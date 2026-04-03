@@ -1,0 +1,17 @@
+streamlit==1.56.0
+supabase
+python-dotenv
+pandas
+numpy
+plotly
+graphviz
+openpyxl
+matplotlib
+streamlit-aggrid==1.1.7
+python-docx
+fpdf2
+requests
+streamlit-echarts
+python-docx
+pyvis
+numpy-financial
