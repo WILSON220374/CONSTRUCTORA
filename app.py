@@ -5,7 +5,7 @@ from session_state import init_session_state, clear_auth
 from supabase_state import cargar_estado, guardar_estado
 
 st.set_page_config(
-    page_title="TECNIC",
+    page_title="CONSTRUCTORA",
     layout="wide",
     page_icon="unnamed.jpg",
 )
