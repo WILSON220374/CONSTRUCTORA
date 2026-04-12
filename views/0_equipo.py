@@ -33,8 +33,8 @@ st.markdown(
     """
     <style>
     .ficha-equipo {
-        background-color: #EAFBF4;
-        border-left: 10px solid #145A32;
+        background-color: #FFF1F1;
+        border-left: 10px solid #B22222;
         padding: 20px;
         border-radius: 15px;
         margin-bottom: 10px;
@@ -46,7 +46,7 @@ st.markdown(
     }
     .nombre-mediano {
         font-size: 24px !important;
-        color: #0B3D2E;
+        color: #8B0000;
         font-weight: 800;
         line-height: 1.2;
         margin-bottom: 8px;
@@ -60,7 +60,7 @@ st.markdown(
     .titulo-principal {
         font-size: 42px !important;
         font-weight: 800 !important;
-        color: #145A32;
+        color: #B22222;
         text-align: left;
         margin-bottom: 25px;
     }
@@ -89,9 +89,9 @@ st.markdown(
     button[kind="primary"],
     div.stButton > button[data-testid*="primary"],
     button[data-testid*="primary"] {
-        background-color: #0B3D2E !important;
+        background-color: #8B0000 !important;
         color: white !important;
-        border: 1px solid #145A32 !important;
+        border: 1px solid #B22222 !important;
         border-radius: 10px !important;
         font-weight: 700 !important;
     }
@@ -99,14 +99,14 @@ st.markdown(
     button[kind="primary"]:hover,
     div.stButton > button[data-testid*="primary"]:hover,
     button[data-testid*="primary"]:hover {
-        background-color: #145A32 !important;
-        border-color: #00FF7F !important;
+        background-color: #B22222 !important;
+        border-color: #FF4D4D !important;
     }
     div.stButton > button[kind="primary"]:active,
     button[kind="primary"]:active,
     div.stButton > button[data-testid*="primary"]:active,
     button[data-testid*="primary"]:active {
-        background-color: #06281E !important;
+        background-color: #5C0000 !important;
     }
     </style>
     """,
