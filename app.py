@@ -63,21 +63,21 @@ def render_login():
             """
             <style>
             div.stButton > button {
-                background-color: #0B3D2E !important;
+                background-color: #8B0000 !important;
                 color: white !important;
-                border: 1px solid #145A32 !important;
+                border: 1px solid #B22222 !important;
                 border-radius: 10px !important;
                 font-weight: 700 !important;
                 padding: 0.65rem 1rem !important;
-                box-shadow: 0 0 12px rgba(0, 230, 118, 0.45) !important;
+                box-shadow: 0 0 12px rgba(255, 59, 59, 0.35) !important;
             }
             div.stButton > button:hover {
-                background-color: #145A32 !important;
-                border-color: #00FF7F !important;
-                box-shadow: 0 0 16px rgba(0, 255, 127, 0.55) !important;
+                background-color: #B22222 !important;
+                border-color: #FF4D4D !important;
+                box-shadow: 0 0 16px rgba(255, 77, 77, 0.45) !important;
             }
             div.stButton > button:active {
-                background-color: #06281E !important;
+                background-color: #5C0000 !important;
             }
             </style>
             """,
