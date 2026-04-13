@@ -155,10 +155,10 @@ with st.sidebar:
         if not datos["nombre_proyecto"]:
             st.warning("⚠️ Primero diligencie el contrato de obra para que se cargue el nombre del proyecto.")
         else:
-            with st.expander("🎯 Añadir Objetivo", expanded=False):
+            with st.expander("📦 Añadir Paquete de Trabajo", expanded=False):
                 with st.form("form_nuevo_objetivo_sidebar", clear_on_submit=True):
-                    nuevo_txt = st.text_input("Escriba un nuevo objetivo:")
-                    if st.form_submit_button("➕ Añadir Objetivo"):
+                    nuevo_txt = st.text_input("Escriba un nuevo paquete de trabajo:")
+                    if st.form_submit_button("➕ Añadir Paquete de Trabajo"):
                         if nuevo_txt.strip():
                             datos["objetivos"].append({
                                 "id": str(uuid.uuid4()),
@@ -204,7 +204,7 @@ with st.sidebar:
                     cod_obj = f"{i+1}"
                     dict_obj[oid] = f"{cod_obj}. {obj['texto']}"
 
-                with st.expander("📦 Añadir Producto"):
+                with st.expander("⚙️ Añadir Actividad"):
                     target_obj = st.selectbox(
                         "Objetivo Padre:",
                         options=list(dict_obj.keys()),
@@ -212,8 +212,8 @@ with st.sidebar:
                         key="prod_obj_padre"
                     )
                     with st.form("form_sidebar_prod", clear_on_submit=True):
-                        txt_p = st.text_input("Nombre del Producto:")
-                        if st.form_submit_button("Guardar Producto"):
+                        txt_p = st.text_input("Nombre de la Actividad:")
+                        f st.form_submit_button("➕ Añadir Actividad"):
                             if txt_p:
                                 if target_obj not in datos["edt_data"]:
                                     datos["edt_data"][target_obj] = []
@@ -261,7 +261,7 @@ with st.sidebar:
                         dict_prod_obj[pid] = f"{cod_prod}. {p.get('nombre','')}"
 
                     if not dict_prod_obj:
-                        st.info("Cree un producto primero dentro de este objetivo.")
+                        st.info("Cree una actividad primero dentro de este paquete de trabajo.")
                     else:
                         target_prod = st.selectbox(
                             "Producto Padre:",
@@ -300,7 +300,7 @@ with st.sidebar:
                                     st.session_state.pop("paq_act_padre", None)
                                     st.rerun()
 
-                with st.expander("🧩 Añadir Paquete de Trabajo"):
+                with st.expander("🧩 Añadir Subactividad"):
                     target_obj_paq = st.selectbox(
                         "Objetivo Padre:",
                         options=list(dict_obj.keys()),
@@ -340,7 +340,7 @@ with st.sidebar:
                                 dict_act_obj[aid] = f"{cod_act}. {a.get('nombre','')}"
 
                         if not dict_act_obj:
-                            st.info("Cree una actividad primero dentro de este producto.")
+                            sst.info("Cree una subactividad primero dentro de esta actividad.")
                         else:
                             target_act_paq = st.selectbox(
                                 "Actividad Padre:",
@@ -350,8 +350,8 @@ with st.sidebar:
                             )
 
                             with st.form("form_sidebar_paq", clear_on_submit=True):
-                                txt_paq = st.text_input("Nombre del Paquete de Trabajo:")
-                                if st.form_submit_button("Guardar Paquete"):
+                                txt_paq = st.text_input("Nombre de la Subactividad:")
+                               if st.form_submit_button("Guardar Subactividad"):
                                     if txt_paq:
                                         for p in datos["edt_data"].get(target_obj_paq, []):
                                             if p["id"] == target_prod_paq:
