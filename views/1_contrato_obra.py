@@ -206,10 +206,6 @@ with st.expander("1. Datos generales del contrato", expanded=True):
     if st.button("Guardar sección 1", key="guardar_1"):
         guardar_y_refrescar()
 
-    if st.button("Guardar sección 1", key="guardar_1"):
-        guardar_y_refrescar()
-
-
 with st.expander("2. Datos del contratante", expanded=False):
     st.markdown("**Entidad contratante**")
     c1, c2 = st.columns(2)
