@@ -502,26 +502,11 @@ if st.session_state["seccion_activa"] == "📥 Datos de Entrada":
         guardar_estado("alcance", datos)
         st.rerun()
                     
-    with st.container(border=True):
-        st.markdown("#### 📝 Descripción General")
-        altura_desc = calcular_altura(datos["descripcion_proyecto"])
-        desc_proyecto = st.text_area("Descripción:", value=datos["descripcion_proyecto"], height=altura_desc)
-
     if (
         nombre_proyecto != datos["nombre_proyecto"]
-        or desc_proyecto != datos["descripcion_proyecto"]
-        or entidad_formuladora != datos.get("entidad_formuladora", "")
-        or division_dependencia != datos.get("division_dependencia", "")
-        or lugar_presentacion != datos.get("lugar_presentacion", "")
-        or anio_presentacion != datos.get("anio_presentacion", "")
         or requiere_costos_indirectos != datos.get("requiere_costos_indirectos", "No")
     ):
         datos["nombre_proyecto"] = nombre_proyecto
-        datos["descripcion_proyecto"] = desc_proyecto
-        datos["entidad_formuladora"] = entidad_formuladora
-        datos["division_dependencia"] = division_dependencia
-        datos["lugar_presentacion"] = lugar_presentacion
-        datos["anio_presentacion"] = anio_presentacion
         datos["requiere_costos_indirectos"] = requiere_costos_indirectos
         guardar_estado("alcance", datos)
         st.rerun()
