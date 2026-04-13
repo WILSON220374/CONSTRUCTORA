@@ -55,7 +55,7 @@ def inicializar_alcance():
     if "lugar_presentacion" not in d: d["lugar_presentacion"] = ""
     if "anio_presentacion" not in d: d["anio_presentacion"] = ""
     
-     nombre_proyecto_contrato = str(contrato_obra.get("objeto_general", "")).strip()
+    nombre_proyecto_contrato = str(contrato_obra.get("objeto_general", "")).strip()
     if "nombre_proyecto" not in d:
         d["nombre_proyecto"] = nombre_proyecto_contrato
     elif nombre_proyecto_contrato:
