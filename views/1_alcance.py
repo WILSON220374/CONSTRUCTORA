@@ -223,7 +223,8 @@ with st.sidebar:
                 dict_prod_obj = {}
 
                 # índice del objetivo para codificación visual (1,2,3...)
-                obj_idx = list(dict_obj.keys()).index(target_obj_act) + 1
+                obj_keys = list(dict_obj.keys())
+                obj_idx = obj_keys.index(target_obj_act) + 1 if target_obj_act in obj_keys else 1
 
                 for j, p in enumerate(prod_list):
                     pid = p["id"]
