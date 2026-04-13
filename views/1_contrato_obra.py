@@ -179,13 +179,18 @@ with st.sidebar:
 
 
 with st.expander("1. Datos generales del contrato", expanded=True):
-    datos["modalidad_seleccion"] = st.selectbox(
-        "Modalidad de selección",
-        options=["Licitación pública", "Selección abreviada", "Mínima cuantía", "Otra"],
-        index=["Licitación pública", "Selección abreviada", "Mínima cuantía", "Otra"].index(datos["modalidad_seleccion"])
-        if datos["modalidad_seleccion"] in ["Licitación pública", "Selección abreviada", "Mínima cuantía", "Otra"] else 0,
-        key="modalidad_seleccion"
-    )
+    c1, c2 = st.columns(2)
+    with c1:
+        datos["numero_contrato"] = st.text_input(
+            "Número de contrato",
+            value=datos["numero_contrato"],
+            key="numero_contrato"
+        )
+        datos["nombre_proyecto"] = st.text_input(
+            "Nombre del proyecto",
+            value=datos["nombre_proyecto"],
+            key="nombre_proyecto"
+        )
     with c2:
         datos["fecha_contrato"] = st.text_input(
             "Fecha del contrato",
@@ -197,6 +202,9 @@ with st.expander("1. Datos generales del contrato", expanded=True):
             value=datos["lugar_celebracion"],
             key="lugar_celebracion"
         )
+
+    if st.button("Guardar sección 1", key="guardar_1"):
+        guardar_y_refrescar()
 
     if st.button("Guardar sección 1", key="guardar_1"):
         guardar_y_refrescar()
