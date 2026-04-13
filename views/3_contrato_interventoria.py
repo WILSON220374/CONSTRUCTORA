@@ -42,14 +42,12 @@ def inicializar_contrato_interventoria():
     valores_defecto = {
         "nombre_entidad": "",
         "nombre_interventor": "",
-        "condicion_interventor": "Persona natural",
         "numero_proceso_contratacion": "",
 
         "objeto_general": "",
         "alcance_objeto": "",
 
         "plazo_contrato": "",
-        "punto_inicio": "",
 
         "valor_contrato_numeros": "",
         "valor_contrato_letras": "",
@@ -62,12 +60,10 @@ def inicializar_contrato_interventoria():
         "clausula_penal_porcentaje_valor": "",
 
         "dias_presentacion_garantia": "",
-        "asegurado_beneficiario": "",
 
         "termino_liquidacion": "",
 
         "lugar_ejecucion": "",
-        "domicilio_contractual": "",
         "lugar_perfeccionamiento": "",
         "fecha_suscripcion": "",
 
@@ -164,14 +160,6 @@ with st.expander("1. Datos generales", expanded=True):
         )
 
     with c2:
-        opciones_condicion = ["Persona natural", "Representante legal"]
-        indice_condicion = opciones_condicion.index(datos["condicion_interventor"]) if datos["condicion_interventor"] in opciones_condicion else 0
-        datos["condicion_interventor"] = st.selectbox(
-            "Condición en que actúa",
-            options=opciones_condicion,
-            index=indice_condicion,
-            key="int_condicion_interventor"
-        )
         datos["numero_proceso_contratacion"] = st.text_input(
             "Número del Proceso de Contratación",
             value=datos["numero_proceso_contratacion"],
@@ -202,21 +190,11 @@ with st.expander("2. Objeto y alcance", expanded=False):
 
 
 with st.expander("3. Plazo", expanded=False):
-    c1, c2 = st.columns(2)
-
-    with c1:
-        datos["plazo_contrato"] = st.text_input(
-            "Plazo del contrato",
-            value=datos["plazo_contrato"],
-            key="int_plazo_contrato"
-        )
-
-    with c2:
-        datos["punto_inicio"] = st.text_input(
-            "Punto de inicio",
-            value=datos["punto_inicio"],
-            key="int_punto_inicio"
-        )
+    datos["plazo_contrato"] = st.text_input(
+        "Plazo del contrato",
+        value=datos["plazo_contrato"],
+        key="int_plazo_contrato"
+    )
 
     if st.button("Guardar sección 3", key="guardar_int_3"):
         guardar_y_refrescar()
@@ -282,21 +260,18 @@ with st.expander("6. Cláusula penal", expanded=False):
 
 
 with st.expander("7. Garantías", expanded=False):
-    c1, c2 = st.columns(2)
+    datos["dias_presentacion_garantia"] = st.text_input(
+        "Días para presentar la garantía",
+        value=datos["dias_presentacion_garantia"],
+        key="int_dias_presentacion_garantia"
+    )
 
-    with c1:
-        datos["dias_presentacion_garantia"] = st.text_input(
-            "Días para presentar la garantía",
-            value=datos["dias_presentacion_garantia"],
-            key="int_dias_presentacion_garantia"
-        )
-
-    with c2:
-        datos["asegurado_beneficiario"] = st.text_input(
-            "Asegurado / beneficiario",
-            value=datos["asegurado_beneficiario"],
-            key="int_asegurado_beneficiario"
-        )
+    st.text_input(
+        "Asegurado / beneficiario",
+        value=datos["nombre_entidad"],
+        key="int_asegurado_beneficiario_visual",
+        disabled=True
+    )
 
     if "df_garantias_interventoria" not in st.session_state:
         st.session_state["df_garantias_interventoria"] = pd.DataFrame(datos["garantias_interventoria"])
@@ -307,11 +282,12 @@ with st.expander("7. Garantías", expanded=False):
         use_container_width=True,
         key="editor_garantias_interventoria"
     )
-    st.session_state["df_garantias_interventoria"] = df_editado.copy()
+
     datos["garantias_interventoria"] = df_editado.fillna("").to_dict(orient="records")
 
     if st.button("Guardar sección 7", key="guardar_int_7"):
-        datos["garantias_interventoria"] = st.session_state["df_garantias_interventoria"].fillna("").to_dict(orient="records")
+        st.session_state["df_garantias_interventoria"] = df_editado.copy()
+        datos["garantias_interventoria"] = df_editado.fillna("").to_dict(orient="records")
         guardar_y_refrescar()
 
 
@@ -335,11 +311,6 @@ with st.expander("9. Lugar y domicilio", expanded=False):
             value=datos["lugar_ejecucion"],
             key="int_lugar_ejecucion"
         )
-        datos["domicilio_contractual"] = st.text_input(
-            "Domicilio contractual",
-            value=datos["domicilio_contractual"],
-            key="int_domicilio_contractual"
-        )
 
     with c2:
         datos["lugar_perfeccionamiento"] = st.text_input(
@@ -352,7 +323,6 @@ with st.expander("9. Lugar y domicilio", expanded=False):
             value=datos["fecha_suscripcion"],
             key="int_fecha_suscripcion"
         )
-
     if st.button("Guardar sección 9", key="guardar_int_9"):
         guardar_y_refrescar()
 
