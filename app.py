@@ -266,6 +266,7 @@ else:
 
     pages = [
         st.Page("views/0_equipo.py", title="0. Equipo", icon="👥"),
+        st.Page("views/1_contrato_obra.py", title="1. Contrato de obra", icon="📄"),
         st.Page("views/1_alcance.py", title="1. Alcance", icon="🎯"),
         st.Page("views/localizacion.py", title="Localización", icon="📍"),
         st.Page("views/2_cronograma.py", title="⭐ 2. CRONOGRAMA", icon="📅"),
