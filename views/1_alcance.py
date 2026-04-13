@@ -289,7 +289,8 @@ with st.sidebar:
                 # Productos SOLO del objetivo seleccionado
                 prod_list = datos["edt_data"].get(target_obj_paq, [])
                 dict_prod_obj2 = {}
-                obj_idx2 = list(dict_obj.keys()).index(target_obj_paq) + 1
+                obj_keys2 = list(dict_obj.keys())
+                obj_idx2 = obj_keys2.index(target_obj_paq) + 1 if target_obj_paq in obj_keys2 else 1
 
                 for j, p in enumerate(prod_list):
                     pid = p["id"]
