@@ -143,17 +143,15 @@ if c_nav3.button("📋 Especificaciones Técnicas", type="primary" if st.session
 st.divider()
 
 # --- 6. BARRA LATERAL (Panel de Gestión de EDT CONDICIONAL) ---
-# --- 6. BARRA LATERAL (Panel de Gestión de EDT CONDICIONAL) ---
 with st.sidebar:
     if st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
         st.header("🛠️ Gestión de EDT")
         st.markdown("Use este panel para añadir o eliminar elementos.")
-        
-        elif st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
-            if not datos["nombre_proyecto"]:
-                st.warning("⚠️ Debes definir el Nombre del Proyecto en la pestaña anterior.")
-            else:
-                        # ==========================================================
+
+        if not datos["nombre_proyecto"]:
+            st.warning("⚠️ Debes definir el Nombre del Proyecto en la pestaña anterior.")
+        else:
+            # ==========================================================
             # ✅ Diccionarios de apoyo (siempre desde el estado actual)
             # ==========================================================
             dict_obj = {}
