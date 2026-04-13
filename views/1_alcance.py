@@ -330,7 +330,7 @@ with st.sidebar:
                             guardar_estado("alcance", datos)
                             st.rerun()
 
-                                st.divider()
+                st.divider()
 
                 prod_sel_del = next(
                     (p for p in datos["edt_data"].get(target_obj_paq, []) if p["id"] == target_prod_paq),
