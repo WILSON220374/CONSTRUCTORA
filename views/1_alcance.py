@@ -405,69 +405,12 @@ with st.sidebar:
 
 if st.session_state["seccion_activa"] == "📥 Datos de Entrada":
     with st.container(border=True):
-        st.markdown("#### 🏢 Información Institucional")
-        col_i1, col_i2 = st.columns(2)
-        with col_i1:
-            entidad_formuladora = st.text_area("Entidad que formula el proyecto:", value=datos.get("entidad_formuladora", ""), height=68)
-            lugar_presentacion = st.text_input("Lugar de presentación:", value=datos.get("lugar_presentacion", ""))
-        with col_i2:
-            division_dependencia = st.text_input("División / Dependencia:", value=datos.get("division_dependencia", ""))
-            anio_presentacion = st.text_input("Año:", value=datos.get("anio_presentacion", ""))
-
-    with st.container(border=True):
         st.markdown("#### 🏷️ Nombre del Proyecto")
-        nombre_proyecto = st.text_input("Digite el nombre:", value=datos["nombre_proyecto"], key="input_nom_proy")
-
-    with st.container(border=True):
-        st.markdown("#### 🎯 Objetivos Estratégicos")
-        with st.form("form_nuevo_objetivo", clear_on_submit=True):
-            nuevo_txt = st.text_input("Escriba un nuevo objetivo:")
-            if st.form_submit_button("➕ Añadir Objetivo"):
-                if nuevo_txt:
-                    datos["objetivos"].append({
-                        "id": str(uuid.uuid4()), "texto": nuevo_txt, "unidad": "",
-                        "specs": {"descripcion": "", "procedimiento": "", "materiales": "", "herramientas": "", "equipos": "", "medicion_pago": "", "no_conformidad": ""}
-                    })
-                    guardar_estado("alcance", datos); st.rerun()
-
-        for i, obj in enumerate(datos["objetivos"]):
-            edit_key = f"edit_obj_{obj['id']}"
-            txt_key = f"txt_obj_{obj['id']}"
-
-            if edit_key not in st.session_state:
-                st.session_state[edit_key] = False
-            if txt_key not in st.session_state:
-                st.session_state[txt_key] = obj["texto"]
-
-            if st.session_state[edit_key]:
-                c1, c2, c3 = st.columns([0.72, 0.14, 0.14])
-                nuevo_texto = c1.text_input(
-                    f"Editar objetivo {i+1}",
-                    value=st.session_state[txt_key],
-                    key=txt_key,
-                    label_visibility="collapsed",
-                )
-                if c2.button("💾", key=f"save_{obj['id']}"):
-                    datos["objetivos"][i]["texto"] = nuevo_texto
-                    st.session_state[edit_key] = False
-                    guardar_estado("alcance", datos); st.rerun()
-                if c3.button("✖", key=f"cancel_{obj['id']}"):
-                    st.session_state[txt_key] = obj["texto"]
-                    st.session_state[edit_key] = False
-                    st.rerun()
-            else:
-                c1, c2, c3 = st.columns([0.8, 0.1, 0.1])
-                c1.info(f"**{i+1}.** {obj['texto']}")
-                if c2.button("✏️", key=f"edit_{obj['id']}"):
-                    st.session_state[txt_key] = obj["texto"]
-                    st.session_state[edit_key] = True
-                    st.rerun()
-                if c3.button("🗑️", key=f"del_{obj['id']}"):
-                    datos["objetivos"].pop(i)
-                    if obj["id"] in datos["edt_data"]: del datos["edt_data"][obj["id"]]
-                    st.session_state.pop(edit_key, None)
-                    st.session_state.pop(txt_key, None)
-                    guardar_estado("alcance", datos); st.rerun()
+        nombre_proyecto = st.text_input(
+            "Digite el nombre:",
+            value=datos["nombre_proyecto"],
+            key="input_nom_proy"
+        )
 
     with st.container(border=True):
         st.markdown("#### 💼 Costos indirectos del proyecto")
@@ -549,6 +492,15 @@ if st.session_state["seccion_activa"] == "📥 Datos de Entrada":
                         st.session_state.pop(txt_key_ci, None)
                         guardar_estado("alcance", datos)
                         st.rerun()
+
+    if (
+        nombre_proyecto != datos["nombre_proyecto"]
+        or requiere_costos_indirectos != datos.get("requiere_costos_indirectos", "No")
+    ):
+        datos["nombre_proyecto"] = nombre_proyecto
+        datos["requiere_costos_indirectos"] = requiere_costos_indirectos
+        guardar_estado("alcance", datos)
+        st.rerun()
                     
     with st.container(border=True):
         st.markdown("#### 📝 Descripción General")
