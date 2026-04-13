@@ -302,7 +302,7 @@ with st.sidebar:
                                     st.session_state.pop("paq_act_padre", None)
                                     st.rerun()
 
-                                with st.expander("🧩 Añadir Subactividad"):
+                with st.expander("🧩 Añadir Subactividad"):
                     target_obj_paq = st.selectbox(
                         "Producto Padre:",
                         options=list(dict_obj.keys()),
