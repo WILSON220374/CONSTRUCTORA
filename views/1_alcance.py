@@ -140,11 +140,13 @@ with col_l:
 st.divider()
 
 # --- 5. NAVEGACIÓN INTELIGENTE ---
-c_nav1, c_nav2 = st.columns(2)
-if c_nav1.button("📥 Datos de Entrada", type="primary" if st.session_state["seccion_activa"] == "📥 Datos de Entrada" else "secondary"):
-    st.session_state["seccion_activa"] = "📥 Datos de Entrada"; st.rerun()
-if c_nav2.button("🗂️ EDT Gráfica", type="primary" if st.session_state["seccion_activa"] == "🗂️ EDT Gráfica" else "secondary"):
-    st.session_state["seccion_activa"] = "🗂️ EDT Gráfica"; st.rerun()
+c_nav1, c_nav2, c_nav3 = st.columns(3)
+if c_nav1.button("📥 Datos de Entrada", use_container_width=True, type="primary" if st.session_state["seccion_activa"] == "📥 Datos de Entrada" else "secondary"):
+    st.session_state["seccion_activa"] = "📥 Datos de Entrada"
+if c_nav2.button("🗂️ EDT Gráfica", use_container_width=True, type="primary" if st.session_state["seccion_activa"] == "🗂️ EDT Gráfica" else "secondary"):
+    st.session_state["seccion_activa"] = "🗂️ EDT Gráfica"
+if c_nav3.button("📋 Especificaciones Técnicas", use_container_width=True, type="primary" if st.session_state["seccion_activa"] == "📋 Especificaciones Técnicas" else "secondary"):
+    st.session_state["seccion_activa"] = "📋 Especificaciones Técnicas"
 
 # --- 6. BARRA LATERAL (Panel de Gestión de EDT CONDICIONAL) ---
 with st.sidebar:
