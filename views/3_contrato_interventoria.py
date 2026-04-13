@@ -41,6 +41,8 @@ def inicializar_contrato_interventoria():
 
     valores_defecto = {
         "nombre_entidad": "",
+        "nombre_representante_entidad": "",
+        "nombre_empresa_interventora": "",
         "nombre_interventor": "",
         "numero_proceso_contratacion": "",
 
@@ -74,6 +76,16 @@ def inicializar_contrato_interventoria():
     for k, v in valores_defecto.items():
         if k not in d:
             d[k] = v
+
+    if "multas_interventoria" not in d or not isinstance(d["multas_interventoria"], list) or len(d["multas_interventoria"]) == 0:
+        d["multas_interventoria"] = [
+            {"causal": "Atraso o incumplimiento del Cronograma", "porcentaje": ""},
+            {"causal": "No mantener en vigor las Garantías", "porcentaje": ""},
+            {"causal": "No entrega la información completa que le solicite el supervisor", "porcentaje": ""},
+            {"causal": "Atraso imputable al Interventor", "porcentaje": ""},
+            {"causal": "Por incumplir, sin justa causa, las órdenes que el supervisor dé", "porcentaje": ""},
+            {"causal": "Por cambiar el equipo de trabajo presentado en la oferta, sin la aprobación previa del supervisor", "porcentaje": ""},
+        ]
 
     if "garantias_interventoria" not in d or not isinstance(d["garantias_interventoria"], list) or len(d["garantias_interventoria"]) == 0:
         d["garantias_interventoria"] = [
@@ -153,6 +165,11 @@ with st.expander("1. Datos generales", expanded=True):
             value=datos["nombre_entidad"],
             key="int_nombre_entidad"
         )
+        datos["nombre_representante_entidad"] = st.text_input(
+            "Nombre del representante de la Entidad",
+            value=datos["nombre_representante_entidad"],
+            key="int_nombre_representante_entidad"
+        )
         datos["nombre_interventor"] = st.text_input(
             "Nombre del Interventor",
             value=datos["nombre_interventor"],
@@ -160,12 +177,16 @@ with st.expander("1. Datos generales", expanded=True):
         )
 
     with c2:
+        datos["nombre_empresa_interventora"] = st.text_input(
+            "Nombre de la empresa interventora",
+            value=datos["nombre_empresa_interventora"],
+            key="int_nombre_empresa_interventora"
+        )
         datos["numero_proceso_contratacion"] = st.text_input(
             "Número del Proceso de Contratación",
             value=datos["numero_proceso_contratacion"],
             key="int_numero_proceso_contratacion"
         )
-
     if st.button("Guardar sección 1", key="guardar_int_1"):
         guardar_y_refrescar()
 
@@ -258,8 +279,29 @@ with st.expander("6. Cláusula penal", expanded=False):
     if st.button("Guardar sección 6", key="guardar_int_6"):
         guardar_y_refrescar()
 
+with st.expander("7. Multas", expanded=False):
+    st.markdown("**Tabla de multas**")
 
-with st.expander("7. Garantías", expanded=False):
+    if "df_multas_interventoria" not in st.session_state:
+        st.session_state["df_multas_interventoria"] = pd.DataFrame(datos["multas_interventoria"])
+
+    df_multas = st.data_editor(
+        st.session_state["df_multas_interventoria"],
+        num_rows="fixed",
+        use_container_width=True,
+        key="editor_multas_interventoria",
+        disabled=["causal"]
+    )
+
+    datos["multas_interventoria"] = df_multas.fillna("").to_dict(orient="records")
+
+    if st.button("Guardar sección 7", key="guardar_int_7_multas"):
+        st.session_state["df_multas_interventoria"] = df_multas.copy()
+        datos["multas_interventoria"] = df_multas.fillna("").to_dict(orient="records")
+        guardar_y_refrescar()
+
+
+with st.expander("8. Garantías", expanded=False):
     datos["dias_presentacion_garantia"] = st.text_input(
         "Días para presentar la garantía",
         value=datos["dias_presentacion_garantia"],
@@ -285,24 +327,24 @@ with st.expander("7. Garantías", expanded=False):
 
     datos["garantias_interventoria"] = df_editado.fillna("").to_dict(orient="records")
 
-    if st.button("Guardar sección 7", key="guardar_int_7"):
+    if st.button("Guardar sección 8", key="guardar_int_8"):
         st.session_state["df_garantias_interventoria"] = df_editado.copy()
         datos["garantias_interventoria"] = df_editado.fillna("").to_dict(orient="records")
         guardar_y_refrescar()
 
 
-with st.expander("8. Liquidación", expanded=False):
+with st.expander("9. Liquidación", expanded=False):
     datos["termino_liquidacion"] = st.text_input(
         "Término para la liquidación",
         value=datos["termino_liquidacion"],
         key="int_termino_liquidacion"
     )
 
-    if st.button("Guardar sección 8", key="guardar_int_8"):
+    if st.button("Guardar sección 9", key="guardar_int_9"):
         guardar_y_refrescar()
 
 
-with st.expander("9. Lugar y domicilio", expanded=False):
+with st.expander("10. Lugar y domicilio", expanded=False):
     c1, c2 = st.columns(2)
 
     with c1:
@@ -323,11 +365,11 @@ with st.expander("9. Lugar y domicilio", expanded=False):
             value=datos["fecha_suscripcion"],
             key="int_fecha_suscripcion"
         )
-    if st.button("Guardar sección 9", key="guardar_int_9"):
+    if st.button("Guardar sección 10", key="guardar_int_10"):
         guardar_y_refrescar()
 
 
-with st.expander("10. Firmas", expanded=False):
+with st.expander("11. Firmas", expanded=False):
     c1, c2 = st.columns(2)
 
     with c1:
@@ -344,7 +386,7 @@ with st.expander("10. Firmas", expanded=False):
             key="int_firmante_interventor"
         )
 
-    if st.button("Guardar sección 10", key="guardar_int_10"):
+    if st.button("Guardar sección 11", key="guardar_int_11"):
         guardar_y_refrescar()
 
 
