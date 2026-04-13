@@ -213,7 +213,7 @@ with st.sidebar:
                     )
                     with st.form("form_sidebar_prod", clear_on_submit=True):
                         txt_p = st.text_input("Nombre de la Actividad:")
-                        f st.form_submit_button("➕ Añadir Actividad"):
+                        if st.form_submit_button("➕ Añadir Actividad"):
                             if txt_p:
                                 if target_obj not in datos["edt_data"]:
                                     datos["edt_data"][target_obj] = []
