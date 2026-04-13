@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import json
-from datetime import date
+import pandas as pd
 from supabase_state import cargar_estado
 from supabase_state import guardar_estado as guardar_estado_bd
 
@@ -56,68 +56,38 @@ def inicializar_contrato():
         "rep_entidad_num_doc": "",
         "rep_entidad_municipio_expedicion": "",
         "rep_entidad_cargo": "",
-        "rep_entidad_num_acto": "",
-        "rep_entidad_fecha_acto": "",
-        "rep_entidad_fecha_posesion": "",
-        "rep_entidad_num_acta_posesion": "",
-        "rep_entidad_fecha_acta_posesion": "",
-        "rep_entidad_norma_competencia": "",
-        "rep_entidad_fecha_norma_competencia": "",
 
         "tipo_contratista": "Persona jurídica",
         "nombre_contratista": "",
         "nit_contratista": "",
-        "matricula_mercantil": "",
-        "calidad_actua_contratista": "",
 
         "rep_contratista_nombre": "",
         "rep_contratista_tipo_doc": "Cédula de ciudadanía",
         "rep_contratista_num_doc": "",
         "rep_contratista_ciudad_expedicion": "",
 
-        "estudios_documentos_previos": "",
-        "nombre_pliego_invitacion": "",
         "proceso_secop": "",
         "modalidad_seleccion": "Licitación pública",
-        "incluido_paa": "Sí",
-        "acto_adjudicacion": "",
-        "motivacion_adicional": "",
 
         "objeto_general": "",
         "objeto_especifico": "",
 
-        "actividades_especificas": "",
-        "especificaciones_tecnicas": "",
-
         "valor_total_numeros": "",
         "valor_total_letras": "",
-        "modalidad_pago": "Precios unitarios",
-        "datos_cdp": "",
-        "usa_vigencias_futuras": "No",
-        "vigencias_futuras_detalle": "",
         "periodicidad_pago": "",
         "requisitos_pago": "",
         "dias_pago": "",
 
         "plazo_ejecucion": "",
-        "cronograma_obra": "",
 
-        "condiciones_multa": "",
         "clausula_penal_numeros": "",
         "clausula_penal_letras": "",
 
         "plazo_garantias_dias": "",
 
-        "mecanismo_controversias": "Jurisdicción Contenciosa Administrativa",
-        "detalle_controversias": "",
-
-        "not_entidad_nombre": "",
-        "not_entidad_cargo": "",
         "not_entidad_direccion": "",
         "not_entidad_telefono": "",
         "not_entidad_correo": "",
-        "not_contratista_nombre": "",
-        "not_contratista_cargo": "",
         "not_contratista_direccion": "",
         "not_contratista_telefono": "",
         "not_contratista_correo": "",
@@ -125,29 +95,22 @@ def inicializar_contrato():
         "tipo_seguimiento": "Ambas",
         "nombre_supervisor": "",
         "nombre_interventor": "",
-        "observaciones_seguimiento": "",
 
         "anexos_estudios_previos": True,
         "anexos_pliego": True,
         "anexos_oferta": True,
         "anexos_actas_informes": True,
         "anexos_cdp": True,
-        "anexos_otros": "",
 
         "lugar_ejecucion": "",
-        "domicilio_contractual": "",
         "fecha_celebracion": "",
-        "firmante_entidad_nombre": "",
-        "firmante_entidad_identificacion": "",
-        "firmante_contratista_nombre": "",
-        "firmante_contratista_identificacion": "",
     }
 
     for k, v in valores_defecto.items():
         if k not in d:
             d[k] = v
 
-    if "garantias" not in d or not isinstance(d["garantias"], list):
+    if "garantias" not in d or not isinstance(d["garantias"], list) or len(d["garantias"]) == 0:
         d["garantias"] = [{"amparo": "", "suficiencia": "", "vigencia": ""}]
 
 
@@ -297,6 +260,7 @@ with st.expander("2. Datos del contratante", expanded=False):
             if datos["rep_entidad_tipo_doc"] in ["Cédula de ciudadanía", "Cédula de extranjería", "Pasaporte", "Otro"] else 0,
             key="rep_entidad_tipo_doc"
         )
+    with c4:
         datos["rep_entidad_num_doc"] = st.text_input(
             "Número de identificación del representante del contratante",
             value=datos["rep_entidad_num_doc"],
@@ -311,43 +275,6 @@ with st.expander("2. Datos del contratante", expanded=False):
             "Cargo del representante del contratante",
             value=datos["rep_entidad_cargo"],
             key="rep_entidad_cargo"
-        )
-        datos["rep_entidad_num_acto"] = st.text_input(
-            "Número del acto administrativo de nombramiento del contratante",
-            value=datos["rep_entidad_num_acto"],
-            key="rep_entidad_num_acto"
-        )
-    with c4:
-        datos["rep_entidad_fecha_acto"] = st.text_input(
-            "Fecha del acto administrativo de nombramiento del contratante",
-            value=datos["rep_entidad_fecha_acto"],
-            key="rep_entidad_fecha_acto"
-        )
-        datos["rep_entidad_fecha_posesion"] = st.text_input(
-            "Fecha de posesión del representante del contratante",
-            value=datos["rep_entidad_fecha_posesion"],
-            key="rep_entidad_fecha_posesion"
-        )
-        datos["rep_entidad_num_acta_posesion"] = st.text_input(
-            "Número del acta de posesión del representante del contratante",
-            value=datos["rep_entidad_num_acta_posesion"],
-            key="rep_entidad_num_acta_posesion"
-        )
-        datos["rep_entidad_fecha_acta_posesion"] = st.text_input(
-            "Fecha del acta de posesión del representante del contratante",
-            value=datos["rep_entidad_fecha_acta_posesion"],
-            key="rep_entidad_fecha_acta_posesion"
-        )
-        datos["rep_entidad_norma_competencia"] = st.text_area(
-            "Norma que concede competencia para firmar al representante del contratante",
-            value=datos["rep_entidad_norma_competencia"],
-            height=calcular_altura(datos["rep_entidad_norma_competencia"]),
-            key="rep_entidad_norma_competencia"
-        )
-        datos["rep_entidad_fecha_norma_competencia"] = st.text_input(
-            "Fecha de la norma de competencia del contratante",
-            value=datos["rep_entidad_fecha_norma_competencia"],
-            key="rep_entidad_fecha_norma_competencia"
         )
 
     if st.button("Guardar sección 2", key="guardar_2"):
@@ -370,21 +297,11 @@ with st.expander("3. Datos del contratista", expanded=False):
             value=datos["nombre_contratista"],
             key="nombre_contratista"
         )
+    with c2:
         datos["nit_contratista"] = st.text_input(
             "NIT del contratista",
             value=datos["nit_contratista"],
             key="nit_contratista"
-        )
-    with c2:
-        datos["matricula_mercantil"] = st.text_input(
-            "Matrícula mercantil del contratista",
-            value=datos["matricula_mercantil"],
-            key="matricula_mercantil"
-        )
-        datos["calidad_actua_contratista"] = st.text_input(
-            "Calidad en la que actúa el contratista",
-            value=datos["calidad_actua_contratista"],
-            key="calidad_actua_contratista"
         )
 
     st.markdown("**Representante del contratista**")
@@ -419,20 +336,8 @@ with st.expander("3. Datos del contratista", expanded=False):
 
 
 with st.expander("4. Antecedentes del proceso", expanded=False):
-    datos["estudios_documentos_previos"] = st.text_area(
-        "Referencia a estudios y documentos previos",
-        value=datos["estudios_documentos_previos"],
-        height=calcular_altura(datos["estudios_documentos_previos"]),
-        key="estudios_documentos_previos"
-    )
-
     c1, c2 = st.columns(2)
     with c1:
-        datos["nombre_pliego_invitacion"] = st.text_input(
-            "Nombre del pliego o invitación",
-            value=datos["nombre_pliego_invitacion"],
-            key="nombre_pliego_invitacion"
-        )
         datos["proceso_secop"] = st.text_input(
             "Identificación del proceso en SECOP",
             value=datos["proceso_secop"],
@@ -446,24 +351,6 @@ with st.expander("4. Antecedentes del proceso", expanded=False):
             if datos["modalidad_seleccion"] in ["Licitación pública", "Selección abreviada", "Mínima cuantía", "Otra"] else 0,
             key="modalidad_seleccion"
         )
-        datos["incluido_paa"] = st.selectbox(
-            "¿Está incluido en el Plan Anual de Adquisiciones?",
-            options=["Sí", "No"],
-            index=0 if datos["incluido_paa"] == "Sí" else 1,
-            key="incluido_paa"
-        )
-
-    datos["acto_adjudicacion"] = st.text_input(
-        "Número y fecha del acto administrativo de adjudicación",
-        value=datos["acto_adjudicacion"],
-        key="acto_adjudicacion"
-    )
-    datos["motivacion_adicional"] = st.text_area(
-        "Motivación adicional",
-        value=datos["motivacion_adicional"],
-        height=calcular_altura(datos["motivacion_adicional"]),
-        key="motivacion_adicional"
-    )
 
     if st.button("Guardar sección 4", key="guardar_4"):
         guardar_y_refrescar()
@@ -487,38 +374,13 @@ with st.expander("5. Objeto del contrato", expanded=False):
         guardar_y_refrescar()
 
 
-with st.expander("6. Actividades y especificaciones", expanded=False):
-    datos["actividades_especificas"] = st.text_area(
-        "Actividades específicas del contrato",
-        value=datos["actividades_especificas"],
-        height=calcular_altura(datos["actividades_especificas"], min_h=180),
-        key="actividades_especificas"
-    )
-    datos["especificaciones_tecnicas"] = st.text_area(
-        "Especificaciones técnicas",
-        value=datos["especificaciones_tecnicas"],
-        height=calcular_altura(datos["especificaciones_tecnicas"], min_h=180),
-        key="especificaciones_tecnicas"
-    )
-
-    if st.button("Guardar sección 6", key="guardar_6"):
-        guardar_y_refrescar()
-
-
-with st.expander("7. Valor y forma de pago", expanded=False):
+with st.expander("6. Valor y forma de pago", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
         datos["valor_total_numeros"] = st.text_input(
             "Valor total en números",
             value=datos["valor_total_numeros"],
             key="valor_total_numeros"
-        )
-        datos["modalidad_pago"] = st.selectbox(
-            "Modalidad de pago",
-            options=["Precios unitarios", "Precio global fijo", "Administración delegada"],
-            index=["Precios unitarios", "Precio global fijo", "Administración delegada"].index(datos["modalidad_pago"])
-            if datos["modalidad_pago"] in ["Precios unitarios", "Precio global fijo", "Administración delegada"] else 0,
-            key="modalidad_pago"
         )
         datos["dias_pago"] = st.text_input(
             "Días para pago",
@@ -536,27 +398,6 @@ with st.expander("7. Valor y forma de pago", expanded=False):
             value=datos["periodicidad_pago"],
             key="periodicidad_pago"
         )
-        datos["usa_vigencias_futuras"] = st.selectbox(
-            "¿Usa vigencias futuras?",
-            options=["Sí", "No"],
-            index=0 if datos["usa_vigencias_futuras"] == "Sí" else 1,
-            key="usa_vigencias_futuras"
-        )
-
-    datos["datos_cdp"] = st.text_area(
-        "Datos del certificado de disponibilidad presupuestal (CDP)",
-        value=datos["datos_cdp"],
-        height=calcular_altura(datos["datos_cdp"]),
-        key="datos_cdp"
-    )
-
-    if datos["usa_vigencias_futuras"] == "Sí":
-        datos["vigencias_futuras_detalle"] = st.text_area(
-            "Detalle de vigencias futuras",
-            value=datos["vigencias_futuras_detalle"],
-            height=calcular_altura(datos["vigencias_futuras_detalle"]),
-            key="vigencias_futuras_detalle"
-        )
 
     datos["requisitos_pago"] = st.text_area(
         "Entregables o requisitos para pago",
@@ -565,35 +406,22 @@ with st.expander("7. Valor y forma de pago", expanded=False):
         key="requisitos_pago"
     )
 
-    if st.button("Guardar sección 7", key="guardar_7"):
+    if st.button("Guardar sección 6", key="guardar_6"):
         guardar_y_refrescar()
 
 
-with st.expander("8. Plazo y cronograma", expanded=False):
+with st.expander("7. Plazo", expanded=False):
     datos["plazo_ejecucion"] = st.text_input(
         "Plazo de ejecución del contrato",
         value=datos["plazo_ejecucion"],
         key="plazo_ejecucion"
     )
-    datos["cronograma_obra"] = st.text_area(
-        "Cronograma estimado de obra",
-        value=datos["cronograma_obra"],
-        height=calcular_altura(datos["cronograma_obra"]),
-        key="cronograma_obra"
-    )
 
-    if st.button("Guardar sección 8", key="guardar_8"):
+    if st.button("Guardar sección 7", key="guardar_7"):
         guardar_y_refrescar()
 
 
-with st.expander("9. Multas y cláusula penal", expanded=False):
-    datos["condiciones_multa"] = st.text_area(
-        "Condiciones de multas",
-        value=datos["condiciones_multa"],
-        height=calcular_altura(datos["condiciones_multa"]),
-        key="condiciones_multa"
-    )
-
+with st.expander("8. Cláusula penal", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
         datos["clausula_penal_numeros"] = st.text_input(
@@ -608,18 +436,22 @@ with st.expander("9. Multas y cláusula penal", expanded=False):
             key="clausula_penal_letras"
         )
 
-    if st.button("Guardar sección 9", key="guardar_9"):
+    if st.button("Guardar sección 8", key="guardar_8"):
         guardar_y_refrescar()
 
 
-with st.expander("10. Garantías", expanded=False):
-    st.markdown("**Tabla de garantías**")
-    datos["garantias"] = st.data_editor(
-        datos["garantias"],
+with st.expander("9. Garantías", expanded=False):
+    if "df_garantias_contrato" not in st.session_state:
+        st.session_state["df_garantias_contrato"] = pd.DataFrame(datos["garantias"])
+
+    df_editado = st.data_editor(
+        st.session_state["df_garantias_contrato"],
         num_rows="dynamic",
         use_container_width=True,
         key="editor_garantias"
     )
+    st.session_state["df_garantias_contrato"] = df_editado.copy()
+    datos["garantias"] = df_editado.fillna("").to_dict(orient="records")
 
     datos["plazo_garantias_dias"] = st.text_input(
         "Plazo en días hábiles para presentar garantías",
@@ -627,59 +459,15 @@ with st.expander("10. Garantías", expanded=False):
         key="plazo_garantias_dias"
     )
 
-    if st.button("Guardar sección 10", key="guardar_10"):
+    if st.button("Guardar sección 9", key="guardar_9"):
+        datos["garantias"] = st.session_state["df_garantias_contrato"].fillna("").to_dict(orient="records")
         guardar_y_refrescar()
 
 
-with st.expander("11. Solución de controversias", expanded=False):
-    datos["mecanismo_controversias"] = st.selectbox(
-        "Mecanismo de solución de controversias",
-        options=[
-            "Amigable composición",
-            "Conciliación",
-            "Tribunal de Arbitramento",
-            "Jurisdicción Contenciosa Administrativa"
-        ],
-        index=[
-            "Amigable composición",
-            "Conciliación",
-            "Tribunal de Arbitramento",
-            "Jurisdicción Contenciosa Administrativa"
-        ].index(datos["mecanismo_controversias"])
-        if datos["mecanismo_controversias"] in [
-            "Amigable composición",
-            "Conciliación",
-            "Tribunal de Arbitramento",
-            "Jurisdicción Contenciosa Administrativa"
-        ] else 3,
-        key="mecanismo_controversias"
-    )
-
-    datos["detalle_controversias"] = st.text_area(
-        "Detalle del mecanismo seleccionado",
-        value=datos["detalle_controversias"],
-        height=calcular_altura(datos["detalle_controversias"]),
-        key="detalle_controversias"
-    )
-
-    if st.button("Guardar sección 11", key="guardar_11"):
-        guardar_y_refrescar()
-
-
-with st.expander("12. Notificaciones", expanded=False):
+with st.expander("10. Notificaciones", expanded=False):
     st.markdown("**Notificaciones del contratante**")
-    c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
     with c1:
-        datos["not_entidad_nombre"] = st.text_input(
-            "Nombre de contacto del contratante",
-            value=datos["not_entidad_nombre"],
-            key="not_entidad_nombre"
-        )
-        datos["not_entidad_cargo"] = st.text_input(
-            "Cargo del contacto del contratante",
-            value=datos["not_entidad_cargo"],
-            key="not_entidad_cargo"
-        )
         datos["not_entidad_direccion"] = st.text_input(
             "Dirección del contratante",
             value=datos["not_entidad_direccion"],
@@ -691,6 +479,7 @@ with st.expander("12. Notificaciones", expanded=False):
             value=datos["not_entidad_telefono"],
             key="not_entidad_telefono"
         )
+    with c3:
         datos["not_entidad_correo"] = st.text_input(
             "Correo electrónico del contratante",
             value=datos["not_entidad_correo"],
@@ -698,40 +487,31 @@ with st.expander("12. Notificaciones", expanded=False):
         )
 
     st.markdown("**Notificaciones del contratista**")
-    c3, c4 = st.columns(2)
-    with c3:
-        datos["not_contratista_nombre"] = st.text_input(
-            "Nombre de contacto del contratista",
-            value=datos["not_contratista_nombre"],
-            key="not_contratista_nombre"
-        )
-        datos["not_contratista_cargo"] = st.text_input(
-            "Cargo del contacto del contratista",
-            value=datos["not_contratista_cargo"],
-            key="not_contratista_cargo"
-        )
+    c4, c5, c6 = st.columns(3)
+    with c4:
         datos["not_contratista_direccion"] = st.text_input(
             "Dirección del contratista",
             value=datos["not_contratista_direccion"],
             key="not_contratista_direccion"
         )
-    with c4:
+    with c5:
         datos["not_contratista_telefono"] = st.text_input(
             "Teléfono del contratista",
             value=datos["not_contratista_telefono"],
             key="not_contratista_telefono"
         )
+    with c6:
         datos["not_contratista_correo"] = st.text_input(
             "Correo electrónico del contratista",
             value=datos["not_contratista_correo"],
             key="not_contratista_correo"
         )
 
-    if st.button("Guardar sección 12", key="guardar_12"):
+    if st.button("Guardar sección 10", key="guardar_10"):
         guardar_y_refrescar()
 
 
-with st.expander("13. Supervisión e interventoría", expanded=False):
+with st.expander("11. Supervisión e interventoría", expanded=False):
     datos["tipo_seguimiento"] = st.selectbox(
         "Tipo de seguimiento",
         options=["Solo supervisión", "Solo interventoría", "Ambas"],
@@ -756,18 +536,11 @@ with st.expander("13. Supervisión e interventoría", expanded=False):
                 key="nombre_interventor"
             )
 
-    datos["observaciones_seguimiento"] = st.text_area(
-        "Observaciones sobre supervisión e interventoría",
-        value=datos["observaciones_seguimiento"],
-        height=calcular_altura(datos["observaciones_seguimiento"]),
-        key="observaciones_seguimiento"
-    )
-
-    if st.button("Guardar sección 13", key="guardar_13"):
+    if st.button("Guardar sección 11", key="guardar_11"):
         guardar_y_refrescar()
 
 
-with st.expander("14. Anexos", expanded=False):
+with st.expander("12. Anexos", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
         datos["anexos_estudios_previos"] = st.checkbox(
@@ -797,18 +570,11 @@ with st.expander("14. Anexos", expanded=False):
             key="anexos_cdp"
         )
 
-    datos["anexos_otros"] = st.text_area(
-        "Otros anexos",
-        value=datos["anexos_otros"],
-        height=calcular_altura(datos["anexos_otros"]),
-        key="anexos_otros"
-    )
-
-    if st.button("Guardar sección 14", key="guardar_14"):
+    if st.button("Guardar sección 12", key="guardar_12"):
         guardar_y_refrescar()
 
 
-with st.expander("15. Cierre y firmas", expanded=False):
+with st.expander("13. Cierre", expanded=False):
     c1, c2 = st.columns(2)
     with c1:
         datos["lugar_ejecucion"] = st.text_input(
@@ -816,39 +582,14 @@ with st.expander("15. Cierre y firmas", expanded=False):
             value=datos["lugar_ejecucion"],
             key="lugar_ejecucion"
         )
-        datos["domicilio_contractual"] = st.text_input(
-            "Domicilio contractual",
-            value=datos["domicilio_contractual"],
-            key="domicilio_contractual"
-        )
+    with c2:
         datos["fecha_celebracion"] = st.text_input(
             "Fecha de celebración del contrato",
             value=datos["fecha_celebracion"],
             key="fecha_celebracion"
         )
-    with c2:
-        datos["firmante_entidad_nombre"] = st.text_input(
-            "Nombre del firmante del contratante",
-            value=datos["firmante_entidad_nombre"],
-            key="firmante_entidad_nombre"
-        )
-        datos["firmante_entidad_identificacion"] = st.text_input(
-            "Identificación del firmante del contratante",
-            value=datos["firmante_entidad_identificacion"],
-            key="firmante_entidad_identificacion"
-        )
-        datos["firmante_contratista_nombre"] = st.text_input(
-            "Nombre del firmante del contratista",
-            value=datos["firmante_contratista_nombre"],
-            key="firmante_contratista_nombre"
-        )
-        datos["firmante_contratista_identificacion"] = st.text_input(
-            "Identificación del firmante del contratista",
-            value=datos["firmante_contratista_identificacion"],
-            key="firmante_contratista_identificacion"
-        )
 
-    if st.button("Guardar sección 15", key="guardar_15"):
+    if st.button("Guardar sección 13", key="guardar_13"):
         guardar_y_refrescar()
 
 
@@ -857,6 +598,7 @@ st.divider()
 col_a, col_b = st.columns([1, 1])
 with col_a:
     if st.button("💾 Guardar formulario completo", type="primary", key="guardar_formulario_completo"):
+        datos["garantias"] = st.session_state["df_garantias_contrato"].fillna("").to_dict(orient="records")
         guardar_estado("contrato_obra", datos)
         st.success("Formulario completo guardado.")
 with col_b:
