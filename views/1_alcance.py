@@ -148,9 +148,10 @@ with st.sidebar:
         st.header("🛠️ Gestión de EDT")
         st.markdown("Use este panel para añadir o eliminar elementos.")
         
-        if not datos["nombre_proyecto"] or not datos["objetivos"]:
-            st.warning("⚠️ Primero defina el Proyecto y Objetivos en la sección de Datos de Entrada.")
-        else:
+        elif st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
+            if not datos["nombre_proyecto"]:
+                st.warning("⚠️ Debes definir el Nombre del Proyecto en la pestaña anterior.")
+            else:
                         # ==========================================================
             # ✅ Diccionarios de apoyo (siempre desde el estado actual)
             # ==========================================================
