@@ -94,13 +94,6 @@ def inicializar_alcance():
 inicializar_alcance()
 datos = st.session_state["alcance_datos"]
 
-datos_contrato_obra = st.session_state.get("contrato_obra_datos") or cargar_estado("contrato_obra") or {}
-nombre_proyecto_contrato = str(datos_contrato_obra.get("objeto_general", "") or "").strip()
-
-if nombre_proyecto_contrato and datos.get("nombre_proyecto", "") != nombre_proyecto_contrato:
-    datos["nombre_proyecto"] = nombre_proyecto_contrato
-    guardar_estado("alcance", datos)
-
 if "zoom_edt" not in st.session_state:
     st.session_state["zoom_edt"] = 1.0
 
@@ -130,39 +123,64 @@ st.markdown("""
 col_t, col_l = st.columns([4, 1], vertical_alignment="center")
 with col_t:
     st.markdown('<div class="titulo-seccion">🎯 1. Alcance del Proyecto</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitulo-gris">Esta hoja solo conserva el nombre del proyecto, la EDT y los costos indirectos.</div>', unsafe_allow_html=True)
-    campos_clave = [datos["nombre_proyecto"]]
+    st.markdown('<div class="subtitulo-gris">Defina la base técnica, objetivos y estructura de trabajo (EDT).</div>', unsafe_allow_html=True)
+    campos_clave = [datos["nombre_proyecto"], datos["objetivos"], datos["entidad_formuladora"], datos["anio_presentacion"]]
     completos = sum([1 for x in campos_clave if x])
-    st.progress(completos / 1, text=f"Progreso General: {int((completos/1)*100)}%")
+    st.progress(completos / 4, text=f"Progreso General: {int((completos/4)*100)}%")
 with col_l:
     if os.path.exists("unnamed.jpg"):
         st.image("unnamed.jpg", use_container_width=True)
 st.divider()
 
 # --- 5. NAVEGACIÓN INTELIGENTE ---
-c_nav1, c_nav2 = st.columns(2)
+c_nav1, c_nav2, c_nav3 = st.columns(3)
 if c_nav1.button("📥 Datos de Entrada", type="primary" if st.session_state["seccion_activa"] == "📥 Datos de Entrada" else "secondary"):
     st.session_state["seccion_activa"] = "📥 Datos de Entrada"; st.rerun()
 if c_nav2.button("🗂️ EDT Gráfica", type="primary" if st.session_state["seccion_activa"] == "🗂️ EDT Gráfica" else "secondary"):
     st.session_state["seccion_activa"] = "🗂️ EDT Gráfica"; st.rerun()
+if c_nav3.button("📋 Especificaciones Técnicas", type="primary" if st.session_state["seccion_activa"] == "📋 Especificaciones Técnicas" else "secondary"):
+    st.session_state["seccion_activa"] = "📋 Especificaciones Técnicas"; st.rerun()
+st.divider()
 
 # --- 6. BARRA LATERAL (Panel de Gestión de EDT CONDICIONAL) ---
 with st.sidebar:
     if st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
         st.header("🛠️ Gestión de EDT")
         st.markdown("Use este panel para añadir o eliminar elementos.")
-
-        if not datos["nombre_proyecto"]:
-            st.warning("⚠️ Primero diligencie el contrato de obra para que se cargue el nombre del proyecto.")
+        
+        if not datos["nombre_proyecto"] or not datos["objetivos"]:
+            st.warning("⚠️ Primero defina el Proyecto y Objetivos en la sección de Datos de Entrada.")
         else:
-            with st.expander("🎯 Añadir Objetivo", expanded=False):
-                with st.form("form_nuevo_objetivo_sidebar", clear_on_submit=True):
-                    nuevo_txt = st.text_input("Escriba un nuevo objetivo:")
-                    if st.form_submit_button("➕ Añadir Objetivo"):
-                        if nuevo_txt.strip():
-                            datos["objetivos"].append({
+                        # ==========================================================
+            # ✅ Diccionarios de apoyo (siempre desde el estado actual)
+            # ==========================================================
+            dict_obj = {}
+            for i, obj in enumerate(datos["objetivos"]):
+                oid = obj["id"]
+                cod_obj = f"{i+1}"
+                dict_obj[oid] = f"{cod_obj}. {obj['texto']}"
+
+            # ==========================================================
+            # 📦 Añadir Producto (igual, pero con key y reset)
+            # ==========================================================
+            with st.expander("📦 Añadir Producto"):
+                target_obj = st.selectbox(
+                    "Objetivo Padre:",
+                    options=list(dict_obj.keys()),
+                    format_func=lambda x: dict_obj[x],
+                    key="prod_obj_padre"
+                )
+                with st.form("form_sidebar_prod", clear_on_submit=True):
+                    txt_p = st.text_input("Nombre del Producto:")
+                    if st.form_submit_button("Guardar Producto"):
+                        if txt_p:
+                            if target_obj not in datos["edt_data"]:
+                                datos["edt_data"][target_obj] = []
+
+                            datos["edt_data"][target_obj].append({
                                 "id": str(uuid.uuid4()),
-                                "texto": nuevo_txt.strip(),
+                                "nombre": txt_p,
+                                "actividades": [],
                                 "unidad": "",
                                 "specs": {
                                     "descripcion": "",
@@ -174,113 +192,151 @@ with st.sidebar:
                                     "no_conformidad": ""
                                 }
                             })
+
+                            # Guardar + reset de selectores dependientes
                             guardar_estado("alcance", datos)
+                            st.session_state["act_obj_padre"] = target_obj
+                            st.session_state.pop("act_prod_padre", None)
+                            st.session_state["paq_obj_padre"] = target_obj
+                            st.session_state.pop("paq_prod_padre", None)
+                            st.session_state.pop("paq_act_padre", None)
                             st.rerun()
 
-            with st.expander("🗑️ Eliminar Objetivo", expanded=False):
-                if not datos["objetivos"]:
-                    st.info("No hay objetivos para eliminar.")
+            # ==========================================================
+            # ⚙️ Añadir Actividad (Objetivo → Producto)
+            # ==========================================================
+            with st.expander("⚙️ Añadir Actividad"):
+                target_obj_act = st.selectbox(
+                    "Objetivo Padre:",
+                    options=list(dict_obj.keys()),
+                    format_func=lambda x: dict_obj[x],
+                    key="act_obj_padre"
+                )
+
+                # Productos SOLO del objetivo seleccionado
+                prod_list = datos["edt_data"].get(target_obj_act, [])
+                dict_prod_obj = {}
+
+                # índice del objetivo para codificación visual (1,2,3...)
+                obj_idx = list(dict_obj.keys()).index(target_obj_act) + 1
+
+                for j, p in enumerate(prod_list):
+                    pid = p["id"]
+                    cod_prod = f"{obj_idx}.{j+1}"
+                    dict_prod_obj[pid] = f"{cod_prod}. {p.get('nombre','')}"
+
+                if not dict_prod_obj:
+                    st.info("Cree un producto primero dentro de este objetivo.")
                 else:
-                    opciones_obj = {obj["id"]: obj["texto"] for obj in datos["objetivos"]}
-                    with st.form("form_eliminar_objetivo_sidebar"):
-                        target_obj_del = st.selectbox(
-                            "Seleccione el objetivo:",
-                            options=list(opciones_obj.keys()),
-                            format_func=lambda x: opciones_obj[x]
-                        )
-                        if st.form_submit_button("🗑️ Eliminar Objetivo"):
-                            datos["objetivos"] = [o for o in datos["objetivos"] if o["id"] != target_obj_del]
-                            if target_obj_del in datos["edt_data"]:
-                                del datos["edt_data"][target_obj_del]
-                            guardar_estado("alcance", datos)
-                            st.rerun()
-
-            if not datos["objetivos"]:
-                st.info("💡 Cree el primer objetivo para continuar configurando la EDT.")
-            else:
-                dict_obj = {}
-                for i, obj in enumerate(datos["objetivos"]):
-                    oid = obj["id"]
-                    cod_obj = f"{i+1}"
-                    dict_obj[oid] = f"{cod_obj}. {obj['texto']}"
-
-                with st.expander("📦 Añadir Producto"):
-                    target_obj = st.selectbox(
-                        "Objetivo Padre:",
-                        options=list(dict_obj.keys()),
-                        format_func=lambda x: dict_obj[x],
-                        key="prod_obj_padre"
+                    target_prod = st.selectbox(
+                        "Producto Padre:",
+                        options=list(dict_prod_obj.keys()),
+                        format_func=lambda x: dict_prod_obj[x],
+                        key="act_prod_padre"
                     )
-                    with st.form("form_sidebar_prod", clear_on_submit=True):
-                        txt_p = st.text_input("Nombre del Producto:")
-                        if st.form_submit_button("Guardar Producto"):
-                            if txt_p:
-                                if target_obj not in datos["edt_data"]:
-                                    datos["edt_data"][target_obj] = []
 
-                                datos["edt_data"][target_obj].append({
-                                    "id": str(uuid.uuid4()),
-                                    "nombre": txt_p,
-                                    "actividades": [],
-                                    "unidad": "",
-                                    "specs": {
-                                        "descripcion": "",
-                                        "procedimiento": "",
-                                        "materiales": "",
-                                        "herramientas": "",
-                                        "equipos": "",
-                                        "medicion_pago": "",
-                                        "no_conformidad": ""
-                                    }
-                                })
+                    with st.form("form_sidebar_act", clear_on_submit=True):
+                        txt_a = st.text_input("Nombre de la Actividad:")
+                        if st.form_submit_button("Guardar Actividad"):
+                            if txt_a:
+                                # insertar actividad en el producto correcto
+                                for p in datos["edt_data"].get(target_obj_act, []):
+                                    if p["id"] == target_prod:
+                                        p.setdefault("actividades", [])
+                                        p["actividades"].append({
+                                            "id": str(uuid.uuid4()),
+                                            "nombre": txt_a,
+                                            "paquetes": [],
+                                            "unidad": "",
+                                            "specs": {
+                                                "descripcion": "",
+                                                "procedimiento": "",
+                                                "materiales": "",
+                                                "herramientas": "",
+                                                "equipos": "",
+                                                "medicion_pago": "",
+                                                "no_conformidad": ""
+                                            }
+                                        })
+                                        break
 
                                 guardar_estado("alcance", datos)
-                                st.session_state["act_obj_padre"] = target_obj
-                                st.session_state.pop("act_prod_padre", None)
-                                st.session_state["paq_obj_padre"] = target_obj
-                                st.session_state.pop("paq_prod_padre", None)
+                                # Mantener contexto para 'Añadir Paquete'
+                                st.session_state["paq_obj_padre"] = target_obj_act
+                                st.session_state["paq_prod_padre"] = target_prod
                                 st.session_state.pop("paq_act_padre", None)
                                 st.rerun()
+                            else:
+                                st.warning("Escribe el nombre de la actividad.")
 
-                with st.expander("⚙️ Añadir Actividad"):
-                    target_obj_act = st.selectbox(
-                        "Objetivo Padre:",
-                        options=list(dict_obj.keys()),
-                        format_func=lambda x: dict_obj[x],
-                        key="act_obj_padre"
+            # ==========================================================
+            # 📄 Añadir Paquete (Objetivo → Producto → Actividad)
+            # ==========================================================
+            with st.expander("📄 Añadir Paquete"):
+                target_obj_paq = st.selectbox(
+                    "Objetivo Padre:",
+                    options=list(dict_obj.keys()),
+                    format_func=lambda x: dict_obj[x],
+                    key="paq_obj_padre"
+                )
+
+                # Productos SOLO del objetivo seleccionado
+                prod_list = datos["edt_data"].get(target_obj_paq, [])
+                dict_prod_obj2 = {}
+                obj_idx2 = list(dict_obj.keys()).index(target_obj_paq) + 1
+
+                for j, p in enumerate(prod_list):
+                    pid = p["id"]
+                    cod_prod = f"{obj_idx2}.{j+1}"
+                    dict_prod_obj2[pid] = f"{cod_prod}. {p.get('nombre','')}"
+
+                if not dict_prod_obj2:
+                    st.info("Cree un producto primero dentro de este objetivo.")
+                else:
+                    target_prod_paq = st.selectbox(
+                        "Producto Padre:",
+                        options=list(dict_prod_obj2.keys()),
+                        format_func=lambda x: dict_prod_obj2[x],
+                        key="paq_prod_padre"
                     )
 
-                    prod_list = datos["edt_data"].get(target_obj_act, [])
-                    dict_prod_obj = {}
+                    # Actividades SOLO del producto seleccionado
+                    dict_act_prod = {}
+                    prod_obj = None
+                    for p in datos["edt_data"].get(target_obj_paq, []):
+                        if p["id"] == target_prod_paq:
+                            prod_obj = p
+                            break
 
-                    obj_idx = list(dict_obj.keys()).index(target_obj_act) + 1
+                    acts = (prod_obj.get("actividades", []) if prod_obj else [])
+                    for k, a in enumerate(acts):
+                        aid = a["id"]
+                        # codificación: Obj.Prod.Act
+                        cod_act = f"{dict_prod_obj2[target_prod_paq].split('.')[0]}.{dict_prod_obj2[target_prod_paq].split('.')[1].split(' ')[0]}.{k+1}"
+                        # el cod_act de arriba no es crítico; solo visual. Si prefieres, lo quito.
+                        dict_act_prod[aid] = f"{k+1}. {a.get('nombre','')}"
 
-                    for j, p in enumerate(prod_list):
-                        pid = p["id"]
-                        cod_prod = f"{obj_idx}.{j+1}"
-                        dict_prod_obj[pid] = f"{cod_prod}. {p.get('nombre','')}"
-
-                    if not dict_prod_obj:
-                        st.info("Cree un producto primero dentro de este objetivo.")
+                    if not dict_act_prod:
+                        st.info("Cree una actividad primero dentro de este producto.")
                     else:
-                        target_prod = st.selectbox(
-                            "Producto Padre:",
-                            options=list(dict_prod_obj.keys()),
-                            format_func=lambda x: dict_prod_obj[x],
-                            key="act_prod_padre"
+                        target_act = st.selectbox(
+                            "Actividad Padre:",
+                            options=list(dict_act_prod.keys()),
+                            format_func=lambda x: dict_act_prod[x],
+                            key="paq_act_padre"
                         )
 
-                        with st.form("form_sidebar_act", clear_on_submit=True):
-                            txt_a = st.text_input("Nombre de la Actividad:")
-                            if st.form_submit_button("Guardar Actividad"):
-                                if txt_a:
-                                    for p in datos["edt_data"].get(target_obj_act, []):
-                                        if p["id"] == target_prod:
-                                            p.setdefault("actividades", [])
-                                            p["actividades"].append({
+                        with st.form("form_sidebar_paq", clear_on_submit=True):
+                            txt_pq = st.text_input("Nombre del Paquete:")
+                            if st.form_submit_button("Guardar Paquete"):
+                                if txt_pq:
+                                    # insertar paquete en la actividad correcta
+                                    for a in acts:
+                                        if a["id"] == target_act:
+                                            a.setdefault("paquetes", [])
+                                            a["paquetes"].append({
                                                 "id": str(uuid.uuid4()),
-                                                "nombre": txt_a,
-                                                "paquetes": [],
+                                                "nombre": txt_pq,
                                                 "unidad": "",
                                                 "specs": {
                                                     "descripcion": "",
@@ -295,142 +351,50 @@ with st.sidebar:
                                             break
 
                                     guardar_estado("alcance", datos)
-                                    st.session_state["paq_obj_padre"] = target_obj_act
-                                    st.session_state["paq_prod_padre"] = target_prod
-                                    st.session_state.pop("paq_act_padre", None)
                                     st.rerun()
-
-                with st.expander("🧩 Añadir Paquete de Trabajo"):
-                    target_obj_paq = st.selectbox(
-                        "Objetivo Padre:",
-                        options=list(dict_obj.keys()),
-                        format_func=lambda x: dict_obj[x],
-                        key="paq_obj_padre"
-                    )
-
-                    prod_list_paq = datos["edt_data"].get(target_obj_paq, [])
-                    dict_prod_obj_paq = {}
-
-                    obj_idx_paq = list(dict_obj.keys()).index(target_obj_paq) + 1
-
-                    for j, p in enumerate(prod_list_paq):
-                        pid = p["id"]
-                        cod_prod = f"{obj_idx_paq}.{j+1}"
-                        dict_prod_obj_paq[pid] = f"{cod_prod}. {p.get('nombre','')}"
-
-                    if not dict_prod_obj_paq:
-                        st.info("Cree un producto primero dentro de este objetivo.")
-                    else:
-                        target_prod_paq = st.selectbox(
-                            "Producto Padre:",
-                            options=list(dict_prod_obj_paq.keys()),
-                            format_func=lambda x: dict_prod_obj_paq[x],
-                            key="paq_prod_padre"
-                        )
-
-                        prod_sel = next((p for p in prod_list_paq if p["id"] == target_prod_paq), None)
-                        dict_act_obj = {}
-
-                        if prod_sel:
-                            acts = prod_sel.get("actividades", [])
-                            prod_idx_paq = list(dict_prod_obj_paq.keys()).index(target_prod_paq) + 1
-                            for k, a in enumerate(acts):
-                                aid = a["id"]
-                                cod_act = f"{obj_idx_paq}.{prod_idx_paq}.{k+1}"
-                                dict_act_obj[aid] = f"{cod_act}. {a.get('nombre','')}"
-
-                        if not dict_act_obj:
-                            st.info("Cree una actividad primero dentro de este producto.")
-                        else:
-                            target_act_paq = st.selectbox(
-                                "Actividad Padre:",
-                                options=list(dict_act_obj.keys()),
-                                format_func=lambda x: dict_act_obj[x],
-                                key="paq_act_padre"
-                            )
-
-                            with st.form("form_sidebar_paq", clear_on_submit=True):
-                                txt_paq = st.text_input("Nombre del Paquete de Trabajo:")
-                                if st.form_submit_button("Guardar Paquete"):
-                                    if txt_paq:
-                                        for p in datos["edt_data"].get(target_obj_paq, []):
-                                            if p["id"] == target_prod_paq:
-                                                for a in p.get("actividades", []):
-                                                    if a["id"] == target_act_paq:
-                                                        a.setdefault("paquetes", [])
-                                                        a["paquetes"].append({
-                                                            "id": str(uuid.uuid4()),
-                                                            "nombre": txt_paq,
-                                                            "unidad": "",
-                                                            "specs": {
-                                                                "descripcion": "",
-                                                                "procedimiento": "",
-                                                                "materiales": "",
-                                                                "herramientas": "",
-                                                                "equipos": "",
-                                                                "medicion_pago": "",
-                                                                "no_conformidad": ""
-                                                            }
-                                                        })
-                                                        break
-
-                                        guardar_estado("alcance", datos)
-                                        st.rerun()
-
-                with st.expander("🗑️ Eliminar Elemento", expanded=False):
-                    filtro_tipo = st.radio("Filtre por categoría:", ["Producto", "Actividad", "Paquete"], horizontal=True)
-                    elementos_filtrados = {}
-                    for i, obj in enumerate(datos["objetivos"]):
-                        oid = obj["id"]; cod_obj = f"{i+1}"
-                        for j, p in enumerate(datos["edt_data"].get(oid, [])):
-                            cod_prod = f"{cod_obj}.{j+1}"
-                            if filtro_tipo == "Producto":
-                                elementos_filtrados[p["id"]] = {"nombre": f"{cod_prod}. {p['nombre']}", "tipo": "prod", "padre": oid}
-                            for k, a in enumerate(p.get("actividades", [])):
-                                cod_act = f"{cod_prod}.{k+1}"
-                                if filtro_tipo == "Actividad":
-                                    elementos_filtrados[a["id"]] = {"nombre": f"{cod_act}. {a['nombre']}", "tipo": "act", "padre": p["id"]}
-                                for l, pq in enumerate(a.get("paquetes", [])):
-                                    cod_paq = f"{cod_act}.{l+1}"
-                                    if filtro_tipo == "Paquete":
-                                        elementos_filtrados[pq["id"]] = {"nombre": f"{cod_paq}. {pq['nombre']}", "tipo": "paq", "padre": a["id"]}
-
-                    if not elementos_filtrados:
-                        st.info(f"No hay elementos de la categoría '{filtro_tipo}' para eliminar.")
-                    else:
-                        with st.form("form_eliminar_nodo"):
-                            target_del = st.selectbox(
-                                f"Seleccione el {filtro_tipo}:",
-                                options=list(elementos_filtrados.keys()),
-                                format_func=lambda x: elementos_filtrados[x]["nombre"]
-                            )
-                            st.caption("⚠️ Al eliminar este elemento, también se borrarán sus dependencias.")
-                            if st.form_submit_button("🗑️ Eliminar Definitivamente"):
-                                if target_del:
-                                    tipo = elementos_filtrados[target_del]["tipo"]
-                                    padre_id = elementos_filtrados[target_del]["padre"]
-                                    if tipo == "prod":
-                                        if padre_id in datos["edt_data"]:
-                                            p_borrar = next((p for p in datos["edt_data"][padre_id] if p["id"] == target_del), None)
-                                            if p_borrar:
-                                                datos["edt_data"][padre_id].remove(p_borrar)
-                                    elif tipo == "act":
-                                        for obj_list in datos["edt_data"].values():
-                                            for p in obj_list:
-                                                if p["id"] == padre_id:
-                                                    a_borrar = next((a for a in p.get("actividades", []) if a["id"] == target_del), None)
-                                                    if a_borrar:
-                                                        p["actividades"].remove(a_borrar)
-                                    elif tipo == "paq":
-                                        for obj_list in datos["edt_data"].values():
-                                            for p in obj_list:
-                                                for a in p.get("actividades", []):
-                                                    if a["id"] == padre_id:
-                                                        pq_borrar = next((pq for pq in a.get("paquetes", []) if pq["id"] == target_del), None)
-                                                        if pq_borrar:
-                                                            a["paquetes"].remove(pq_borrar)
-                                    guardar_estado("alcance", datos)
-                                    st.rerun()
+                                else:
+                                    st.warning("Escribe el nombre del paquete.")
+            with st.expander("🗑️ Eliminar Elemento", expanded=False):
+                filtro_tipo = st.radio("Filtre por categoría:", ["Producto", "Actividad", "Paquete"], horizontal=True)
+                elementos_filtrados = {}
+                for i, obj in enumerate(datos["objetivos"]):
+                    oid = obj["id"]; cod_obj = f"{i+1}"
+                    for j, p in enumerate(datos["edt_data"].get(oid, [])):
+                        cod_prod = f"{cod_obj}.{j+1}"
+                        if filtro_tipo == "Producto": elementos_filtrados[p["id"]] = {"nombre": f"{cod_prod}. {p['nombre']}", "tipo": "prod", "padre": oid}
+                        for k, a in enumerate(p.get("actividades", [])):
+                            cod_act = f"{cod_prod}.{k+1}"
+                            if filtro_tipo == "Actividad": elementos_filtrados[a["id"]] = {"nombre": f"{cod_act}. {a['nombre']}", "tipo": "act", "padre": p["id"]}
+                            for l, pq in enumerate(a.get("paquetes", [])):
+                                cod_paq = f"{cod_act}.{l+1}"
+                                if filtro_tipo == "Paquete": elementos_filtrados[pq["id"]] = {"nombre": f"{cod_paq}. {pq['nombre']}", "tipo": "paq", "padre": a["id"]}
+                
+                if not elementos_filtrados: st.info(f"No hay elementos de la categoría '{filtro_tipo}' para eliminar.")
+                else:
+                    with st.form("form_eliminar_nodo"):
+                        target_del = st.selectbox(f"Seleccione el {filtro_tipo}:", options=list(elementos_filtrados.keys()), format_func=lambda x: elementos_filtrados[x]["nombre"])
+                        st.caption("⚠️ Al eliminar este elemento, también se borrarán sus dependencias.")
+                        if st.form_submit_button("🗑️ Eliminar Definitivamente"):
+                            if target_del:
+                                tipo = elementos_filtrados[target_del]["tipo"]; padre_id = elementos_filtrados[target_del]["padre"]
+                                if tipo == "prod":
+                                    if padre_id in datos["edt_data"]:
+                                        p_borrar = next((p for p in datos["edt_data"][padre_id] if p["id"] == target_del), None)
+                                        if p_borrar: datos["edt_data"][padre_id].remove(p_borrar)
+                                elif tipo == "act":
+                                    for obj_list in datos["edt_data"].values():
+                                        for p in obj_list:
+                                            if p["id"] == padre_id:
+                                                a_borrar = next((a for a in p.get("actividades", []) if a["id"] == target_del), None)
+                                                if a_borrar: p["actividades"].remove(a_borrar)
+                                elif tipo == "paq":
+                                    for obj_list in datos["edt_data"].values():
+                                        for p in obj_list:
+                                            for a in p.get("actividades", []):
+                                                if a["id"] == padre_id:
+                                                    pq_borrar = next((pq for pq in a.get("paquetes", []) if pq["id"] == target_del), None)
+                                                    if pq_borrar: a["paquetes"].remove(pq_borrar)
+                                guardar_estado("alcance", datos); st.rerun()
     else:
         st.info("💡 Navegue a '🗂️ EDT Gráfica' para gestionar la estructura.")
 
@@ -441,15 +405,69 @@ with st.sidebar:
 
 if st.session_state["seccion_activa"] == "📥 Datos de Entrada":
     with st.container(border=True):
+        st.markdown("#### 🏢 Información Institucional")
+        col_i1, col_i2 = st.columns(2)
+        with col_i1:
+            entidad_formuladora = st.text_area("Entidad que formula el proyecto:", value=datos.get("entidad_formuladora", ""), height=68)
+            lugar_presentacion = st.text_input("Lugar de presentación:", value=datos.get("lugar_presentacion", ""))
+        with col_i2:
+            division_dependencia = st.text_input("División / Dependencia:", value=datos.get("division_dependencia", ""))
+            anio_presentacion = st.text_input("Año:", value=datos.get("anio_presentacion", ""))
+
+    with st.container(border=True):
         st.markdown("#### 🏷️ Nombre del Proyecto")
-        st.text_area(
-            "Nombre del proyecto",
-            value=datos["nombre_proyecto"],
-            height=100,
-            disabled=True,
-            key="alcance_nombre_proyecto_desde_contrato"
-        )
-        st.caption("Este valor se toma automáticamente desde Contrato de obra → Sección 5 → Descripción general del objeto contractual.")
+        nombre_proyecto = st.text_input("Digite el nombre:", value=datos["nombre_proyecto"], key="input_nom_proy")
+
+    with st.container(border=True):
+        st.markdown("#### 🎯 Objetivos Estratégicos")
+        with st.form("form_nuevo_objetivo", clear_on_submit=True):
+            nuevo_txt = st.text_input("Escriba un nuevo objetivo:")
+            if st.form_submit_button("➕ Añadir Objetivo"):
+                if nuevo_txt:
+                    datos["objetivos"].append({
+                        "id": str(uuid.uuid4()), "texto": nuevo_txt, "unidad": "",
+                        "specs": {"descripcion": "", "procedimiento": "", "materiales": "", "herramientas": "", "equipos": "", "medicion_pago": "", "no_conformidad": ""}
+                    })
+                    guardar_estado("alcance", datos); st.rerun()
+
+        for i, obj in enumerate(datos["objetivos"]):
+            edit_key = f"edit_obj_{obj['id']}"
+            txt_key = f"txt_obj_{obj['id']}"
+
+            if edit_key not in st.session_state:
+                st.session_state[edit_key] = False
+            if txt_key not in st.session_state:
+                st.session_state[txt_key] = obj["texto"]
+
+            if st.session_state[edit_key]:
+                c1, c2, c3 = st.columns([0.72, 0.14, 0.14])
+                nuevo_texto = c1.text_input(
+                    f"Editar objetivo {i+1}",
+                    value=st.session_state[txt_key],
+                    key=txt_key,
+                    label_visibility="collapsed",
+                )
+                if c2.button("💾", key=f"save_{obj['id']}"):
+                    datos["objetivos"][i]["texto"] = nuevo_texto
+                    st.session_state[edit_key] = False
+                    guardar_estado("alcance", datos); st.rerun()
+                if c3.button("✖", key=f"cancel_{obj['id']}"):
+                    st.session_state[txt_key] = obj["texto"]
+                    st.session_state[edit_key] = False
+                    st.rerun()
+            else:
+                c1, c2, c3 = st.columns([0.8, 0.1, 0.1])
+                c1.info(f"**{i+1}.** {obj['texto']}")
+                if c2.button("✏️", key=f"edit_{obj['id']}"):
+                    st.session_state[txt_key] = obj["texto"]
+                    st.session_state[edit_key] = True
+                    st.rerun()
+                if c3.button("🗑️", key=f"del_{obj['id']}"):
+                    datos["objetivos"].pop(i)
+                    if obj["id"] in datos["edt_data"]: del datos["edt_data"][obj["id"]]
+                    st.session_state.pop(edit_key, None)
+                    st.session_state.pop(txt_key, None)
+                    guardar_estado("alcance", datos); st.rerun()
 
     with st.container(border=True):
         st.markdown("#### 💼 Costos indirectos del proyecto")
@@ -531,15 +549,34 @@ if st.session_state["seccion_activa"] == "📥 Datos de Entrada":
                         st.session_state.pop(txt_key_ci, None)
                         guardar_estado("alcance", datos)
                         st.rerun()
+                    
+    with st.container(border=True):
+        st.markdown("#### 📝 Descripción General")
+        altura_desc = calcular_altura(datos["descripcion_proyecto"])
+        desc_proyecto = st.text_area("Descripción:", value=datos["descripcion_proyecto"], height=altura_desc)
 
-    if requiere_costos_indirectos != datos.get("requiere_costos_indirectos", "No"):
+    if (
+        nombre_proyecto != datos["nombre_proyecto"]
+        or desc_proyecto != datos["descripcion_proyecto"]
+        or entidad_formuladora != datos.get("entidad_formuladora", "")
+        or division_dependencia != datos.get("division_dependencia", "")
+        or lugar_presentacion != datos.get("lugar_presentacion", "")
+        or anio_presentacion != datos.get("anio_presentacion", "")
+        or requiere_costos_indirectos != datos.get("requiere_costos_indirectos", "No")
+    ):
+        datos["nombre_proyecto"] = nombre_proyecto
+        datos["descripcion_proyecto"] = desc_proyecto
+        datos["entidad_formuladora"] = entidad_formuladora
+        datos["division_dependencia"] = division_dependencia
+        datos["lugar_presentacion"] = lugar_presentacion
+        datos["anio_presentacion"] = anio_presentacion
         datos["requiere_costos_indirectos"] = requiere_costos_indirectos
         guardar_estado("alcance", datos)
         st.rerun()
 
 elif st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
-    if not datos["nombre_proyecto"]:
-        st.warning("⚠️ Debes diligenciar primero el contrato de obra para que se cargue el nombre del proyecto.")
+    if not datos["nombre_proyecto"] or not datos["objetivos"]:
+        st.warning("⚠️ Debes definir el Nombre del Proyecto y los Objetivos en la pestaña anterior.")
     else:
         flat_table = []; nom_proy = str(datos["nombre_proyecto"]).upper()
         c_l0, c_l1, c_l2, c_l3, c_l4 = "#43A047", "#9370DB", "#C2185B", "#F57C00", "#00796B"
