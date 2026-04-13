@@ -512,8 +512,8 @@ if st.session_state["seccion_activa"] == "📥 Datos de Entrada":
         st.rerun()
 
 elif st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
-    if not datos["nombre_proyecto"] or not datos["objetivos"]:
-        st.warning("⚠️ Debes definir el Nombre del Proyecto y los Objetivos en la pestaña anterior.")
+    if not datos["nombre_proyecto"]:
+        st.warning("⚠️ Debes definir el Nombre del Proyecto en la pestaña anterior.")
     else:
         flat_table = []; nom_proy = str(datos["nombre_proyecto"]).upper()
         c_l0, c_l1, c_l2, c_l3, c_l4 = "#43A047", "#9370DB", "#C2185B", "#F57C00", "#00796B"
