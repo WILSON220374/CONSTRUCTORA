@@ -158,7 +158,7 @@ with st.sidebar:
             for i, obj in enumerate(datos["objetivos"]):
                 oid = obj["id"]
                 cod_obj = f"{i+1}"
-                dict_obj[oid] = f"{cod_obj}. {obj['t
+                dict_obj[oid] = f"{cod_obj}. {obj.get('titulo', obj.get('nombre', ''))}"
 
             # ==========================================================
             # 📦 Añadir Producto (igual, pero con key y reset)
