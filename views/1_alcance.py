@@ -149,7 +149,7 @@ with st.sidebar:
         st.markdown("Use este panel para añadir o eliminar elementos.")
 
         if not datos["nombre_proyecto"]:
-            st.warning("⚠️ Debes definir el Nombre del Proyecto en la pestaña anterior.")
+            st.warning("⚠️ Primero defina el Nombre del Proyecto en la sección de Datos de Entrada.")
         else:
             # ==========================================================
             # ✅ Diccionarios de apoyo (siempre desde el estado actual)
