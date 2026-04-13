@@ -143,6 +143,7 @@ if c_nav3.button("📋 Especificaciones Técnicas", type="primary" if st.session
 st.divider()
 
 # --- 6. BARRA LATERAL (Panel de Gestión de EDT CONDICIONAL) ---
+# --- 6. BARRA LATERAL (Panel de Gestión de EDT CONDICIONAL) ---
 with st.sidebar:
     if st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
         st.header("🛠️ Gestión de EDT")
@@ -159,7 +160,7 @@ with st.sidebar:
             for i, obj in enumerate(datos["objetivos"]):
                 oid = obj["id"]
                 cod_obj = f"{i+1}"
-                dict_obj[oid] = f"{cod_obj}. {obj['texto']}"
+                dict_obj[oid] = f"{cod_obj}. {obj['t
 
             # ==========================================================
             # 📦 Añadir Producto (igual, pero con key y reset)
