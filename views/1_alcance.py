@@ -300,6 +300,76 @@ with st.sidebar:
                                     st.session_state.pop("paq_act_padre", None)
                                     st.rerun()
 
+                st.divider()
+
+                prod_sel_del = next(
+                    (p for p in datos["edt_data"].get(target_obj_act, []) if p["id"] == target_prod),
+                    None
+                )
+
+                acts_del = prod_sel_del.get("actividades", []) if prod_sel_del else []
+
+                if acts_del:
+                    opciones_act = {a["id"]: a["nombre"] for a in acts_del}
+
+                    with st.form("form_del_act"):
+                        act_del = st.selectbox(
+                            "Eliminar actividad:",
+                            options=list(opciones_act.keys()),
+                            format_func=lambda x: opciones_act[x]
+                        )
+
+                        if st.form_submit_button("🗑️ Eliminar"):
+                            for p in datos["edt_data"].get(target_obj_act, []):
+                                if p["id"] == target_prod:
+                                    p["actividades"] = [
+                                        a for a in p["actividades"] if a["id"] != act_del
+                                    ]
+                                    break
+
+                            guardar_estado("alcance", datos)
+                            st.rerun()
+
+                                st.divider()
+
+                prod_sel_del = next(
+                    (p for p in datos["edt_data"].get(target_obj_paq, []) if p["id"] == target_prod_paq),
+                    None
+                )
+
+                acts_del = prod_sel_del.get("actividades", []) if prod_sel_del else []
+
+                act_sel_del = next(
+                    (a for a in acts_del if a["id"] == target_act_paq),
+                    None
+                )
+
+                paquetes_del = act_sel_del.get("paquetes", []) if act_sel_del else []
+
+                if paquetes_del:
+                    opciones_paq = {p["id"]: p["nombre"] for p in paquetes_del}
+
+                    with st.form("form_del_paq"):
+                        paq_del = st.selectbox(
+                            "Eliminar subactividad:",
+                            options=list(opciones_paq.keys()),
+                            format_func=lambda x: opciones_paq[x]
+                        )
+
+                        if st.form_submit_button("🗑️ Eliminar"):
+                            for p in datos["edt_data"].get(target_obj_paq, []):
+                                if p["id"] == target_prod_paq:
+                                    for a in p.get("actividades", []):
+                                        if a["id"] == target_act_paq:
+                                            a["paquetes"] = [
+                                                x for x in a["paquetes"] if x["id"] != paq_del
+                                            ]
+                                            break
+
+                            guardar_estado("alcance", datos)
+                            st.rerun()
+
+                
                 with st.expander("🧩 Añadir Subactividad"):
                     target_obj_paq = st.selectbox(
                         "Objetivo Padre:",
