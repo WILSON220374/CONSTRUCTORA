@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import pandas as pd
 from supabase_state import cargar_estado
 
 
@@ -19,45 +20,52 @@ def texto_si_vacio(valor, pendiente="PENDIENTE"):
     return str(valor)
 
 
-def construir_bloque_garantias(garantias):
-    if not garantias or not isinstance(garantias, list):
-        return "Amparo | Suficiencia | Vigencia\n[PENDIENTE] | [PENDIENTE] | [PENDIENTE]"
+def escapar_tabla(valor):
+    return texto_si_vacio(valor).replace("|", "\\|")
 
-    filas_validas = []
+
+def construir_tabla_garantias(garantias):
+    if not garantias or not isinstance(garantias, list):
+        return (
+            "| Amparo | Suficiencia | Vigencia |\n"
+            "|---|---|---|\n"
+            "| PENDIENTE | PENDIENTE | PENDIENTE |"
+        )
+
+    filas = []
     for fila in garantias:
         if not isinstance(fila, dict):
             continue
-        amparo = texto_si_vacio(fila.get("amparo", ""))
-        suficiencia = texto_si_vacio(fila.get("suficiencia", ""))
-        vigencia = texto_si_vacio(fila.get("vigencia", ""))
+        amparo = escapar_tabla(fila.get("amparo", ""))
+        suficiencia = escapar_tabla(fila.get("suficiencia", ""))
+        vigencia = escapar_tabla(fila.get("vigencia", ""))
         if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and vigencia == "PENDIENTE":
             continue
-        filas_validas.append(f"{amparo} | {suficiencia} | {vigencia}")
+        filas.append(f"| {amparo} | {suficiencia} | {vigencia} |")
 
-    if not filas_validas:
-        return "Amparo | Suficiencia | Vigencia\n[PENDIENTE] | [PENDIENTE] | [PENDIENTE]"
+    if not filas:
+        filas.append("| PENDIENTE | PENDIENTE | PENDIENTE |")
 
-    encabezado = "Amparo | Suficiencia | Vigencia"
-    cuerpo = "\n".join(filas_validas)
-    return f"{encabezado}\n{cuerpo}"
+    encabezado = "| Amparo | Suficiencia | Vigencia |\n|---|---|---|"
+    return encabezado + "\n" + "\n".join(filas)
 
 
 def construir_bloque_anexos(datos):
     anexos = []
 
     if datos.get("anexos_estudios_previos"):
-        anexos.append("27.1. Los estudios previos.")
+        anexos.append("25.1. Los estudios previos.")
     if datos.get("anexos_pliego"):
-        anexos.append("27.2. El Pliego de Condiciones del proceso de selección, sus anexos, adendas o cualquier otro Documento del Proceso.")
+        anexos.append("25.2. El Pliego de Condiciones del proceso de selección, sus anexos, adendas o cualquier otro Documento del Proceso.")
     if datos.get("anexos_oferta"):
-        anexos.append("27.3. La oferta presentada por el Contratista.")
+        anexos.append("25.3. La oferta presentada por el Contratista.")
     if datos.get("anexos_actas_informes"):
-        anexos.append("27.4. Las actas, acuerdos, informes y documentos precontractuales.")
+        anexos.append("25.4. Las actas, acuerdos, informes y documentos precontractuales.")
     if datos.get("anexos_cdp"):
-        anexos.append("27.5. Certificado de Disponibilidad Presupuestal.")
+        anexos.append("25.5. Certificado de Disponibilidad Presupuestal.")
 
     if not anexos:
-        anexos.append("27.1. [PENDIENTE]")
+        anexos.append("25.1. PENDIENTE.")
 
     return "\n".join(anexos)
 
@@ -103,7 +111,7 @@ def construir_contrato(datos):
     clausula_penal_numeros = texto_si_vacio(datos.get("clausula_penal_numeros"))
     clausula_penal_letras = texto_si_vacio(datos.get("clausula_penal_letras"))
 
-    garantias_txt = construir_bloque_garantias(datos.get("garantias", []))
+    tabla_garantias = construir_tabla_garantias(datos.get("garantias", []))
     plazo_garantias_dias = texto_si_vacio(datos.get("plazo_garantias_dias"))
 
     not_entidad_direccion = texto_si_vacio(datos.get("not_entidad_direccion"))
@@ -144,21 +152,13 @@ III. Que la modalidad de selección corresponde a {modalidad_seleccion}.
 
 Por lo anterior, las partes celebran el presente contrato, el cual se regirá por las siguientes cláusulas:
 
-## Cláusula 1 – Definiciones
-
-Las expresiones utilizadas en el presente Contrato con mayúscula inicial deben ser entendidas con el significado que se asigna en el documento tipo de contrato de obra pública.
-
-## Cláusula 2 – Objeto del contrato
+## Cláusula 1 – Objeto del contrato
 
 El objeto del contrato es {objeto_general} que incluye {objeto_especifico}.
 
 Los Documentos del Proceso forman parte del presente Contrato y definen igualmente las actividades, alcance y obligaciones del Contrato.
 
-## Cláusula 3 – Actividades específicas del Contrato
-
-Las actividades específicas del contrato se entienden conforme al documento tipo y a los documentos del proceso de contratación.
-
-## Cláusula 4 – Valor del Contrato y Forma de pago
+## Cláusula 2 – Valor del Contrato y Forma de pago
 
 El valor del presente Contrato corresponde a la suma de {valor_total_numeros} ({valor_total_letras}).
 
@@ -166,89 +166,127 @@ La Entidad Estatal Contratante pagará al Contratista el valor del contrato en l
 
 Los pagos se realizarán dentro de los {dias_pago} siguientes a la fecha de presentación del certificado de cumplimiento firmado por el supervisor del Contrato.
 
-## Cláusula 5 – Declaraciones del contratista
+## Cláusula 3 – Declaraciones del contratista
 
-El Contratista hace las declaraciones previstas en el documento tipo de contrato de obra pública, las cuales se entienden incorporadas al presente contrato.
+El Contratista hace las siguientes declaraciones:
 
-## Cláusula 6 – Plazo y Cronograma de Obra
+3.1. Conoce y acepta los Documentos del Proceso.  
+3.2. Tuvo la oportunidad de solicitar aclaraciones y modificaciones a los Documentos del Proceso y recibió de {nombre_entidad} respuesta oportuna a cada una de las solicitudes.  
+3.3. Se encuentra debidamente facultado para suscribir el presente Contrato.  
+3.4. El Contratista al momento de la celebración del presente Contrato no se encuentra en ninguna causal de inhabilidad, incompatibilidad.  
+3.5. El Contratista está a paz y salvo con sus obligaciones laborales frente al sistema de seguridad social integral.  
+3.6. El valor del Contrato incluye todos los gastos, costos, derechos, impuestos, tasas y demás contribuciones relacionados con el cumplimiento del objeto del presente contrato.  
+3.7. El Contratista durante la ejecución del presente Contrato realizará todas las actividades necesarias para la ejecución final de la obra, cumpliendo con el plazo establecido en la cláusula 4 del presente Contrato.  
+3.8. El Contratista manifiesta que los recursos que componen su patrimonio no provienen de lavado de activos, financiación del terrorismo, narcotráfico, captación ilegal de dineros y en general de cualquier actividad ilícita; de igual manera manifiesta que los recursos recibidos en desarrollo de este contrato, no serán destinados a ninguna de las actividades antes descritas.  
+3.9. El Contratista se compromete a no contratar menores de edad para el ejercicio del objeto contractual, así como a no permitir que se subcontrate a menores de edad para tales efectos, dando aplicación a la normativa vigente.
+
+## Cláusula 4 – Plazo y Cronograma de Obra
 
 El plazo de ejecución del Contrato es {plazo_ejecucion}.
 
 El Cronograma Estimado de Obra del presente Contrato resulta del análisis conjunto del Contratista y de la Entidad Estatal contratante y forma parte del presente Contrato como anexo cuando aplique.
 
-## Cláusula 7 – Derechos del Contratista
+La fecha de inicio del plazo de ejecución de la obra es la fecha en la cual se suscriba entre las partes el Acta de Inicio de obra.
 
-El Contratista tendrá los derechos previstos en el documento tipo de contrato de obra pública.
+La fecha de terminación del plazo de ejecución de la obra es la fecha en la cual se suscriba el Acta de Recibo Final. Para que se pueda suscribir el Acta de Recibo Final, el Contratista debe cumplir a cabalidad con los compromisos y obligaciones contenidos en el presente Contrato y sus anexos.
 
-## Cláusula 8 – Obligaciones particulares del Contratista
+## Cláusula 5 – Derechos del Contratista
 
-El Contratista deberá cumplir las obligaciones previstas en el documento tipo de contrato de obra pública.
+5.1. Recibir una remuneración por la ejecución de la obra en los términos pactados en la cláusula 2 del presente Contrato.  
+5.2. Los demás derechos que resulten aplicables conforme al documento tipo y a la normatividad vigente.
 
-## Cláusula 9 – Derechos particulares de la Entidad Estatal contratante
+## Cláusula 6 – Obligaciones particulares del Contratista
 
-La Entidad Estatal contratante tendrá los derechos previstos en el documento tipo de contrato de obra pública.
+6.1. Desarrollar y cumplir el objeto del Contrato, en las condiciones de calidad, oportunidad y obligaciones definidas en el presente Contrato, incluyendo su Anexo Técnico y sus Pliegos de Condiciones.  
+6.2. Entregar el Cronograma estimado de obra que constituirá el anexo correspondiente del presente Contrato.  
+6.3. Colaborar con {nombre_entidad} en cualquier requerimiento que ella haga.  
+6.4. Garantizar la calidad de los bienes y servicios prestados, de acuerdo con el Anexo Técnico, el pliego de condiciones y la oferta presentada a {nombre_entidad}.  
+6.5. Dar a conocer a {nombre_entidad} cualquier reclamación que indirecta o directamente pueda tener algún efecto sobre el objeto del Contrato o sobre sus obligaciones.  
+6.6. Comunicarle a {nombre_entidad} cualquier circunstancia política, jurídica, social, económica, técnica, ambiental o de cualquier tipo, que pueda afectar la ejecución del contrato.  
+6.7. Elaborar, suscribir y presentar a {nombre_entidad} las respectivas Actas parciales de Obra. Estas Actas parciales de Obra deben estar aprobadas por el Interventor y/o Supervisor del Contrato, según corresponda.  
+6.8. Cumplir las obligaciones en materia ambiental, predial y de responsabilidad social que le competen conforme a normas aplicables y a las especificaciones técnicas de la obra.  
+6.9. Las demás obligaciones que resulten aplicables conforme al documento tipo y al proceso de contratación.
 
-## Cláusula 10 – Obligaciones Generales de la Entidad Estatal contratante
+## Cláusula 7 – Derechos particulares de la Entidad Estatal contratante
 
-La Entidad Estatal contratante tendrá las obligaciones previstas en el documento tipo de contrato de obra pública.
+7.1. Revisar, rechazar, corregir o modificar las Actas de Obra y solicitar las correcciones o modificaciones que la obra necesite.  
+7.2. Hacer uso de las cláusulas excepcionales del contrato.  
+7.3. Hacer uso de la cláusula de imposición de multas, la cláusula penal o cualquier otro derecho consagrado a la Entidad Estatal contratante de manera legal o contractual.  
+7.4. Los demás derechos que resulten aplicables conforme al documento tipo y a la normatividad vigente.
 
-## Cláusula 11 – Responsabilidad
+## Cláusula 8 – Obligaciones Generales de la Entidad Estatal contratante
 
-{nombre_contratista} es responsable por el cumplimiento del objeto establecido en la cláusula 2 del presente Contrato. {nombre_contratista} será responsable por los daños que ocasionen sus empleados y/o consultores, los empleados y/o consultores de sus subcontratistas, a {nombre_entidad} en la ejecución del objeto del presente Contrato.
+8.1. Ejercer control sobre el presente Contrato, de manera directa o indirecta.  
+8.2. Pagar el valor de la obra pública, de acuerdo con los términos establecidos en el presente Contrato.  
+8.3. Prestar su colaboración para el cumplimiento de las obligaciones del Contratista.  
+8.4. Acoger y ejecutar respecto del Contratista las directrices y lineamientos sobre la ejecución, seguimiento y monitoreo del Contrato que resulten aplicables.  
+8.5. Las demás obligaciones que resulten aplicables conforme al documento tipo y a la normatividad vigente.
 
-## Cláusula 12 – Confidencialidad
+## Cláusula 9 – Responsabilidad
 
-En caso de que exista información sujeta a reserva legal, las partes deben mantener la confidencialidad de esta información, conforme al documento tipo.
+{nombre_contratista} es responsable por el cumplimiento del objeto establecido en la cláusula 1 del presente Contrato. {nombre_contratista} será responsable por los daños que ocasionen sus empleados y/o consultores, los empleados y/o consultores de sus subcontratistas, a {nombre_entidad} en la ejecución del objeto del presente Contrato.
 
-## Cláusula 13 – Terminación, modificación e interpretación unilaterales del Contrato
+## Cláusula 10 – Confidencialidad
+
+En caso de que exista información sujeta a reserva legal, las partes deben mantener la confidencialidad de esta información. Para ello, la parte interesada debe comunicar a la otra parte que la información suministrada tiene el carácter de confidencial.
+
+La Entidad Estatal contratante puede definir qué documentos o asuntos están sometidos a confidencialidad.
+
+## Cláusula 11 – Terminación, modificación e interpretación unilaterales del Contrato
 
 {nombre_entidad} puede terminar, modificar y/o interpretar unilateralmente el Contrato, de acuerdo con la normatividad aplicable, cuando lo considere necesario para que el Contratista cumpla con el objeto del presente contrato.
 
-## Cláusula 14 – Caducidad
+## Cláusula 12 – Caducidad
 
 {nombre_entidad} estará facultada para declarar la caducidad cuando exista un incumplimiento del contrato por parte del Contratista en la forma y de acuerdo con el procedimiento previsto por la ley.
 
-## Cláusula 15 – Multas
+## Cláusula 13 – Multas
 
-Se aplicará el texto no editable del documento tipo de contrato de obra pública.
+En caso de incumplimiento a las obligaciones del Contratista derivadas del presente Contrato, {nombre_entidad} puede adelantar el procedimiento establecido en la ley e imponer las siguientes multas:
 
-## Cláusula 16 – Cláusula Penal
+[Incluir el valor condiciones de las multas]
 
-En caso de declaratoria de caducidad o de incumplimiento total o parcial de las obligaciones del presente Contrato, {nombre_contratista} debe pagar a {nombre_entidad}, a título de indemnización, una suma equivalente a {clausula_penal_numeros} ({clausula_penal_letras}).
+## Cláusula 14 – Cláusula Penal
 
-## Cláusula 17 – Garantías y Mecanismos de cobertura del riesgo
+En caso de declaratoria de caducidad o de incumplimiento total o parcial de las obligaciones del presente Contrato, {nombre_contratista} debe pagar a {nombre_entidad}, a título de indemnización, una suma equivalente a {clausula_penal_numeros} ({clausula_penal_letras}). El valor pactado de la presente cláusula penal es el de la estimación anticipada de perjuicios; no obstante, la presente cláusula no impide el cobro de todos los perjuicios adicionales que se causen sobre el citado valor.
 
-El Contratista se obliga a garantizar el cumplimiento de las obligaciones surgidas a favor de la Entidad Estatal contratante, con ocasión de la ejecución del contrato, de acuerdo con la siguiente tabla:
+## Cláusula 15 – Garantías y Mecanismos de cobertura del riesgo
 
-{garantias_txt}
+El Contratista se obliga a garantizar el cumplimiento de las obligaciones surgidas a favor de la Entidad Estatal contratante, con ocasión de la ejecución del contrato, de acuerdo con la información de la siguiente tabla:
+
+{tabla_garantias}
+
+El Contratista se compromete a mantener vigente la garantía durante todo el tiempo de ejecución del contrato.
 
 El Contratista debe presentar dentro de los {plazo_garantias_dias} días hábiles siguientes a la firma del presente contrato las garantías a favor de {nombre_entidad}.
 
-## Cláusula 18 – Independencia del Contratista
+## Cláusula 16 – Independencia del Contratista
 
 El Contratista es una entidad independiente de {nombre_entidad}, y en consecuencia, el Contratista no es su representante, agente o mandatario.
 
-## Cláusula 19 – Cesión
+## Cláusula 17 – Cesión
 
 El Contratista no puede ceder parcial ni totalmente sus obligaciones o derechos derivados del presente Contrato sin la autorización previa y por escrito de {nombre_entidad}.
 
-## Cláusula 20 – Subcontratación
+## Cláusula 18 – Subcontratación
 
-{nombre_contratista} puede subcontratar con cualquier tercero la ejecución de las actividades relacionadas con el objeto del presente contrato, conforme al documento tipo.
+{nombre_contratista} puede subcontratar con cualquier tercero la ejecución de las actividades relacionadas con el objeto del presente contrato. Sin embargo, el Contratista debe comunicar estas contrataciones a la Entidad Estatal contratante y debe tener el debido registro de este tipo de negocios jurídicos. El Contratista debe mantener indemne a la Entidad Estatal contratante de acuerdo con la cláusula 19.
 
-## Cláusula 21 – Indemnidad
+## Cláusula 19 – Indemnidad
 
 El Contratista se obliga a indemnizar a {nombre_entidad} con ocasión de la violación o el incumplimiento de las obligaciones previstas en el presente Contrato.
 
-## Cláusula 22 – Caso Fortuito y Fuerza Mayor
+## Cláusula 20 – Caso Fortuito y Fuerza Mayor
 
-Las partes quedan exoneradas de responsabilidad por el incumplimiento de cualquiera de sus obligaciones o por la demora en la satisfacción de cualquiera de las prestaciones a su cargo derivadas del presente Contrato cuando el incumplimiento sea resultado o consecuencia de la ocurrencia de un evento de fuerza mayor y caso fortuito.
+Las partes quedan exoneradas de responsabilidad por el incumplimiento de cualquiera de sus obligaciones o por la demora en la satisfacción de cualquiera de las prestaciones a su cargo derivadas del presente Contrato cuando el incumplimiento sea resultado o consecuencia de la ocurrencia de un evento de fuerza mayor y caso fortuito debidamente invocado y constatado de acuerdo con la ley y la jurisprudencia colombiana.
 
-## Cláusula 23 – Solución de Controversias
+## Cláusula 21 – Solución de Controversias
 
-Las controversias o diferencias que surjan entre el Contratista y la Entidad Estatal Contratante se resolverán conforme al texto no editable del documento tipo de contrato de obra pública.
+Las controversias o diferencias que surjan entre el Contratista y la Entidad Estatal Contratante con ocasión de la firma, ejecución, interpretación, prórroga o terminación del Contrato, así como de cualquier otro asunto relacionado con el presente Contrato, serán sometidas a la revisión de las partes para buscar un arreglo directo, en un término no mayor a cinco (5) días hábiles a partir de la fecha en que cualquiera de las partes comunique por escrito a la otra parte la existencia de una diferencia y la explique someramente.
 
-## Cláusula 24 – Notificaciones
+Las controversias que no puedan ser resueltas de forma directa entre las partes, se resolverán mediante los mecanismos previstos en el documento tipo de contrato de obra pública, incluidos, según aplique, amigable composición, conciliación, tribunal de arbitramento o jurisdicción contenciosa administrativa.
+
+## Cláusula 22 – Notificaciones
 
 Los avisos, solicitudes, comunicaciones y notificaciones que las Partes deban hacer en desarrollo del presente Contrato deben constar por escrito y se entenderán debidamente efectuadas solo si son entregadas personalmente o por correo electrónico a las siguientes direcciones:
 
@@ -262,23 +300,23 @@ Los avisos, solicitudes, comunicaciones y notificaciones que las Partes deban ha
 - Teléfono: {not_contratista_telefono}
 - Correo electrónico: {not_contratista_correo}
 
-## Cláusula 25 – Supervisión
+## Cláusula 23 – Supervisión
 
 {bloque_supervision}
 
-## Cláusula 26 – Interventoría
+## Cláusula 24 – Interventoría
 
 {bloque_interventoria}
 
-## Cláusula 27 – Anexos del Contrato
+## Cláusula 25 – Anexos del Contrato
 
 {anexos_txt}
 
-## Cláusula 28 – Perfeccionamiento y ejecución
+## Cláusula 26 – Perfeccionamiento y ejecución
 
 El presente contrato requiere para su perfeccionamiento de la firma de las partes. Para su ejecución requiere el registro presupuestal y la acreditación de encontrarse el Contratista a paz y salvo por concepto de aportes al sistema de seguridad social integral.
 
-## Cláusula 29 – Lugar de ejecución y domicilio contractual
+## Cláusula 27 – Lugar de ejecución y domicilio contractual
 
 Las actividades previstas en el presente Contrato se desarrollarán en {lugar_ejecucion}.
 
