@@ -66,7 +66,6 @@ def inicializar_contrato():
         "rep_contratista_num_doc": "",
         "rep_contratista_ciudad_expedicion": "",
 
-        "proceso_secop": "",
         "modalidad_seleccion": "Licitación pública",
 
         "objeto_general": "",
@@ -75,7 +74,6 @@ def inicializar_contrato():
         "valor_total_numeros": "",
         "valor_total_letras": "",
         "periodicidad_pago": "",
-        "requisitos_pago": "",
         "dias_pago": "",
 
         "plazo_ejecucion": "",
@@ -103,7 +101,6 @@ def inicializar_contrato():
         "anexos_cdp": True,
 
         "lugar_ejecucion": "",
-        "fecha_celebracion": "",
     }
 
     for k, v in valores_defecto.items():
@@ -182,18 +179,13 @@ with st.sidebar:
 
 
 with st.expander("1. Datos generales del contrato", expanded=True):
-    c1, c2 = st.columns(2)
-    with c1:
-        datos["numero_contrato"] = st.text_input(
-            "Número de contrato",
-            value=datos["numero_contrato"],
-            key="numero_contrato"
-        )
-        datos["nombre_proyecto"] = st.text_input(
-            "Nombre del proyecto",
-            value=datos["nombre_proyecto"],
-            key="nombre_proyecto"
-        )
+    datos["modalidad_seleccion"] = st.selectbox(
+        "Modalidad de selección",
+        options=["Licitación pública", "Selección abreviada", "Mínima cuantía", "Otra"],
+        index=["Licitación pública", "Selección abreviada", "Mínima cuantía", "Otra"].index(datos["modalidad_seleccion"])
+        if datos["modalidad_seleccion"] in ["Licitación pública", "Selección abreviada", "Mínima cuantía", "Otra"] else 0,
+        key="modalidad_seleccion"
+    )
     with c2:
         datos["fecha_contrato"] = st.text_input(
             "Fecha del contrato",
@@ -399,13 +391,6 @@ with st.expander("6. Valor y forma de pago", expanded=False):
             key="periodicidad_pago"
         )
 
-    datos["requisitos_pago"] = st.text_area(
-        "Entregables o requisitos para pago",
-        value=datos["requisitos_pago"],
-        height=calcular_altura(datos["requisitos_pago"]),
-        key="requisitos_pago"
-    )
-
     if st.button("Guardar sección 6", key="guardar_6"):
         guardar_y_refrescar()
 
@@ -583,12 +568,12 @@ with st.expander("13. Cierre", expanded=False):
             key="lugar_ejecucion"
         )
     with c2:
-        datos["fecha_celebracion"] = st.text_input(
+        st.text_input(
             "Fecha de celebración del contrato",
-            value=datos["fecha_celebracion"],
-            key="fecha_celebracion"
+            value=datos["fecha_contrato"],
+            key="fecha_celebracion_visual",
+            disabled=True
         )
-
     if st.button("Guardar sección 13", key="guardar_13"):
         guardar_y_refrescar()
 
