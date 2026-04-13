@@ -421,7 +421,7 @@ with st.sidebar:
 
                             with st.form("form_sidebar_paq", clear_on_submit=True):
                                 txt_paq = st.text_input("Nombre de la Subactividad:")
-                               if st.form_submit_button("Guardar Subactividad"):
+                                if st.form_submit_button("Guardar Subactividad"):
                                     if txt_paq:
                                         for p in datos["edt_data"].get(target_obj_paq, []):
                                             if p["id"] == target_prod_paq:
