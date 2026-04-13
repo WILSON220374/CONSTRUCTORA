@@ -91,8 +91,49 @@ def construir_bloque_documentos():
 5. Toda la correspondencia que se surta entre las partes durante el término de ejecución del contrato."""
 
 
+def construir_bloque_multas(multas):
+    valores = {
+        "Atraso o incumplimiento del Cronograma": "XXX",
+        "No mantener en vigor las Garantías": "XXX",
+        "No entrega la información completa que le solicite el supervisor": "XXX",
+        "Atraso imputable al Interventor": "XX",
+        "Por incumplir, sin justa causa, las órdenes que el supervisor dé": "XX",
+        "Por cambiar el equipo de trabajo presentado en la oferta, sin la aprobación previa del supervisor": "XXX",
+    }
+
+    if multas and isinstance(multas, list):
+        for fila in multas:
+            if isinstance(fila, dict):
+                causal = str(fila.get("causal", "")).strip()
+                porcentaje = str(fila.get("porcentaje", "")).strip()
+                if causal and porcentaje:
+                    valores[causal] = porcentaje
+
+    return f"""Causales: 
+1. Por atraso o incumplimiento del Cronograma de Interventoría se causará una multa equivalente al [{valores["Atraso o incumplimiento del Cronograma"]}%] del valor del contrato, por cada día calendario de atraso.
+2. Por no mantener en vigor, renovar, prorrogar, corregir o adicionar las Garantías, en los plazos y por los montos establecidos de acuerdo con el contrato o sus modificaciones, se causará una multa equivalente al [{valores["No mantener en vigor las Garantías"]}%] del contrato, por cada día calendario de atraso en el cumplimiento. 
+3. Si el Interventor no entrega la información completa que le solicite el supervisor, que se relacione con el objeto del contrato o con el cumplimiento de las actividades del proyecto a ejecutar, dentro de los plazos y en los términos de cada requerimiento siempre y cuando sean razonables en función de la información exigida, se causará una multa equivalente al [{valores["No entrega la información completa que le solicite el supervisor"]}%] del contrato. Estas multas se causarán sucesivamente por cada día de atraso, hasta cuando el Interventor demuestre que corrija el incumplimiento respectivo a satisfacción del supervisor. 
+4. Por atraso imputable al Interventor, se causará una multa diaria equivalente al [{valores["Atraso imputable al Interventor"]}%] del contrato, por cada día calendario de atraso. Igual sanción se aplicará en caso de que el Interventor no inicie efectivamente con la ejecución del contrato en la fecha acordada.
+5. Por incumplir, sin justa causa, las órdenes que el supervisor dé en ejercicio de sus funciones y en el marco del ordenamiento jurídico, el Interventor se hará acreedor a una multa equivalente al [{valores["Por incumplir, sin justa causa, las órdenes que el supervisor dé"]}%] del contrato, por cada orden incumplida.
+6. Por cambiar el equipo de trabajo presentado en la oferta, sin la aprobación previa del supervisor, al Interventor se le impondrá una multa equivalente al [{valores["Por cambiar el equipo de trabajo presentado en la oferta, sin la aprobación previa del supervisor"]}%] del contrato.
+
+Parágrafo 1. Las multas son apremios al Interventor para el cumplimiento de sus obligaciones y, por lo tanto, no tienen el carácter de estimación anticipada de perjuicios, de manera que pueden acumularse con cualquier forma de indemnización, en los términos previstos en el artículo 1600 del Código Civil. 
+
+Parágrafo 2. En caso de que el Interventor incurra en una de las causales de multa, este autoriza a la Entidad para descontar el valor de la misma, la cual se tomará directamente de cualquier suma que se le adeude, sin perjuicio de hacer efectiva la Garantía de cumplimiento del contrato.
+
+Parágrafo 3. El pago en cualquier forma, incluyendo la deducción de los valores adeudados al Interventor, realizado con fundamento en las multas impuestas, no lo exonerará de continuar con la ejecución del contrato ni de las demás responsabilidades y obligaciones que emanen del mismo, amén de la obligación incumplida.
+
+Parágrafo 4. En caso de que el Interventor reincida en el incumplimiento de una o de varias obligaciones se podrán imponer nuevas multas.
+
+Parágrafo 5. Para efectos de la imposición de las multas el salario mínimo diario o mensual vigente, será aquel que rija para el momento de la expedición del acto administrativo que lo declara.
+
+Parágrafo 6. El monto de ninguna de las sanciones asociadas a cada causal de multa, aplicada de forma independiente, podrá ser superior al cinco por ciento (5 %) del valor del contrato, particularmente frente a aquellas que se imponen de forma sucesiva. Lo anterior, sin perjuicio de que se inicie un nuevo procedimiento sancionatorio para efectos de imponer nuevas multas."""
+
+
 def construir_contrato(datos):
     nombre_entidad = texto_si_vacio(datos.get("nombre_entidad"))
+    nombre_representante_entidad = texto_si_vacio(datos.get("nombre_representante_entidad"))
+    nombre_empresa_interventora = texto_si_vacio(datos.get("nombre_empresa_interventora"))
     nombre_interventor = texto_si_vacio(datos.get("nombre_interventor"))
     numero_proceso_contratacion = texto_si_vacio(datos.get("numero_proceso_contratacion"))
 
@@ -121,10 +162,11 @@ def construir_contrato(datos):
 
     tabla_garantias = construir_tabla_garantias_markdown(datos.get("garantias_interventoria", []))
     documentos_txt = construir_bloque_documentos()
+    bloque_multas = construir_bloque_multas(datos.get("multas_interventoria", []))
 
     contrato = f"""# CONTRATO DE INTERVENTORÍA
 
-Entre {nombre_entidad} (en adelante la “Entidad”) por medio de su representante legal, por una parte; y por la otra {nombre_interventor} (en adelante el “Interventor”), hemos convenido celebrar el presente Contrato de Interventoría, previas las siguientes consideraciones:
+Entre {nombre_entidad} (en adelante la “Entidad”) por medio de su representante legal {nombre_representante_entidad}, por una parte; y por la otra {nombre_interventor} en representación de {nombre_empresa_interventora} (en adelante el “Interventor”), hemos convenido celebrar el presente Contrato de Interventoría, previas las siguientes consideraciones:
 
 Con base en las anteriores consideraciones, la Entidad y el Interventor (individualmente la “Parte”, conjuntamente las “Partes”), convienen las siguientes cláusulas.
 
@@ -204,7 +246,7 @@ El Interventor es responsable de cumplir las obligaciones pactadas en el contrat
 
 ## MULTAS
 
-Se aplicará el texto fijo de multas previsto en la minuta tipo de interventoría.
+{bloque_multas}
 
 ## CLÁUSULA PENAL
 
@@ -269,12 +311,18 @@ Los documentos que a continuación se relacionan hacen parte integral del contra
 {documentos_txt}
 
 En constancia se firma el presente contrato en {lugar_perfeccionamiento}, el {fecha_suscripcion}.
+
+**Por la Entidad:** {nombre_representante_entidad}  
+**Por el Interventor:** {nombre_interventor}  
+**Empresa interventora:** {nombre_empresa_interventora}
 """
     return contrato
 
 
 def generar_word(datos):
     nombre_entidad = texto_si_vacio(datos.get("nombre_entidad"))
+    nombre_representante_entidad = texto_si_vacio(datos.get("nombre_representante_entidad"))
+    nombre_empresa_interventora = texto_si_vacio(datos.get("nombre_empresa_interventora"))
     nombre_interventor = texto_si_vacio(datos.get("nombre_interventor"))
     contrato_txt = construir_contrato(datos)
 
@@ -302,8 +350,17 @@ def generar_word(datos):
     izquierda = tabla_firmas.rows[0].cells[0]
     derecha = tabla_firmas.rows[0].cells[1]
 
-    izquierda.text = f"Por la Entidad,\n\n{texto_si_vacio(datos.get('firmante_entidad'))}"
-    derecha.text = f"Por el Interventor,\n\n{texto_si_vacio(datos.get('firmante_interventor'))}"
+    izquierda.text = (
+        "Por la Entidad,\n\n"
+        f"{nombre_representante_entidad}\n"
+        f"{texto_si_vacio(datos.get('firmante_entidad'))}"
+    )
+    derecha.text = (
+        "Por el Interventor,\n\n"
+        f"{nombre_interventor}\n"
+        f"{nombre_empresa_interventora}\n"
+        f"{texto_si_vacio(datos.get('firmante_interventor'))}"
+    )
 
     buffer = BytesIO()
     doc.save(buffer)
@@ -351,7 +408,9 @@ st.divider()
 with st.sidebar:
     st.header("🧭 Resumen")
     st.markdown(f"**Entidad:** {texto_si_vacio(datos.get('nombre_entidad'))}")
+    st.markdown(f"**Representante entidad:** {texto_si_vacio(datos.get('nombre_representante_entidad'))}")
     st.markdown(f"**Interventor:** {texto_si_vacio(datos.get('nombre_interventor'))}")
+    st.markdown(f"**Empresa interventora:** {texto_si_vacio(datos.get('nombre_empresa_interventora'))}")
     st.markdown(f"**Proceso:** {texto_si_vacio(datos.get('numero_proceso_contratacion'))}")
     st.markdown(f"**Valor:** {texto_si_vacio(datos.get('valor_contrato_numeros'))}")
     st.markdown(f"**Plazo:** {texto_si_vacio(datos.get('plazo_contrato'))}")
@@ -365,10 +424,19 @@ st.markdown("### Firmas")
 
 col1, col2 = st.columns(2)
 with col1:
-    st.markdown(f"**Por la Entidad**  \n{texto_si_vacio(datos.get('firmante_entidad'))}")
+    st.markdown(
+        f"**Por la Entidad**  \n"
+        f"{texto_si_vacio(datos.get('nombre_representante_entidad'))}  \n"
+        f"{texto_si_vacio(datos.get('firmante_entidad'))}"
+    )
 
 with col2:
-    st.markdown(f"**Por el Interventor**  \n{texto_si_vacio(datos.get('firmante_interventor'))}")
+    st.markdown(
+        f"**Por el Interventor**  \n"
+        f"{texto_si_vacio(datos.get('nombre_interventor'))}  \n"
+        f"{texto_si_vacio(datos.get('nombre_empresa_interventora'))}  \n"
+        f"{texto_si_vacio(datos.get('firmante_interventor'))}"
+    )
 
 word_buffer, nombre_word = generar_word(datos)
 st.download_button(
