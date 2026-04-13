@@ -1,6 +1,9 @@
-import streamlit as st
 import os
-import pandas as pd
+from io import BytesIO
+
+import streamlit as st
+from docx import Document
+
 from supabase_state import cargar_estado
 
 
@@ -24,7 +27,7 @@ def escapar_tabla(valor):
     return texto_si_vacio(valor).replace("|", "\\|")
 
 
-def construir_tabla_garantias(garantias):
+def construir_tabla_garantias_markdown(garantias):
     if not garantias or not isinstance(garantias, list):
         return (
             "| Amparo | Suficiencia | Vigencia |\n"
@@ -48,6 +51,36 @@ def construir_tabla_garantias(garantias):
 
     encabezado = "| Amparo | Suficiencia | Vigencia |\n|---|---|---|"
     return encabezado + "\n" + "\n".join(filas)
+
+
+def construir_tabla_garantias_doc(doc, garantias):
+    tabla = doc.add_table(rows=1, cols=3)
+    tabla.style = "Table Grid"
+    encabezado = tabla.rows[0].cells
+    encabezado[0].text = "Amparo"
+    encabezado[1].text = "Suficiencia"
+    encabezado[2].text = "Vigencia"
+
+    filas_validas = []
+    if garantias and isinstance(garantias, list):
+        for fila in garantias:
+            if not isinstance(fila, dict):
+                continue
+            amparo = texto_si_vacio(fila.get("amparo", ""))
+            suficiencia = texto_si_vacio(fila.get("suficiencia", ""))
+            vigencia = texto_si_vacio(fila.get("vigencia", ""))
+            if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and vigencia == "PENDIENTE":
+                continue
+            filas_validas.append((amparo, suficiencia, vigencia))
+
+    if not filas_validas:
+        filas_validas.append(("PENDIENTE", "PENDIENTE", "PENDIENTE"))
+
+    for amparo, suficiencia, vigencia in filas_validas:
+        celdas = tabla.add_row().cells
+        celdas[0].text = amparo
+        celdas[1].text = suficiencia
+        celdas[2].text = vigencia
 
 
 def construir_bloque_anexos(datos):
@@ -111,7 +144,7 @@ def construir_contrato(datos):
     clausula_penal_numeros = texto_si_vacio(datos.get("clausula_penal_numeros"))
     clausula_penal_letras = texto_si_vacio(datos.get("clausula_penal_letras"))
 
-    tabla_garantias = construir_tabla_garantias(datos.get("garantias", []))
+    tabla_garantias = construir_tabla_garantias_markdown(datos.get("garantias", []))
     plazo_garantias_dias = texto_si_vacio(datos.get("plazo_garantias_dias"))
 
     not_entidad_direccion = texto_si_vacio(datos.get("not_entidad_direccion"))
@@ -139,8 +172,6 @@ def construir_contrato(datos):
         bloque_supervision = "La supervisión no aplica para el presente contrato."
 
     contrato = f"""# Contrato de obra pública {numero_contrato} para la ejecución del proyecto {nombre_proyecto} del {fecha_contrato}, celebrado entre {nombre_entidad} y {nombre_contratista}.
-
-## Comparecencia
 
 Entre los suscritos: {rep_entidad_nombre}, identificado con {rep_entidad_tipo_doc} No. {rep_entidad_num_doc}, expedida en {rep_entidad_municipio_expedicion}, en su calidad de {rep_entidad_cargo}, actuando en nombre y representación de {nombre_entidad}, con NIT {nit_entidad}, quien para los efectos del presente contrato se denomina la Entidad Estatal contratante; y por la otra, {rep_contratista_nombre}, identificado con {rep_contratista_tipo_doc} No. {rep_contratista_num_doc}, expedida en {rep_contratista_ciudad_expedicion}, en representación de {nombre_contratista}, identificado con NIT {nit_contratista}, quien para los efectos del presente contrato se denominará el Contratista, hemos convenido en celebrar el presente Contrato de obra pública, teniendo en cuenta las siguientes consideraciones:
 
@@ -242,9 +273,7 @@ La Entidad Estatal contratante puede definir qué documentos o asuntos están so
 
 ## Cláusula 13 – Multas
 
-En caso de incumplimiento a las obligaciones del Contratista derivadas del presente Contrato, {nombre_entidad} puede adelantar el procedimiento establecido en la ley e imponer las siguientes multas:
-
-[Incluir el valor condiciones de las multas]
+En caso de incumplimiento a las obligaciones del Contratista derivadas del presente Contrato, {nombre_entidad} puede adelantar el procedimiento establecido en la ley e imponer las multas previstas en el documento tipo de contrato de obra pública.
 
 ## Cláusula 14 – Cláusula Penal
 
@@ -321,16 +350,66 @@ El presente contrato requiere para su perfeccionamiento de la firma de las parte
 Las actividades previstas en el presente Contrato se desarrollarán en {lugar_ejecucion}.
 
 Para constancia, se firma en {lugar_celebracion} el {fecha_contrato}.
-
-**{rep_entidad_nombre}**  
-{rep_entidad_cargo}  
-{rep_entidad_tipo_doc} No. {rep_entidad_num_doc}
-
-**{rep_contratista_nombre}**  
-Representante del contratista {tipo_contratista}  
-{rep_contratista_tipo_doc} No. {rep_contratista_num_doc}
 """
     return contrato
+
+
+def generar_word(datos):
+    numero_contrato = texto_si_vacio(datos.get("numero_contrato"))
+    nombre_proyecto = texto_si_vacio(datos.get("nombre_proyecto"))
+    fecha_contrato = texto_si_vacio(datos.get("fecha_contrato"))
+    lugar_celebracion = texto_si_vacio(datos.get("lugar_celebracion"))
+
+    rep_entidad_nombre = texto_si_vacio(datos.get("rep_entidad_nombre"))
+    rep_entidad_tipo_doc = texto_si_vacio(datos.get("rep_entidad_tipo_doc"))
+    rep_entidad_num_doc = texto_si_vacio(datos.get("rep_entidad_num_doc"))
+    rep_entidad_cargo = texto_si_vacio(datos.get("rep_entidad_cargo"))
+
+    tipo_contratista = texto_si_vacio(datos.get("tipo_contratista"))
+    rep_contratista_nombre = texto_si_vacio(datos.get("rep_contratista_nombre"))
+    rep_contratista_tipo_doc = texto_si_vacio(datos.get("rep_contratista_tipo_doc"))
+    rep_contratista_num_doc = texto_si_vacio(datos.get("rep_contratista_num_doc"))
+
+    contrato_txt = construir_contrato(datos)
+
+    doc = Document()
+    doc.add_heading("Contrato de obra pública", level=0)
+
+    for bloque in contrato_txt.split("\n\n"):
+        if bloque.strip().startswith("# "):
+            doc.add_heading(bloque.replace("# ", "").strip(), level=1)
+        elif bloque.strip().startswith("## "):
+            doc.add_heading(bloque.replace("## ", "").strip(), level=2)
+        elif "| Amparo | Suficiencia | Vigencia |" in bloque:
+            construir_tabla_garantias_doc(doc, datos.get("garantias", []))
+        else:
+            doc.add_paragraph(bloque.strip())
+
+    doc.add_paragraph("")
+    tabla_firmas = doc.add_table(rows=1, cols=2)
+    tabla_firmas.style = "Table Grid"
+
+    izquierda = tabla_firmas.rows[0].cells[0]
+    derecha = tabla_firmas.rows[0].cells[1]
+
+    izquierda.text = (
+        f"{rep_entidad_nombre}\n"
+        f"{rep_entidad_cargo}\n"
+        f"{rep_entidad_tipo_doc} No. {rep_entidad_num_doc}"
+    )
+
+    derecha.text = (
+        f"{rep_contratista_nombre}\n"
+        f"Representante del contratista {tipo_contratista}\n"
+        f"{rep_contratista_tipo_doc} No. {rep_contratista_num_doc}"
+    )
+
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    nombre_archivo = f"contrato_{numero_contrato}_{nombre_proyecto}".replace(" ", "_")
+    return buffer, f"{nombre_archivo}.docx"
 
 
 datos = obtener_datos_contrato()
@@ -378,14 +457,32 @@ with st.sidebar:
     st.markdown(f"**Plazo:** {texto_si_vacio(datos.get('plazo_ejecucion'))}")
 
 contrato_armado = construir_contrato(datos)
-
-st.subheader("Vista del contrato")
 st.markdown(contrato_armado)
 
-st.divider()
-st.text_area(
-    "Contrato en texto continuo",
-    value=contrato_armado,
-    height=700,
-    key="contrato_armado_texto_continuo"
+st.markdown("---")
+st.markdown("### Firmas")
+
+col1, col2 = st.columns(2)
+with col1:
+    st.markdown(
+        f"""**{texto_si_vacio(datos.get("rep_entidad_nombre"))}**  
+{texto_si_vacio(datos.get("rep_entidad_cargo"))}  
+{texto_si_vacio(datos.get("rep_entidad_tipo_doc"))} No. {texto_si_vacio(datos.get("rep_entidad_num_doc"))}"""
+    )
+
+with col2:
+    st.markdown(
+        f"""**{texto_si_vacio(datos.get("rep_contratista_nombre"))}**  
+Representante del contratista {texto_si_vacio(datos.get("tipo_contratista"))}  
+{texto_si_vacio(datos.get("rep_contratista_tipo_doc"))} No. {texto_si_vacio(datos.get("rep_contratista_num_doc"))}"""
+    )
+
+word_buffer, nombre_word = generar_word(datos)
+st.download_button(
+    "Descargar contrato en Word",
+    data=word_buffer,
+    file_name=nombre_word,
+    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    type="primary",
+    key="descargar_contrato_word",
 )
