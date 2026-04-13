@@ -47,6 +47,7 @@ def inicializar_alcance():
         st.session_state["alcance_datos"] = cargar_estado("alcance") or {}
     
     d = st.session_state["alcance_datos"]
+    contrato_obra = cargar_estado("contrato_obra") or {}
     
     # --- CAMPOS INSTITUCIONALES ---
     if "entidad_formuladora" not in d: d["entidad_formuladora"] = ""
@@ -54,7 +55,11 @@ def inicializar_alcance():
     if "lugar_presentacion" not in d: d["lugar_presentacion"] = ""
     if "anio_presentacion" not in d: d["anio_presentacion"] = ""
     
-    if "nombre_proyecto" not in d: d["nombre_proyecto"] = ""
+     nombre_proyecto_contrato = str(contrato_obra.get("objeto_general", "")).strip()
+    if "nombre_proyecto" not in d:
+        d["nombre_proyecto"] = nombre_proyecto_contrato
+    elif nombre_proyecto_contrato:
+        d["nombre_proyecto"] = nombre_proyecto_contrato
     if "descripcion_proyecto" not in d: d["descripcion_proyecto"] = ""
     if "alcance_definido" not in d: d["alcance_definido"] = ""
     if "objetivos" not in d: d["objetivos"] = []
@@ -406,12 +411,13 @@ with st.sidebar:
 if st.session_state["seccion_activa"] == "📥 Datos de Entrada":
     with st.container(border=True):
         st.markdown("#### 🏷️ Nombre del Proyecto")
-        nombre_proyecto = st.text_input(
-            "Digite el nombre:",
+        nombre_proyecto = st.text_area(
+            "Traído automáticamente desde Contrato de Obra - Sección 5",
             value=datos["nombre_proyecto"],
+            height=calcular_altura(datos["nombre_proyecto"], min_h=110),
+            disabled=True,
             key="input_nom_proy"
         )
-
     with st.container(border=True):
         st.markdown("#### 💼 Costos indirectos del proyecto")
         requiere_costos_indirectos = st.selectbox(
