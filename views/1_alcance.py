@@ -155,10 +155,10 @@ with st.sidebar:
         if not datos["nombre_proyecto"]:
             st.warning("⚠️ Primero diligencie el contrato de obra para que se cargue el nombre del proyecto.")
         else:
-            with st.expander("📦 Añadir Paquete de Trabajo", expanded=False):
+            with st.expander("🎯 Añadir Objetivo", expanded=False):
                 with st.form("form_nuevo_objetivo_sidebar", clear_on_submit=True):
-                    nuevo_txt = st.text_input("Escriba un nuevo paquete de trabajo:")
-                    if st.form_submit_button("➕ Añadir Paquete de Trabajo"):
+                    nuevo_txt = st.text_input("Escriba un nuevo objetivo:")
+                    if st.form_submit_button("➕ Añadir Objetivo"):
                         if nuevo_txt.strip():
                             datos["objetivos"].append({
                                 "id": str(uuid.uuid4()),
@@ -204,7 +204,7 @@ with st.sidebar:
                     cod_obj = f"{i+1}"
                     dict_obj[oid] = f"{cod_obj}. {obj['texto']}"
 
-                with st.expander("⚙️ Añadir Actividad"):
+                with st.expander("📦 Añadir Producto"):
                     target_obj = st.selectbox(
                         "Objetivo Padre:",
                         options=list(dict_obj.keys()),
@@ -212,8 +212,8 @@ with st.sidebar:
                         key="prod_obj_padre"
                     )
                     with st.form("form_sidebar_prod", clear_on_submit=True):
-                        txt_p = st.text_input("Nombre de la Actividad:")
-                        if st.form_submit_button("➕ Añadir Actividad"):
+                        txt_p = st.text_input("Nombre del Producto:")
+                        if st.form_submit_button("Guardar Producto"):
                             if txt_p:
                                 if target_obj not in datos["edt_data"]:
                                     datos["edt_data"][target_obj] = []
@@ -261,7 +261,7 @@ with st.sidebar:
                         dict_prod_obj[pid] = f"{cod_prod}. {p.get('nombre','')}"
 
                     if not dict_prod_obj:
-                        st.info("Cree una actividad primero dentro de este paquete de trabajo.")
+                        st.info("Cree un producto primero dentro de este objetivo.")
                     else:
                         target_prod = st.selectbox(
                             "Producto Padre:",
@@ -300,77 +300,7 @@ with st.sidebar:
                                     st.session_state.pop("paq_act_padre", None)
                                     st.rerun()
 
-                st.divider()
-
-                prod_sel_del = next(
-                    (p for p in datos["edt_data"].get(target_obj_act, []) if p["id"] == target_prod),
-                    None
-                )
-
-                acts_del = prod_sel_del.get("actividades", []) if prod_sel_del else []
-
-                if acts_del:
-                    opciones_act = {a["id"]: a["nombre"] for a in acts_del}
-
-                    with st.form("form_del_act"):
-                        act_del = st.selectbox(
-                            "Eliminar actividad:",
-                            options=list(opciones_act.keys()),
-                            format_func=lambda x: opciones_act[x]
-                        )
-
-                        if st.form_submit_button("🗑️ Eliminar"):
-                            for p in datos["edt_data"].get(target_obj_act, []):
-                                if p["id"] == target_prod:
-                                    p["actividades"] = [
-                                        a for a in p["actividades"] if a["id"] != act_del
-                                    ]
-                                    break
-
-                            guardar_estado("alcance", datos)
-                            st.rerun()
-
-                st.divider()
-
-                prod_sel_del = next(
-                    (p for p in datos["edt_data"].get(target_obj_paq, []) if p["id"] == target_prod_paq),
-                    None
-                )
-
-                acts_del = prod_sel_del.get("actividades", []) if prod_sel_del else []
-
-                act_sel_del = next(
-                    (a for a in acts_del if a["id"] == target_act_paq),
-                    None
-                )
-
-                paquetes_del = act_sel_del.get("paquetes", []) if act_sel_del else []
-
-                if paquetes_del:
-                    opciones_paq = {p["id"]: p["nombre"] for p in paquetes_del}
-
-                    with st.form("form_del_paq"):
-                        paq_del = st.selectbox(
-                            "Eliminar subactividad:",
-                            options=list(opciones_paq.keys()),
-                            format_func=lambda x: opciones_paq[x]
-                        )
-
-                        if st.form_submit_button("🗑️ Eliminar"):
-                            for p in datos["edt_data"].get(target_obj_paq, []):
-                                if p["id"] == target_prod_paq:
-                                    for a in p.get("actividades", []):
-                                        if a["id"] == target_act_paq:
-                                            a["paquetes"] = [
-                                                x for x in a["paquetes"] if x["id"] != paq_del
-                                            ]
-                                            break
-
-                            guardar_estado("alcance", datos)
-                            st.rerun()
-
-                
-                with st.expander("🧩 Añadir Subactividad"):
+                with st.expander("🧩 Añadir Paquete de Trabajo"):
                     target_obj_paq = st.selectbox(
                         "Objetivo Padre:",
                         options=list(dict_obj.keys()),
@@ -410,7 +340,7 @@ with st.sidebar:
                                 dict_act_obj[aid] = f"{cod_act}. {a.get('nombre','')}"
 
                         if not dict_act_obj:
-                            sst.info("Cree una subactividad primero dentro de esta actividad.")
+                            st.info("Cree una actividad primero dentro de este producto.")
                         else:
                             target_act_paq = st.selectbox(
                                 "Actividad Padre:",
@@ -420,8 +350,8 @@ with st.sidebar:
                             )
 
                             with st.form("form_sidebar_paq", clear_on_submit=True):
-                                txt_paq = st.text_input("Nombre de la Subactividad:")
-                                if st.form_submit_button("Guardar Subactividad"):
+                                txt_paq = st.text_input("Nombre del Paquete de Trabajo:")
+                                if st.form_submit_button("Guardar Paquete"):
                                     if txt_paq:
                                         for p in datos["edt_data"].get(target_obj_paq, []):
                                             if p["id"] == target_prod_paq:
