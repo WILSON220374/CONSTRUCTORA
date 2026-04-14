@@ -698,6 +698,7 @@ with col2:
         key="presupuesto_obra_anio_input",
     )
     st.session_state["presupuesto_obra_datos"]["anio"] = int(nuevo_anio)
+    guardar_estado("presupuesto_obra", _json_clone(st.session_state["presupuesto_obra_datos"]))
 
 if st.session_state.get("presupuesto_obra_load_warning"):
     st.warning(st.session_state["presupuesto_obra_load_warning"])
@@ -762,7 +763,8 @@ def _on_change_municipio_factor_distancia():
     st.session_state["presupuesto_obra_factor_valor"] = factor_cb
     st.session_state["presupuesto_obra_datos"]["configuracion"]["municipio_factor_distancia"] = municipio_cb
     st.session_state["presupuesto_obra_datos"]["configuracion"]["factor_distancia_valor"] = factor_cb
-
+    guardar_estado("presupuesto_obra", _json_clone(st.session_state["presupuesto_obra_datos"]))
+    
 municipio_sel = st.selectbox(
     "Municipio para factor de distancia",
     options=[""] + municipios_factor,
