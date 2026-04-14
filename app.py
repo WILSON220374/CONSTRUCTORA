@@ -267,7 +267,7 @@ else:
         st.Page("views/2_ver_contrato.py", title="2. Ver contrato", icon="📘"),
         st.Page("views/3_contrato_interventoria.py", title="3. Contrato de interventoría", icon="📑"),
         st.Page("views/4_ver_contrato_interventoria.py", title="4. Ver contrato interventoría", icon="📘"),
-        st.Page("views/localizacion.py", title="Localización", icon="📍"),
+        st.Page("views/1_alcance.py", title="1. Alcance", icon="🎯"),
         st.Page("views/2_cronograma.py", title="⭐ 2. CRONOGRAMA", icon="📅"),
         st.Page("views/3_gantt.py", title="3. Diagrama de Gantt", icon="📊"),
         st.Page("views/4_vista_completa_cronograma.py", title="Vista completa cronograma", icon="🖼️"),
