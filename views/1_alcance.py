@@ -244,9 +244,9 @@ with st.sidebar:
                                 st.session_state.pop("paq_act_padre", None)
                                 st.rerun()
 
-                with st.expander("⚙️ Añadir Actividad"):
+                with st.expander("⚙️ Añadir Subactividad"):
                     target_obj_act = st.selectbox(
-                        "Objetivo Padre:",
+                        "Producto Padre:",
                         options=list(dict_obj.keys()),
                         format_func=lambda x: dict_obj[x],
                         key="act_obj_padre"
@@ -263,18 +263,18 @@ with st.sidebar:
                         dict_prod_obj[pid] = f"{cod_prod}. {p.get('nombre','')}"
 
                     if not dict_prod_obj:
-                        st.info("Cree un producto primero dentro de este objetivo.")
+                        st.info("Cree una actividad primero dentro de este producto.")
                     else:
                         target_prod = st.selectbox(
-                            "Producto Padre:",
+                            "Actividad Padre:",
                             options=list(dict_prod_obj.keys()),
                             format_func=lambda x: dict_prod_obj[x],
                             key="act_prod_padre"
                         )
 
                         with st.form("form_sidebar_act", clear_on_submit=True):
-                            txt_a = st.text_input("Nombre de la Actividad:")
-                            if st.form_submit_button("Guardar Actividad"):
+                            txt_a = st.text_input("Nombre de la Subactividad:")
+                            if st.form_submit_button("Guardar Subactividad"):
                                 if txt_a:
                                     for p in datos["edt_data"].get(target_obj_act, []):
                                         if p["id"] == target_prod:
@@ -301,83 +301,6 @@ with st.sidebar:
                                     st.session_state["paq_prod_padre"] = target_prod
                                     st.session_state.pop("paq_act_padre", None)
                                     st.rerun()
-
-                with st.expander("🧩 Añadir Subactividad"):
-                    target_obj_paq = st.selectbox(
-                        "Producto Padre:",
-                        options=list(dict_obj.keys()),
-                        format_func=lambda x: dict_obj[x],
-                        key="paq_obj_padre"
-                    )
-
-                    prod_list_paq = datos["edt_data"].get(target_obj_paq, [])
-                    dict_prod_obj_paq = {}
-
-                    obj_idx_paq = list(dict_obj.keys()).index(target_obj_paq) + 1
-
-                    for j, p in enumerate(prod_list_paq):
-                        pid = p["id"]
-                        cod_prod = f"{obj_idx_paq}.{j+1}"
-                        dict_prod_obj_paq[pid] = f"{cod_prod}. {p.get('nombre','')}"
-
-                    if not dict_prod_obj_paq:
-                        st.info("Cree una actividad primero dentro de este producto.")
-                    else:
-                        target_prod_paq = st.selectbox(
-                            "Actividad Padre:",
-                            options=list(dict_prod_obj_paq.keys()),
-                            format_func=lambda x: dict_prod_obj_paq[x],
-                            key="paq_prod_padre"
-                        )
-
-                        prod_sel = next((p for p in prod_list_paq if p["id"] == target_prod_paq), None)
-                        dict_act_obj = {}
-
-                        if prod_sel:
-                            acts = prod_sel.get("actividades", [])
-                            prod_idx_paq = list(dict_prod_obj_paq.keys()).index(target_prod_paq) + 1
-                            for k, a in enumerate(acts):
-                                aid = a["id"]
-                                cod_act = f"{obj_idx_paq}.{prod_idx_paq}.{k+1}"
-                                dict_act_obj[aid] = f"{cod_act}. {a.get('nombre','')}"
-
-                        if not dict_act_obj:
-                            st.info("Cree una actividad primero dentro de este producto.")
-                        else:
-                            target_act_paq = st.selectbox(
-                                "Subactividad Padre:",
-                                options=list(dict_act_obj.keys()),
-                                format_func=lambda x: dict_act_obj[x],
-                                key="paq_act_padre"
-                            )
-
-                            with st.form("form_sidebar_paq", clear_on_submit=True):
-                                txt_paq = st.text_input("Nombre de la Subactividad:")
-                                if st.form_submit_button("Guardar Subactividad"):
-                                    if txt_paq:
-                                        for p in datos["edt_data"].get(target_obj_paq, []):
-                                            if p["id"] == target_prod_paq:
-                                                for a in p.get("actividades", []):
-                                                    if a["id"] == target_act_paq:
-                                                        a.setdefault("paquetes", [])
-                                                        a["paquetes"].append({
-                                                            "id": str(uuid.uuid4()),
-                                                            "nombre": txt_paq,
-                                                            "unidad": "",
-                                                            "specs": {
-                                                                "descripcion": "",
-                                                                "procedimiento": "",
-                                                                "materiales": "",
-                                                                "herramientas": "",
-                                                                "equipos": "",
-                                                                "medicion_pago": "",
-                                                                "no_conformidad": ""
-                                                            }
-                                                        })
-                                                        break
-
-                                        guardar_estado("alcance", datos)
-                                        st.rerun()
 
                 with st.expander("🗑️ Eliminar Elemento", expanded=False):
                     filtro_tipo = st.radio("Filtre por categoría:", ["Producto", "Actividad", "Paquete"], horizontal=True)
