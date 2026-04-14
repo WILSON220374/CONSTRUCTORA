@@ -77,25 +77,7 @@ div[data-testid="stRadio"] div[role="radiogroup"] label {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="tipo-proyecto-titulo">Tipo de proyecto</div>', unsafe_allow_html=True)
-
-cronograma_datos.setdefault("tipo_presupuesto_proyecto", "Obra")
-
-col_tipo1, col_tipo2 = st.columns([3, 7])
-with col_tipo1:
-    cronograma_datos["tipo_presupuesto_proyecto"] = st.radio(
-        "El proyecto es de:",
-        options=["Obra", "Consultoría"],
-        index=["Obra", "Consultoría"].index(cronograma_datos.get("tipo_presupuesto_proyecto", "Obra")),
-        horizontal=True,
-        key="tipo_presupuesto_proyecto_crono",
-    )
-with col_tipo2:
-    st.markdown(
-        '<div class="tipo-proyecto-ayuda">Esta selección define en cuál hoja se cargarán los ítems del cronograma.</div>',
-        unsafe_allow_html=True,
-    )
-st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+cronograma_datos["tipo_presupuesto_proyecto"] = "Obra"
 st.title("📅 Cronograma")
 st.markdown(f"**Proyecto:** {nombre_proyecto}")
 
