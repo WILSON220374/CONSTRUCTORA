@@ -178,25 +178,7 @@ with st.sidebar:
                             })
                             guardar_estado("alcance", datos)
                             st.rerun()
-
-            with st.expander("🗑️ Eliminar Objetivo", expanded=False):
-                if not datos["objetivos"]:
-                    st.info("No hay objetivos para eliminar.")
-                else:
-                    opciones_obj = {obj["id"]: obj["texto"] for obj in datos["objetivos"]}
-                    with st.form("form_eliminar_objetivo_sidebar"):
-                        target_obj_del = st.selectbox(
-                            "Seleccione el objetivo:",
-                            options=list(opciones_obj.keys()),
-                            format_func=lambda x: opciones_obj[x]
-                        )
-                        if st.form_submit_button("🗑️ Eliminar Objetivo"):
-                            datos["objetivos"] = [o for o in datos["objetivos"] if o["id"] != target_obj_del]
-                            if target_obj_del in datos["edt_data"]:
-                                del datos["edt_data"][target_obj_del]
-                            guardar_estado("alcance", datos)
-                            st.rerun()
-
+                            
             if not datos["objetivos"]:
                 st.info("💡 Cree el primer objetivo para continuar configurando la EDT.")
             else:
