@@ -285,7 +285,7 @@ with st.sidebar:
                                     st.rerun()
 
                 with st.expander("🗑️ Eliminar Elemento", expanded=False):
-                    filtro_tipo = st.radio("Filtre por categoría:", ["Producto", "Actividad", "Paquete"], horizontal=True)
+                    filtro_tipo = st.radio("Filtre por categoría:", ["Producto", "Actividad", "Subactividad"], horizontal=True)
                     elementos_filtrados = {}
                     for i, obj in enumerate(datos["objetivos"]):
                         oid = obj["id"]; cod_obj = f"{i+1}"
@@ -299,7 +299,7 @@ with st.sidebar:
                                     elementos_filtrados[a["id"]] = {"nombre": f"{cod_act}. {a['nombre']}", "tipo": "act", "padre": p["id"]}
                                 for l, pq in enumerate(a.get("paquetes", [])):
                                     cod_paq = f"{cod_act}.{l+1}"
-                                    if filtro_tipo == "Paquete":
+                                    if filtro_tipo == "Subactividad":
                                         elementos_filtrados[pq["id"]] = {"nombre": f"{cod_paq}. {pq['nombre']}", "tipo": "paq", "padre": a["id"]}
 
                     if not elementos_filtrados:
@@ -337,6 +337,7 @@ with st.sidebar:
                                                         if pq_borrar:
                                                             a["paquetes"].remove(pq_borrar)
                                     guardar_estado("alcance", datos)
+                                    
                                     st.rerun()
     else:
         st.info("💡 Navegue a '🗂️ EDT Gráfica' para gestionar la estructura.")
