@@ -17,7 +17,7 @@ def obtener_datos_contrato():
 
 def texto_si_vacio(valor, pendiente="PENDIENTE"):
     if valor is None:
-        return pendiente
+        return pendienteF
     if isinstance(valor, str):
         return valor.strip() if valor.strip() else pendiente
     return str(valor)
@@ -394,7 +394,7 @@ st.markdown("""
 
 col_t, col_l = st.columns([4, 1], vertical_alignment="center")
 with col_t:
-    st.markdown('<div class="titulo-seccion">📄 Contrato de interventoría armado</div>', unsafe_allow_html=True)
+    st.markdown('<div class="titulo-seccion">📄 Contrato de interventoría</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="subtitulo-gris">Vista de lectura del contrato de interventoría construido automáticamente con la información diligenciada.</div>',
         unsafe_allow_html=True
