@@ -168,7 +168,7 @@ def _cargar_catalogo_precios():
         if not nombre:
             continue
 
-        costo_raw = str(row.get("COSTO DIRECTO", "") or "").strip().replace(".", "").replace(",", ".")
+        costo_raw = str(row.get("COSTO DIRECTO", "") or "").strip().replace(",", ".")
         try:
             costo = float(costo_raw) if costo_raw else 0.0
         except Exception:
