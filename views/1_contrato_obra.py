@@ -433,25 +433,25 @@ with st.expander("9. Garantías", expanded=False):
     if "df_garantias_contrato" not in st.session_state:
         st.session_state["df_garantias_contrato"] = pd.DataFrame(datos["garantias"])
 
-    df_editado = st.data_editor(
-        st.session_state["df_garantias_contrato"],
-        num_rows="dynamic",
-        use_container_width=True,
-        key="editor_garantias"
-    )
-    st.session_state["df_garantias_contrato"] = df_editado.copy()
-    datos["garantias"] = df_editado.fillna("").to_dict(orient="records")
+    with st.form("form_garantias_contrato"):
+        df_editado = st.data_editor(
+            st.session_state["df_garantias_contrato"],
+            num_rows="dynamic",
+            use_container_width=True,
+            key="editor_garantias"
+        )
 
-    datos["plazo_garantias_dias"] = st.text_input(
-        "Plazo en días hábiles para presentar garantías",
-        value=datos["plazo_garantias_dias"],
-        key="plazo_garantias_dias"
-    )
+        plazo_garantias_dias = st.text_input(
+            "Plazo en días hábiles para presentar garantías",
+            value=datos["plazo_garantias_dias"],
+            key="plazo_garantias_dias"
+        )
 
-    if st.button("Guardar sección 9", key="guardar_9"):
-        datos["garantias"] = st.session_state["df_garantias_contrato"].fillna("").to_dict(orient="records")
-        guardar_y_refrescar()
-
+        if st.form_submit_button("Guardar sección 9"):
+            st.session_state["df_garantias_contrato"] = df_editado.copy()
+            datos["garantias"] = df_editado.fillna("").to_dict(orient="records")
+            datos["plazo_garantias_dias"] = plazo_garantias_dias
+            guardar_y_refrescar()
 
 with st.expander("10. Notificaciones", expanded=False):
     st.markdown("**Notificaciones del contratante**")
