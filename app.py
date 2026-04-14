@@ -278,11 +278,6 @@ else:
         st.Page("views/11_factor_multiplicador.py", title="FACTOR MULTIPLICADOR", icon="🧮"),
         st.Page("views/12_estudio_mercado.py", title="12. Estudio de mercado", icon="🛒"),
         st.Page("views/13_flujo_fondos.py", title="13. FLUJO DE FONDOS", icon="📈"),
-        st.Page("views/7_presupuesto_consultoria.py", title="🔵 PRESUPUESTO CONSULTORIA", icon="📘"),
-        st.Page("views/14_APUS_CONSULTORIA.py", title="APUS CONSULTORÍA", icon="🧮"),
-        st.Page("views/15_estudio_mercado_consultoria.py", title="15. Estudio de mercado consultoría", icon="🛒"),
-        st.Page("views/16_flujo_fondos_consultoria.py", title="16. FLUJO DE FONDOS CONSULTORÍA", icon="📈"),
-        st.Page("views/17_analisis_financiero.py", title="17. ANÁLISIS FINANCIERO", icon="💹"),
         st.Page("views/informes.py", title="Informes", icon="📄"),
         st.Page("views/18_informe_anexos.py", title="18. INFORME ANEXOS", icon="🗂️"),
     ]
