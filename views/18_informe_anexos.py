@@ -1784,15 +1784,13 @@ st.divider()
 
 st.markdown(f"**Tipo de proyecto detectado:** {tipo_proyecto}")
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
         "1. APUS obra",
-        "2. APUS consultoría",
-        "3. Estudio de mercado obra",
-        "4. Estudio de mercado consultoría",
-        "5. AIU",
-        "6. Factor multiplicador",
-        "7. Documento combinado",
+        "2. Estudio de mercado obra",
+        "3. AIU",
+        "4. Factor multiplicador",
+        "5. Documento combinado",
     ]
 )
 
@@ -1988,101 +1986,6 @@ with tab1:
                     width="stretch",
                 )
 with tab2:
-    st.subheader("APUS consultoría")
-
-    with st.container(border=True):
-        cfg["incluye_apus_consultoria"] = st.checkbox(
-            "Incluir anexo APUS consultoría",
-            value=bool(cfg.get("incluye_apus_consultoria", True)),
-            key="incluye_apus_consultoria_cfg",
-        )
-
-        cfg["notas_apus_consultoria"] = st.text_area(
-            "Notas del anexo APUS consultoría",
-            value=cfg.get("notas_apus_consultoria", ""),
-            height=120,
-            key="notas_apus_consultoria_cfg",
-        )
-
-    with st.container(border=True):
-        if tipo_proyecto != "Consultoría":
-            st.info("Este proyecto no está marcado como Consultoría. La carga de APUS consultoría no aplica en este caso.")
-        else:
-            registros_consultoria = _apus_consultoria_registros()
-
-            if not registros_consultoria:
-                st.info("No se encontraron APUS consultoría guardados.")
-            else:
-                for registro in registros_consultoria:
-                    st.markdown(f"## {registro['nombre'] or 'GRUPO SIN NOMBRE'}")
-
-                    bloques_personal = [
-                        ("1 Personal profesional y especializado", registro["personal_profesional"]),
-                        ("2 Personal técnico", registro["personal_tecnico"]),
-                        ("3 Otro personal", registro["otro_personal"]),
-                    ]
-
-                    for titulo, lista in bloques_personal:
-                        st.markdown(f"### {titulo}")
-                        df = _df_personal_consultoria(lista)
-                        if not df.empty:
-                            st.dataframe(df, width="stretch", hide_index=True)
-                        else:
-                            st.info(f"Sin registros en {titulo}.")
-
-                    st.markdown("### FACTOR MULTIPLICADOR")
-                    st.markdown(f"**{float(registro['factor_multiplicador_personal'] or 0.0):,.2f}**")
-
-                    for titulo, lista in [("4. BIENES", registro["bienes"]), ("5. SERVICIOS", registro["servicios"])]:
-                        st.markdown(f"### {titulo}")
-                        df = _df_bs_consultoria(lista)
-                        if not df.empty:
-                            st.dataframe(df, width="stretch", hide_index=True)
-                        else:
-                            st.info(f"Sin registros en {titulo}.")
-
-                    resumen_df = pd.DataFrame(registro["resumen_final"] or [])
-                    st.markdown("### RESUMEN FINAL")
-                    if not resumen_df.empty:
-                        st.dataframe(resumen_df, width="stretch", hide_index=True)
-                    else:
-                        st.info("Sin resumen final guardado.")
-
-                    st.markdown(f"## TOTAL APU CONSULTORÍA: {float(registro['valor_total_final'] or 0.0):,.2f}")
-                    st.divider()
-
-                col_c_1, col_c_2 = st.columns(2)
-
-                with col_c_1:
-                    if st.button("📥 Generar Word APUS consultoría", key="btn_docx_apus_consultoria", width="stretch"):
-                        st.session_state["archivo_apus_consultoria_docx"] = _generar_docx_apus_consultoria(registros_consultoria)
-                        st.success("Documento Word de APUS consultoría generado.")
-
-                with col_c_2:
-                    if st.button("📊 Generar Excel APUS consultoría", key="btn_excel_apus_consultoria", width="stretch"):
-                        st.session_state["archivo_apus_consultoria_excel"] = _generar_excel_apus_consultoria(registros_consultoria)
-                        st.success("Archivo Excel de APUS consultoría generado.")
-
-                if "archivo_apus_consultoria_docx" in st.session_state:
-                    st.download_button(
-                        label="⬇️ Descargar Word APUS consultoría",
-                        data=st.session_state["archivo_apus_consultoria_docx"],
-                        file_name="anexo_apus_consultoria.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        key="download_docx_apus_consultoria",
-                        width="stretch",
-                    )
-
-                if "archivo_apus_consultoria_excel" in st.session_state:
-                    st.download_button(
-                        label="⬇️ Descargar Excel APUS consultoría",
-                        data=st.session_state["archivo_apus_consultoria_excel"],
-                        file_name="anexo_apus_consultoria.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key="download_excel_apus_consultoria",
-                        width="stretch",
-                    )
-with tab3:
     st.subheader("Estudio de mercado obra")
 
     with st.container(border=True):
@@ -2153,66 +2056,7 @@ with tab3:
                     width="stretch",
                 )
 
-with tab4:
-    st.subheader("Estudio de mercado consultoría")
-
-    with st.container(border=True):
-        st.markdown("**Vista del estudio de mercado consultoría**")
-
-        if tipo_proyecto != "Consultoría":
-            st.info("Este proyecto no está marcado como Consultoría. Esta pestaña no aplica en este caso.")
-        else:
-            tablas_emc, df_emc = _estudio_mercado_consultoria_datos()
-
-            if not tablas_emc:
-                st.info("No hay información de estudio de mercado consultoría.")
-            else:
-                for titulo in ["SALARIOS", "BIENES", "SERVICIOS"]:
-                    df_grupo = tablas_emc.get(titulo)
-                    if df_grupo is not None and not df_grupo.empty:
-                        st.markdown(f"## {titulo}")
-                        st.dataframe(df_grupo, width="stretch", hide_index=True)
-                        st.divider()
-
-            col_emc_1, col_emc_2 = st.columns(2)
-
-            with col_emc_1:
-                if st.button("📥 Generar Word Estudio de mercado consultoría", key="btn_docx_em_consultoria", width="stretch"):
-                    st.session_state["archivo_em_consultoria_docx"] = _generar_docx_estudio_mercado_consultoria(
-                        tablas_emc,
-                        df_emc,
-                    )
-                    st.success("Documento Word de Estudio de mercado consultoría generado.")
-
-            with col_emc_2:
-                if st.button("📊 Generar Excel Estudio de mercado consultoría", key="btn_excel_em_consultoria", width="stretch"):
-                    st.session_state["archivo_em_consultoria_excel"] = _generar_excel_estudio_mercado_consultoria(
-                         tablas_emc,
-                        df_emc,
-                    )
-                    st.success("Archivo Excel de Estudio de mercado consultoría generado.")
-
-            if "archivo_em_consultoria_docx" in st.session_state:
-                st.download_button(
-                    label="⬇️ Descargar Word Estudio de mercado consultoría",
-                    data=st.session_state["archivo_em_consultoria_docx"],
-                    file_name="anexo_estudio_mercado_consultoria.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    key="download_docx_em_consultoria",
-                    width="stretch",
-                )
-
-            if "archivo_em_consultoria_excel" in st.session_state:
-                st.download_button(
-                    label="⬇️ Descargar Excel Estudio de mercado consultoría",
-                    data=st.session_state["archivo_em_consultoria_excel"],
-                    file_name="anexo_estudio_mercado_consultoria.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key="download_excel_em_consultoria",
-                    width="stretch",
-                )
-
-with tab5:
+with tab3:
     st.subheader("AIU")
 
     with st.container(border=True):
@@ -2309,7 +2153,7 @@ with tab5:
                     width="stretch",
                 )
 
-with tab6:
+with tab4:
     st.subheader("Factor multiplicador")
 
     with st.container(border=True):
@@ -2404,7 +2248,7 @@ with tab6:
                 key="download_excel_factor_multiplicador",
                 width="stretch",
             )
-with tab7:
+with tab5:
     st.subheader("Documento combinado")
 
     with st.container(border=True):
@@ -2414,11 +2258,6 @@ with tab7:
             "Incluir APUS obra",
             value=True,
             key="comb_anexos_apus_obra",
-        )
-        incluir_apus_consultoria = st.checkbox(
-            "Incluir APUS consultoría",
-            value=True,
-            key="comb_anexos_apus_consultoria",
         )
         incluir_em_obra = st.checkbox(
             "Incluir Estudio de mercado obra",
@@ -2447,15 +2286,9 @@ with tab7:
     if incluir_apus_obra:
         modulos.append("apus_obra")
         nombres.append("APUS obra")
-    if incluir_apus_consultoria:
-        modulos.append("apus_consultoria")
-        nombres.append("APUS consultoría")
     if incluir_em_obra:
         modulos.append("em_obra")
         nombres.append("Estudio de mercado obra")
-    if incluir_em_consultoria:
-        modulos.append("em_consultoria")
-        nombres.append("Estudio de mercado consultoría")
     if incluir_aiu:
         modulos.append("aiu")
         nombres.append("AIU")
