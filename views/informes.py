@@ -2221,15 +2221,14 @@ with col_ctrl_2:
 
 st.divider()
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "1. Portada",
         "2. Alcance",
         "3. Cronograma",
         "4. Costos",
         "5. Flujo de fondos obra",
-        "6. Flujo de fondos consultoría",
-        "7. Documento combinado",
+        "6. Documento combinado",
     ]
 )
 
@@ -2651,48 +2650,6 @@ with tab5:
         )
 
 with tab6:
-    st.subheader("Flujo de fondos consultoría")
-    flujo = datos_documento["flujo_fondos_consultoria"]
-
-    with st.container(border=True):
-        st.markdown("**Flujo de fondos calculado**")
-        if not flujo["df_calculado"].empty:
-            st.dataframe(flujo["df_calculado"], width="stretch", hide_index=True)
-        else:
-            st.info("No hay información disponible.")
-
-        st.markdown("**Flujo de fondos**")
-        if not flujo["df_resumen"].empty:
-            st.dataframe(flujo["df_resumen"], width="stretch", hide_index=True)
-        else:
-            st.info("No hay información disponible.")
-
-        st.markdown("**Gráfico**")
-        if flujo["grafico_png"]:
-            st.image(flujo["grafico_png"], width="stretch")
-        else:
-            st.info("No hay gráfico disponible.")
-
-    if st.button("📥 Generar documento de Flujo de fondos consultoría", key="btn_doc_flujo_consultoria", width="stretch"):
-        doc = Document()
-        _agregar_flujo_fondos_consultoria(doc, cfg, datos_documento)
-        buffer = io.BytesIO()
-        doc.save(buffer)
-        buffer.seek(0)
-        st.session_state["archivo_flujo_consultoria"] = buffer
-        st.success("Documento de flujo de fondos consultoría generado.")
-
-    if "archivo_flujo_consultoria" in st.session_state:
-        st.download_button(
-            label="⬇️ Descargar Flujo de fondos consultoría",
-            data=st.session_state["archivo_flujo_consultoria"],
-            file_name="flujo_fondos_consultoria.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            key="download_flujo_consultoria",
-            width="stretch",
-        )
-
-with tab7:
     st.subheader("Documento combinado")
 
     with st.container(border=True):
