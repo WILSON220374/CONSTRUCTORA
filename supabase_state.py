@@ -46,6 +46,13 @@ def _token_expirado_o_por_vencer(access_token: str, margen_segundos: int = 120) 
         return False
 
 
+def _manejar_sesion_expirada():
+    st.session_state["auth_ok"] = False
+    st.session_state["supabase_session_expired"] = True
+    st.warning("Tu sesión expiró. Inicia sesión de nuevo. Los cambios locales no se borran hasta recargar.")
+    return None
+
+
 def _refresh_tokens(supabase):
     """
     Refresca la sesión usando refresh_token en st.session_state.
@@ -53,16 +60,14 @@ def _refresh_tokens(supabase):
     """
     refresh_token = st.session_state.get("refresh_token")
     if not refresh_token:
-        raise RuntimeError("La sesión expiró y no hay refresh_token. Debes iniciar sesión de nuevo.")
+        return _manejar_sesion_expirada()
 
-    # 1) Intento: refresh_session(refresh_token)
     resp = None
     try:
         resp = supabase.auth.refresh_session(refresh_token)
     except Exception:
         pass
 
-    # 2) Intento: refresh_session() (algunas versiones usan refresh interno)
     if resp is None:
         try:
             resp = supabase.auth.refresh_session()
@@ -70,27 +75,27 @@ def _refresh_tokens(supabase):
             resp = None
 
     if resp is None:
-        raise RuntimeError("No se pudo refrescar la sesión. Debes iniciar sesión de nuevo.")
+        return _manejar_sesion_expirada()
 
-    # Extraer session
     session = getattr(resp, "session", None)
     if session is None and isinstance(resp, dict):
         session = resp.get("session")
 
     if session is None:
-        raise RuntimeError("No se pudo refrescar la sesión (respuesta sin session).")
+        return _manejar_sesion_expirada()
 
     new_access = getattr(session, "access_token", None) or (session.get("access_token") if isinstance(session, dict) else None)
     new_refresh = getattr(session, "refresh_token", None) or (session.get("refresh_token") if isinstance(session, dict) else None)
 
     if not new_access:
-        raise RuntimeError("No se obtuvo access_token al refrescar sesión.")
+        return _manejar_sesion_expirada()
 
     st.session_state["access_token"] = new_access
     if new_refresh:
         st.session_state["refresh_token"] = new_refresh
 
     _apply_access_token(supabase, new_access)
+    st.session_state["supabase_session_expired"] = False
     return supabase
 
 
@@ -103,17 +108,21 @@ def get_supabase_client():
 
     access_token = st.session_state.get("access_token")
     if not access_token:
-        raise RuntimeError("No hay access_token en session_state. Debes iniciar sesión.")
+        return None
 
     supabase = _make_client()
 
     if _token_expirado_o_por_vencer(access_token):
         supabase = _refresh_tokens(supabase)
+        if supabase is None:
+            return None
         access_token = st.session_state.get("access_token")
+
+    if not access_token:
+        return None
 
     _apply_access_token(supabase, access_token)
     return supabase
-
 
 def _execute_with_refresh_retry(execute_callable):
     """
@@ -172,10 +181,15 @@ def guardar_estado(suffix: str, payload: dict, merge: bool = False):
 
     def _do():
         supabase = get_supabase_client()
+        if supabase is None:
+            return None
         return supabase.table("app_state").upsert(data, on_conflict="session_key").execute()
 
-    return _execute_with_refresh_retry(_do)
-
+    try:
+        return _execute_with_refresh_retry(_do)
+    except Exception:
+        _manejar_sesion_expirada()
+        return None
 
 def cargar_estado(suffix: str):
     init_session_state()
@@ -188,6 +202,8 @@ def cargar_estado(suffix: str):
 
     def _do():
         supabase = get_supabase_client()
+        if supabase is None:
+            return None
         return (
             supabase.table("app_state")
             .select("payload")
@@ -197,7 +213,15 @@ def cargar_estado(suffix: str):
             .execute()
         )
 
-    resp = _execute_with_refresh_retry(_do)
+    try:
+        resp = _execute_with_refresh_retry(_do)
+    except Exception:
+        _manejar_sesion_expirada()
+        return None
+
+    if resp is None:
+        return None
+
     if resp.data:
         return resp.data[0].get("payload")
     return None
