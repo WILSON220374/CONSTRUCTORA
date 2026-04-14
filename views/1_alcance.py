@@ -287,20 +287,37 @@ with st.sidebar:
                 with st.expander("🗑️ Eliminar Elemento", expanded=False):
                     filtro_tipo = st.radio("Filtre por categoría:", ["Producto", "Actividad", "Subactividad"], horizontal=True)
                     elementos_filtrados = {}
+
                     for i, obj in enumerate(datos["objetivos"]):
-                        oid = obj["id"]; cod_obj = f"{i+1}"
+                        oid = obj["id"]
+                        cod_obj = f"{i+1}"
+
+                        if filtro_tipo == "Producto":
+                            elementos_filtrados[oid] = {
+                                "nombre": f"{cod_obj}. {obj.get('texto', obj.get('nombre', ''))}",
+                                "tipo": "obj",
+                                "padre": None
+                            }
+
                         for j, p in enumerate(datos["edt_data"].get(oid, [])):
                             cod_prod = f"{cod_obj}.{j+1}"
-                            if filtro_tipo == "Producto":
-                                elementos_filtrados[p["id"]] = {"nombre": f"{cod_prod}. {p['nombre']}", "tipo": "prod", "padre": oid}
+
+                            if filtro_tipo == "Actividad":
+                                elementos_filtrados[p["id"]] = {
+                                    "nombre": f"{cod_prod}. {p['nombre']}",
+                                    "tipo": "prod",
+                                    "padre": oid
+                                }
+
                             for k, a in enumerate(p.get("actividades", [])):
                                 cod_act = f"{cod_prod}.{k+1}"
-                                if filtro_tipo == "Actividad":
-                                    elementos_filtrados[a["id"]] = {"nombre": f"{cod_act}. {a['nombre']}", "tipo": "act", "padre": p["id"]}
-                                for l, pq in enumerate(a.get("paquetes", [])):
-                                    cod_paq = f"{cod_act}.{l+1}"
-                                    if filtro_tipo == "Subactividad":
-                                        elementos_filtrados[pq["id"]] = {"nombre": f"{cod_paq}. {pq['nombre']}", "tipo": "paq", "padre": a["id"]}
+
+                                if filtro_tipo == "Subactividad":
+                                    elementos_filtrados[a["id"]] = {
+                                        "nombre": f"{cod_act}. {a['nombre']}",
+                                        "tipo": "act",
+                                        "padre": p["id"]
+                                    }
 
                     if not elementos_filtrados:
                         st.info(f"No hay elementos de la categoría '{filtro_tipo}' para eliminar.")
@@ -316,11 +333,20 @@ with st.sidebar:
                                 if target_del:
                                     tipo = elementos_filtrados[target_del]["tipo"]
                                     padre_id = elementos_filtrados[target_del]["padre"]
-                                    if tipo == "prod":
+
+                                    if tipo == "obj":
+                                        obj_borrar = next((o for o in datos["objetivos"] if o["id"] == target_del), None)
+                                        if obj_borrar:
+                                            datos["objetivos"].remove(obj_borrar)
+                                        if target_del in datos["edt_data"]:
+                                            datos["edt_data"].pop(target_del, None)
+
+                                    elif tipo == "prod":
                                         if padre_id in datos["edt_data"]:
                                             p_borrar = next((p for p in datos["edt_data"][padre_id] if p["id"] == target_del), None)
                                             if p_borrar:
                                                 datos["edt_data"][padre_id].remove(p_borrar)
+
                                     elif tipo == "act":
                                         for obj_list in datos["edt_data"].values():
                                             for p in obj_list:
@@ -328,15 +354,6 @@ with st.sidebar:
                                                     a_borrar = next((a for a in p.get("actividades", []) if a["id"] == target_del), None)
                                                     if a_borrar:
                                                         p["actividades"].remove(a_borrar)
-                                    elif tipo == "paq":
-                                        for obj_list in datos["edt_data"].values():
-                                            for p in obj_list:
-                                                for a in p.get("actividades", []):
-                                                    if a["id"] == padre_id:
-                                                        pq_borrar = next((pq for pq in a.get("paquetes", []) if pq["id"] == target_del), None)
-                                                        if pq_borrar:
-                                                            a["paquetes"].remove(pq_borrar)
-                                    guardar_estado("alcance", datos)
                                     
                                     st.rerun()
     else:
