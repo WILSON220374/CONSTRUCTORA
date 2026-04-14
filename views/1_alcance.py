@@ -342,7 +342,7 @@ with st.sidebar:
                                 dict_act_obj[aid] = f"{cod_act}. {a.get('nombre','')}"
 
                         if not dict_act_obj:
-                            st.info("Cree una subactividad primero dentro de esta actividad.")
+                            st.info("Cree una actividad primero dentro de este producto.")
                         else:
                             target_act_paq = st.selectbox(
                                 "Subactividad Padre:",
