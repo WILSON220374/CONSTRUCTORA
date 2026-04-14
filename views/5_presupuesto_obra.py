@@ -1345,5 +1345,3 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-st.session_state["presupuesto_obra_datos"] = _json_clone(st.session_state["presupuesto_obra_datos"])
