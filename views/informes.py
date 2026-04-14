@@ -147,7 +147,7 @@ def _agregar_header_footer(section, logo_buffer, texto_footer, nombre_proyecto):
     f_run = f_p.add_run(texto_footer)
     f_run.font.size = Pt(8)
 
-def _agregar_portada(doc, cfg, nombre_proyecto, division_dependencia):
+def _agregar_portada(doc, cfg, nombre_proyecto, entidad_contratante):
     logo_entidad = _bytes_a_buffer(cfg.get("logo_entidad_bytes"))
     foto_portada = _bytes_a_buffer(cfg.get("foto_portada_bytes"))
 
@@ -188,7 +188,7 @@ def _agregar_portada(doc, cfg, nombre_proyecto, division_dependencia):
         p_inf.add_run(cfg["portada_nombre_informe"].upper()).bold = True
         p_dep = doc.add_paragraph()
         p_dep.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p_dep.add_run(division_dependencia.upper()).font.size = Pt(14)
+        p_dep.add_run(entidad_contratante.upper()).font.size = Pt(14)
 
     if cfg.get("portada_resposables"):
         p_form = doc.add_paragraph()
@@ -1627,7 +1627,7 @@ def _agregar_costos(doc, cfg, datos):
 
 def _generar_doc_portada(cfg, datos):
     doc = Document()
-    _agregar_portada(doc, cfg, datos["nombre_proyecto"], datos["division_dependencia"])
+    _agregar_portada(doc, cfg, datos["nombre_proyecto"], datos["entidad_contratante"])
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
@@ -1969,7 +1969,7 @@ def _generar_doc_combinado(cfg, datos):
     primera = True
 
     if cfg.get("incluye_portada_combinado", True):
-        _agregar_portada(doc, cfg, datos["nombre_proyecto"], datos["division_dependencia"])
+        _agregar_portada(doc, cfg, datos["nombre_proyecto"], datos["entidad_contratante"])
         primera = False
 
     if cfg.get("incluye_alcance_combinado", True):
@@ -2008,7 +2008,10 @@ nombres_equipo = ", ".join(nombres_lista)
 lugar = alcance.get("lugar_presentacion", "")
 anio = alcance.get("anio_presentacion", "")
 fecha_sugerida = f"{lugar}, {anio}".strip(", ")
-division_dependencia = alcance.get("division_dependencia", "SIN DIVISIÓN DEFINIDA")
+
+contrato_obra = cargar_estado("contrato_obra") or {}
+entidad_contratante = _safe_str(contrato_obra.get("nombre_entidad", "SIN ENTIDAD DEFINIDA"))
+
 nombre_proyecto = alcance.get("nombre_proyecto", "SIN NOMBRE DEFINIDO")
 descripcion_proyecto = alcance.get("descripcion_proyecto", "")
 descripcion_edt = alcance.get("descripcion_edt", "")
@@ -2161,7 +2164,7 @@ flujo_fondos_consultoria = _flujo_fondos_consultoria_datos()
 
 datos_documento = {
     "nombre_proyecto": nombre_proyecto,
-    "division_dependencia": division_dependencia,
+    "entidad_contratante": entidad_contratante,
     "descripcion_proyecto": descripcion_proyecto,
     "descripcion_edt": descripcion_edt,
     "flat_table": flat_table,
@@ -2234,7 +2237,7 @@ with tab1:
     with st.container(border=True):
         st.markdown("**Configuración de portada**")
         st.text_input("Nombre del proyecto", value=nombre_proyecto, disabled=True)
-        st.text_input("División / Dependencia", value=division_dependencia, disabled=True)
+        st.text_input("Entidad contratante", value=entidad_contratante, disabled=True)
 
         cfg["portada_nombre_informe"] = st.text_input(
             "Nombre del informe",
@@ -2298,8 +2301,8 @@ with tab1:
                 unsafe_allow_html=True,
             )
 
-        if division_dependencia:
-            st.markdown(f"<p style='text-align:center;'>{division_dependencia.upper()}</p>", unsafe_allow_html=True)
+        if entidad_contratante:
+            st.markdown(f"<p style='text-align:center;'>{entidad_contratante.upper()}</p>", unsafe_allow_html=True)
 
         if cfg.get("portada_Responsables"):
             autores_html = "<br>".join([a.strip() for a in cfg["portada_Responsables"].split(",") if a.strip()])
