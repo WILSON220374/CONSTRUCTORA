@@ -123,7 +123,7 @@ st.markdown("""
 
 col_t, col_l = st.columns([4, 1], vertical_alignment="center")
 with col_t:
-    st.markdown('<div class="titulo-seccion">📄 Contrato de interventoría - captura</div>', unsafe_allow_html=True)
+    st.markdown('<div class="titulo-seccion">📄 Contrato de interventoría</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="subtitulo-gris">Diligencie los datos base para construir automáticamente el contrato de interventoría.</div>',
         unsafe_allow_html=True
