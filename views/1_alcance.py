@@ -743,11 +743,11 @@ elif st.session_state["seccion_activa"] == "📋 Especificaciones Técnicas":
                         
                         k_mp = f"mp_{seleccion_id}"
                         v_mp = st.session_state.get(k_mp, specs_data.get("medicion_pago", ""))
-                        n_med = col_e2.text_area("📏 Medición y Forma de Pago", value=specs_data.get("medicion_pago", ""), height=calcular_altura(v_mp, 120), key=k_mp)
+                        n_med = col_e2.text_area("Personal", value=specs_data.get("medicion_pago", ""), height=calcular_altura(v_mp, 120), key=k_mp)
                         
                         k_nc = f"nc_{seleccion_id}"
                         v_nc = st.session_state.get(k_nc, specs_data.get("no_conformidad", ""))
-                        n_noconf = st.text_area("⚠️ No Conformidad", value=specs_data.get("no_conformidad", ""), height=calcular_altura(v_nc, 100), key=k_nc)
+                        n_noconf = st.text_area("📏 Medición , Forma de Pago y ⚠️ No Conformidad", value=specs_data.get("no_conformidad", ""), height=calcular_altura(v_nc, 100), key=k_nc)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
