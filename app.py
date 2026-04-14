@@ -236,7 +236,6 @@ def render_sidebar():
             "alcance_datos",
             "informes_config",
             "cronograma_datos",
-            "localizacion_datos",
             "presupuesto_obra_datos",
             "todo_loaded",
         ]:
