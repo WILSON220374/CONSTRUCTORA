@@ -67,10 +67,10 @@ def inicializar_contrato():
         "rep_contratista_ciudad_expedicion": "",
 
         "modalidad_seleccion": "Licitación pública",
+        "proceso_secop": "",
 
         "objeto_general": "",
         "objeto_especifico": "",
-
         "valor_total_numeros": "",
         "valor_total_letras": "",
         "periodicidad_pago": "",
