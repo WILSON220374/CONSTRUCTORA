@@ -383,9 +383,15 @@ def _cargar_directos() -> pd.DataFrame:
 
 def _cargar_indirectos(max_periodo_directos: int) -> pd.DataFrame:
     config = presupuesto_obra_datos.get("configuracion") or {}
-    indirectos = config.get("otros_costos_indirectos", []) or []
+    indirectos = (
+        config.get("otros_costos_indirectos", [])
+        or alcance_datos.get("otros_costos_indirectos_proyecto", [])
+        or []
+    )
     registros = costos_indirectos_datos.get("registros_por_oci") or {}
 
+
+    
     rows: List[dict] = []
     for item in indirectos:
         oci_id = _safe_str(item.get("id", ""))
