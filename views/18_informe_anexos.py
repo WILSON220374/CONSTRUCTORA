@@ -1696,11 +1696,8 @@ def _generar_excel_factor_multiplicador(fm_data) -> io.BytesIO:
 def _append_doc_content(doc_destino: Document, doc_fuente_buffer: io.BytesIO):
     from copy import deepcopy
 
-    doc_fuente_buffer.seek(0)
+    for modulo in modulos:
     doc_fuente = Document(doc_fuente_buffer)
-
-    if len(doc_destino.paragraphs) > 0 and any(p.text.strip() for p in doc_destino.paragraphs):
-        doc_destino.add_page_break()
 
     for element in doc_fuente.element.body:
         if str(getattr(element, "tag", "")).endswith("sectPr"):
@@ -1718,36 +1715,37 @@ def _generar_docx_anexos_combinado(modulos: list[str]) -> io.BytesIO:
 
     doc.add_paragraph()
 
-    for modulo in modulos:
+    for idx, modulo in enumerate(modulos):
+        buffer = None
+
         if modulo == "apus_obra":
             codigos_usados, df_apus_filtrados = _apus_filtrados_obra()
             apus_generados_dict = _apus_generados_obra_filtrados()
             buffer = _generar_docx_apus_obra(codigos_usados, df_apus_filtrados, apus_generados_dict)
-            _append_doc_content(doc, buffer)
 
         elif modulo == "apus_consultoria":
             registros_consultoria = _apus_consultoria_registros()
             buffer = _generar_docx_apus_consultoria(registros_consultoria)
-            _append_doc_content(doc, buffer)
 
         elif modulo == "em_obra":
             _, _, _, tablas_visuales = _estudio_mercado_obra_datos()
             buffer = _generar_docx_estudio_mercado_obra(tablas_visuales)
-            _append_doc_content(doc, buffer)
 
         elif modulo == "em_consultoria":
             tablas_emc, df_emc = _estudio_mercado_consultoria_datos()
             buffer = _generar_docx_estudio_mercado_consultoria(tablas_emc, df_emc)
-            _append_doc_content(doc, buffer)
 
         elif modulo == "aiu":
             aiu_data = _aiu_datos()
             buffer = _generar_docx_aiu(aiu_data)
-            _append_doc_content(doc, buffer)
 
         elif modulo == "factor_multiplicador":
             fm_data = _factor_multiplicador_datos()
             buffer = _generar_docx_factor_multiplicador(fm_data)
+
+        if buffer is not None:
+            if idx > 0:
+                doc.add_page_break()
             _append_doc_content(doc, buffer)
 
     output = io.BytesIO()
