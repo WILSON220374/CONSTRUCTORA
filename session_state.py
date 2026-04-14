@@ -10,7 +10,7 @@ DEFAULTS = {
     "group_id": None,
 
     # Proyecto
-    "project_code": "tecnic",
+    "project_code": "constructora",
 }
 
 def init_session_state():
