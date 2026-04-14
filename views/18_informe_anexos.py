@@ -1699,10 +1699,36 @@ def _append_doc_content(doc_destino: Document, doc_fuente_buffer: io.BytesIO):
     doc_fuente_buffer.seek(0)
     doc_fuente = Document(doc_fuente_buffer)
 
+    body_dest = doc_destino.element.body
+    sectpr_dest = None
+    for child in body_dest:
+        if str(getattr(child, "tag", "")).endswith("sectPr"):
+            sectpr_dest = child
+            break
+
+    started = False
+
     for element in doc_fuente.element.body:
-        if str(getattr(element, "tag", "")).endswith("sectPr"):
+        tag = str(getattr(element, "tag", ""))
+
+        if tag.endswith("sectPr"):
             continue
-        doc_destino.element.body.append(deepcopy(element))
+
+        if not started and tag.endswith("p"):
+            texto = "".join(t.text for t in element.iter() if str(getattr(t, "tag", "")).endswith("t")).strip()
+            tiene_break = any(str(getattr(t, "tag", "")).endswith("br") for t in element.iter())
+            if not texto and tiene_break:
+                continue
+            if not texto:
+                continue
+
+        started = True
+        nuevo = deepcopy(element)
+
+        if sectpr_dest is not None:
+            body_dest.insert(body_dest.index(sectpr_dest), nuevo)
+        else:
+            body_dest.append(nuevo)
         
 def _generar_docx_anexos_combinado(modulos: list[str]) -> io.BytesIO:
     doc = Document()
