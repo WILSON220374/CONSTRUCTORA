@@ -1696,14 +1696,14 @@ def _generar_excel_factor_multiplicador(fm_data) -> io.BytesIO:
 def _append_doc_content(doc_destino: Document, doc_fuente_buffer: io.BytesIO):
     from copy import deepcopy
 
-    for modulo in modulos:
+    doc_fuente_buffer.seek(0)
     doc_fuente = Document(doc_fuente_buffer)
 
     for element in doc_fuente.element.body:
         if str(getattr(element, "tag", "")).endswith("sectPr"):
             continue
         doc_destino.element.body.append(deepcopy(element))
-
+        
 def _generar_docx_anexos_combinado(modulos: list[str]) -> io.BytesIO:
     doc = Document()
 
