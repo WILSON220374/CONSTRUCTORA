@@ -1703,8 +1703,9 @@ def _append_doc_content(doc_destino: Document, doc_fuente_buffer: io.BytesIO):
         doc_destino.add_page_break()
 
     for element in doc_fuente.element.body:
+        if str(getattr(element, "tag", "")).endswith("sectPr"):
+            continue
         doc_destino.element.body.append(deepcopy(element))
-
 
 def _generar_docx_anexos_combinado(modulos: list[str]) -> io.BytesIO:
     doc = Document()
