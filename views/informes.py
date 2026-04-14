@@ -82,7 +82,7 @@ def _normalizar_cfg(data: dict, nombres_equipo: str, fecha_sugerida: str) -> dic
 
     return {
         "portada_nombre_informe": _safe_str(data.get("portada_nombre_informe")),
-        "portada_responsables": _safe_str(data.get("portada_responsables")) or nombres_equipo,
+        "portada_Responsables": _safe_str(data.get("portada_Responsables")) or nombres_equipo,
         "portada_fecha_manual": _safe_str(data.get("portada_fecha_manual")) or fecha_sugerida,
         "logo_entidad_bytes": data.get("logo_entidad_bytes"),
         "foto_portada_bytes": data.get("foto_portada_bytes"),
@@ -193,7 +193,7 @@ def _agregar_portada(doc, cfg, nombre_proyecto, division_dependencia):
     if cfg.get("portada_resposables"):
         p_form = doc.add_paragraph()
         p_form.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for autor in [a.strip() for a in cfg["portada_responsables"].split(",") if a.strip()]:
+        for autor in [a.strip() for a in cfg["portada_Responsables"].split(",") if a.strip()]:
             p_form.add_run(autor + "\n").font.size = Pt(12)
 
     if cfg.get("portada_fecha_manual"):
@@ -2241,10 +2241,10 @@ with tab1:
             value=cfg.get("portada_nombre_informe", ""),
             key="portada_nombre_informe_cfg",
         )
-        cfg["portada_responsables"] = st.text_input(
-            "responsables",
-            value=cfg.get("portada_responsables", nombres_equipo),
-            key="portada_responsables_cfg",
+        cfg["portada_Responsables"] = st.text_input(
+            "Responsables",
+            value=cfg.get("portada_Responsables", nombres_equipo),
+            key="portada_Responsables_cfg",
         )
         cfg["portada_fecha_manual"] = st.text_input(
             "Fecha",
@@ -2301,8 +2301,8 @@ with tab1:
         if division_dependencia:
             st.markdown(f"<p style='text-align:center;'>{division_dependencia.upper()}</p>", unsafe_allow_html=True)
 
-        if cfg.get("portada_responsables"):
-            autores_html = "<br>".join([a.strip() for a in cfg["portada_responsables"].split(",") if a.strip()])
+        if cfg.get("portada_Responsables"):
+            autores_html = "<br>".join([a.strip() for a in cfg["portada_Responsables"].split(",") if a.strip()])
             st.markdown(f"<p style='text-align:center;'>{autores_html}</p>", unsafe_allow_html=True)
 
         if cfg.get("portada_fecha_manual"):
