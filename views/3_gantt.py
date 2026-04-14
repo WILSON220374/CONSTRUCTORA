@@ -706,7 +706,7 @@ else:
     row_h = 28
     left_w = 680
     px_per_unit = int(zoom)
-    gantt_w = max(900, (max_x + 1) * px_per_unit + 200)
+    gantt_w = max(900, (max_x + 1) * px_per_unit)
     
     # Etiquetas dinámicas para que NO se superpongan
     esc_u = str(escala).upper().strip()
