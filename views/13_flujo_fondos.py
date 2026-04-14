@@ -400,8 +400,6 @@ def _cargar_indirectos(max_periodo_directos: int) -> pd.DataFrame:
         nombre = _safe_str(item.get("nombre", "Costo indirecto"))
         reg = registros.get(oci_id, {}) or {}
         valor_base = _safe_float(reg.get("valor_total_final", item.get("valor", 0.0)), 0.0)
-        if valor_base <= 0:
-            continue
 
         rows.append(
             {
