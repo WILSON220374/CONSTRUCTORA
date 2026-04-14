@@ -2264,11 +2264,6 @@ with tab5:
             value=True,
             key="comb_anexos_em_obra",
         )
-        incluir_em_consultoria = st.checkbox(
-            "Incluir Estudio de mercado consultoría",
-            value=True,
-            key="comb_anexos_em_consultoria",
-        )
         incluir_aiu = st.checkbox(
             "Incluir AIU",
             value=True,
