@@ -82,7 +82,7 @@ def _normalizar_cfg(data: dict, nombres_equipo: str, fecha_sugerida: str) -> dic
 
     return {
         "portada_nombre_informe": _safe_str(data.get("portada_nombre_informe")),
-        "portada_formuladores": _safe_str(data.get("portada_formuladores")) or nombres_equipo,
+        "portada_responsables": _safe_str(data.get("portada_responsables")) or nombres_equipo,
         "portada_fecha_manual": _safe_str(data.get("portada_fecha_manual")) or fecha_sugerida,
         "logo_entidad_bytes": data.get("logo_entidad_bytes"),
         "foto_portada_bytes": data.get("foto_portada_bytes"),
