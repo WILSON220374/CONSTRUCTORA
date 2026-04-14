@@ -185,8 +185,6 @@ def render_sidebar():
                 st.session_state["informes_config"] = todo.get("informes_config", {})
             if "cronograma_datos" not in st.session_state and isinstance(todo.get("cronograma_datos"), dict):
                 st.session_state["cronograma_datos"] = todo.get("cronograma_datos", {})
-            if "localizacion_datos" not in st.session_state and isinstance(todo.get("localizacion_datos"), dict):
-                st.session_state["localizacion_datos"] = todo.get("localizacion_datos", {})
             if "presupuesto_obra_datos" not in st.session_state and isinstance(todo.get("presupuesto_obra_datos"), dict):
                 st.session_state["presupuesto_obra_datos"] = todo.get("presupuesto_obra_datos", {})
         except Exception:
@@ -219,7 +217,6 @@ def render_sidebar():
                 "alcance_datos": st.session_state.get("alcance_datos", {}),
                 "informes_config": st.session_state.get("informes_config", {}),
                 "cronograma_datos": st.session_state.get("cronograma_datos", {}),
-                "localizacion_datos": st.session_state.get("localizacion_datos", {}),
                 "presupuesto_obra_datos": st.session_state.get("presupuesto_obra_datos", {}),
             }
             guardar_estado("todo", payload_todo)
@@ -270,7 +267,6 @@ else:
         st.Page("views/2_ver_contrato.py", title="2. Ver contrato", icon="📘"),
         st.Page("views/3_contrato_interventoria.py", title="3. Contrato de interventoría", icon="📑"),
         st.Page("views/4_ver_contrato_interventoria.py", title="4. Ver contrato interventoría", icon="📘"),
-        st.Page("views/1_alcance.py", title="1. Alcance", icon="🎯"),
         st.Page("views/localizacion.py", title="Localización", icon="📍"),
         st.Page("views/2_cronograma.py", title="⭐ 2. CRONOGRAMA", icon="📅"),
         st.Page("views/3_gantt.py", title="3. Diagrama de Gantt", icon="📊"),
