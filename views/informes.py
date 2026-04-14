@@ -1988,10 +1988,6 @@ def _generar_doc_combinado(cfg, datos):
         _agregar_flujo_fondos_obra(doc, cfg, datos)
         primera = False
 
-    if cfg.get("incluye_flujo_consultoria_combinado"):
-        _agregar_flujo_fondos_consultoria(doc, cfg, datos)
-        primera = False
-
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
@@ -2679,11 +2675,6 @@ with tab6:
             value=bool(cfg.get("incluye_flujo_obra_combinado", False)),
             key="incluye_flujo_obra_combinado_cfg",
         )
-        cfg["incluye_flujo_consultoria_combinado"] = st.checkbox(
-            "Incluir flujo de fondos consultoría",
-            value=bool(cfg.get("incluye_flujo_consultoria_combinado", False)),
-            key="incluye_flujo_consultoria_combinado_cfg",
-        )
 
     with st.container(border=True):
         st.markdown("**Resumen del documento combinado**")
@@ -2698,8 +2689,6 @@ with tab6:
             seleccionados.append("Costos")
         if cfg.get("incluye_flujo_obra_combinado"):
             seleccionados.append("Flujo de fondos obra")
-        if cfg.get("incluye_flujo_consultoria_combinado"):
-            seleccionados.append("Flujo de fondos consultoría")
 
         st.markdown("Módulos seleccionados: " + (", ".join(seleccionados) if seleccionados else "Ninguno"))
 
