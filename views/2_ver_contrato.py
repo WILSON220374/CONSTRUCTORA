@@ -436,7 +436,7 @@ st.markdown("""
 
 col_t, col_l = st.columns([4, 1], vertical_alignment="center")
 with col_t:
-    st.markdown('<div class="titulo-seccion">📄 CONTRARO</div>', unsafe_allow_html=True)
+    st.markdown('<div class="titulo-seccion">📄 CONTRATO DE OBRA</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="subtitulo-gris"> </div>',
         unsafe_allow_html=True
