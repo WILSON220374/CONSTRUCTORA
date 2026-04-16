@@ -57,7 +57,6 @@ def render_login():
             return f"bgrupo{int(partes[1]):02d}@constructor.local"
 
         st.divider()
-dame 
         # Botón INGRESAR (verde oscuro)
         st.markdown(
             """
