@@ -360,6 +360,7 @@ def _cargar_directos() -> pd.DataFrame:
         descripcion = _safe_str(rec.get("DESCRIPCIÓN", rec.get("DESCRIPCION", "")))
         item = _safe_str(rec.get("ITEM", ""))
         valor_base = _safe_float(rec.get("VALOR BASE", 0.0), 0.0)
+        cantidad_total = _safe_float(rec.get("CANT", rec.get("CANTIDAD", 0.0)), 0.0)
 
         if valor_base <= 0 or not descripcion:
             continue
@@ -371,6 +372,7 @@ def _cargar_directos() -> pd.DataFrame:
                 "ITEM": item,
                 "TIPO": "DIRECTO",
                 "DESCRIPCIÓN": descripcion,
+                "CANTIDAD TOTAL": round(cantidad_total, 4),
                 "VALOR BASE": round(valor_base, 2),
                 "AIU %": round(aiu_pct, 2),
                 "VALOR CON AIU": round(valor_base * (1 + aiu_pct / 100.0), 2),
@@ -817,6 +819,42 @@ else:
 
 if not invalidas.empty:
     st.warning("Los periodos no activos se fuerzan a 0. La suma por actividad debe ser 100%.")
+
+st.subheader("Programa de obra")
+
+df_obra = df_pct[["ITEM", "TIPO", "DESCRIPCIÓN"]].copy()
+
+cantidades_base = {}
+for _, row in base_df.iterrows():
+    cantidades_base[_safe_str(row.get("ROW_ID", ""))] = _safe_float(row.get("CANTIDAD TOTAL", 0.0), 0.0)
+
+df_obra["CANTIDAD TOTAL"] = df_pct["ROW_ID"].apply(lambda rid: round(cantidades_base.get(_safe_str(rid), 0.0), 4))
+
+for periodo in periodos:
+    df_obra[periodo] = (
+        df_obra["CANTIDAD TOTAL"] * df_pct[f"{periodo} %"].apply(lambda x: _safe_float(x, 0.0) / 100.0)
+    ).round(4)
+
+column_order_obra = ["ITEM", "TIPO", "DESCRIPCIÓN", "CANTIDAD TOTAL"] + periodos
+column_config_obra = {
+    "ITEM": st.column_config.TextColumn("ITEM", disabled=True),
+    "TIPO": st.column_config.TextColumn("TIPO", disabled=True),
+    "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN", disabled=True),
+    "CANTIDAD TOTAL": st.column_config.NumberColumn("CANTIDAD TOTAL", format="%.4f", disabled=True),
+}
+for periodo in periodos:
+    column_config_obra[periodo] = st.column_config.NumberColumn(periodo, format="%.4f", disabled=True)
+
+st.data_editor(
+    df_obra,
+    width="stretch",
+    hide_index=True,
+    num_rows="fixed",
+    key="flujo_fondos_programa_obra",
+    column_order=column_order_obra,
+    column_config=column_config_obra,
+    disabled=list(df_obra.columns),
+)
 
 st.subheader("Programa de iversiones")
 df_val = _tabla_valores(df_pct, periodos)
