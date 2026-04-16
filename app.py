@@ -48,13 +48,14 @@ def render_login():
         password = st.text_input("Contraseña", type="password")
 
         def grupo_to_email(grupo_label: str) -> str:
-            partes = grupo_label.split()
-
-            if partes[0] == "Grupo":
-                return f"grupo{int(partes[1]):02d}@tecnic.local"
-            if partes[0] == "WGrupo":
-                return f"wgrupo{int(partes[1]):02d}@tecnic.local"
-            return f"bgrupo{int(partes[1]):02d}@tecnic.local"
+            partes = grupo_label.strip().lower().split()
+            if len(partes) != 2:
+                return ""
+            if partes[0] == "grupo":
+                return f"grupo{int(partes[1]):02d}@constructor.local"
+            if partes[0] == "wgrupo":
+                return f"wgrupo{int(partes[1]):02d}@constructor.local"
+            return f"bgrupo{int(partes[1]):02d}@constructor.local"
 
         st.divider()
 
