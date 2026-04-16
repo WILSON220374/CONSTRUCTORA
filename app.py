@@ -37,11 +37,10 @@ def render_login():
     with col_form:
         st.subheader("Acceso por grupo")
 
-        grupo = st.selectbox(
+       grupo = st.selectbox(
             "Grupo",
-            options=[f"Grupo {i:02d}" for i in range(1, 11)]
-            + [f"WGrupo {i}" for i in range(1, 8)]
-            + [f"BGrupo {i}" for i in range(1, 8)],
+            options=[f"Grupo {i:02d}" for i in range(1, 6)]
+            + [f"WGrupo {i:02d}" for i in range(1, 9)],
             index=0,
         )
 
@@ -58,7 +57,7 @@ def render_login():
             return f"bgrupo{int(partes[1]):02d}@constructor.local"
 
         st.divider()
-
+dame 
         # Botón INGRESAR (verde oscuro)
         st.markdown(
             """
