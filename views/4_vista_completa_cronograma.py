@@ -700,14 +700,13 @@ else:
       .proj-wrap, .left-pane, .right-pane, .header, .row, .cell, .gantt-head, .gantt-body{
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
         font-size: 12px;
-      }
+      }      
       .header{
-        display:grid;
-        grid-template-columns: 60px 830px 60px 50px 50px 130px;
+        display:flex;
         align-items:center;
         height:34px;
         box-sizing:border-box;
-        background:#0B3D2E;
+        background:#7B1E3A;
         color:#fff;
         font-weight:800;
         font-size:12px;
@@ -756,7 +755,7 @@ else:
         margin-bottom:10px;
       }
       .capture-btn{
-        background:#0B3D2E;
+        background:#7B1E3A;
         color:#fff;
         border:none;
         border-radius:8px;
@@ -805,8 +804,8 @@ else:
         border-radius:6px;
         z-index:3;
       }
-      .taskbar{ background:rgba(11,61,46,0.75); }
-      .parentbar{ background:rgba(148,163,184,0.75); }
+      .taskbar{ background:rgba(123,30,58,0.82); }
+      .parentbar{ background:rgba(166,77,101,0.72); }
 
       .today{
         position:absolute;
