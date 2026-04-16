@@ -818,7 +818,7 @@ else:
 if not invalidas.empty:
     st.warning("Los periodos no activos se fuerzan a 0. La suma por actividad debe ser 100%.")
 
-st.subheader("Flujo de fondos calculado")
+st.subheader("Programa de iversiones")
 df_val = _tabla_valores(df_pct, periodos)
 column_order_val = ["ITEM", "TIPO", "DESCRIPCIÓN", "VALOR CON AIU"] + [f"{p} $" for p in periodos] + ["TOTAL PROGRAMADO"]
 column_config_val = {
