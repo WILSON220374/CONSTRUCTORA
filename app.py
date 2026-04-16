@@ -145,26 +145,26 @@ def render_sidebar():
         unsafe_allow_html=True
     )
 
-    # CSS: botones sidebar verdes
+    # CSS: botones sidebar negros
     st.sidebar.markdown(
         """
         <style>
         section[data-testid="stSidebar"] div.stButton > button {
-            background-color: #0B3D2E !important;
+            background-color: #000000 !important;
             color: white !important;
-            border: 1px solid #145A32 !important;
+            border: 1px solid #222222 !important;
             border-radius: 10px !important;
             font-weight: 700 !important;
             padding: 0.65rem 1rem !important;
-            box-shadow: 0 0 12px rgba(0, 230, 118, 0.25) !important;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.25) !important;
         }
         section[data-testid="stSidebar"] div.stButton > button:hover {
-            background-color: #145A32 !important;
-            border-color: #00FF7F !important;
-            box-shadow: 0 0 16px rgba(0, 255, 127, 0.35) !important;
+            background-color: #1a1a1a !important;
+            border-color: #444444 !important;
+            box-shadow: 0 0 16px rgba(0, 0, 0, 0.35) !important;
         }
         section[data-testid="stSidebar"] div.stButton > button:active {
-            background-color: #06281E !important;
+            background-color: #000000 !important;
         }
         </style>
         """,
