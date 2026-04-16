@@ -673,6 +673,7 @@ for grupo in grupos_calculados:
                 "node_id": str(fila.get("node_id", "") or "").strip(),
                 "ITEM": str(fila.get("ITEM", "") or "").strip(),
                 "DESCRIPCIÓN": str(fila.get("DESCRIPCIÓN", "") or "").strip(),
+                "CANT": float(_safe_float(fila.get("CANT", 0.0), 0.0)),
                 "VALOR BASE": valor_base,
             }
         )
