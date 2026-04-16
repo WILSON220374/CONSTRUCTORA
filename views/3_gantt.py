@@ -1034,8 +1034,8 @@ else:
         border-radius:6px;
         z-index:3;
       }
-      .taskbar{ background:rgba(11,61,46,0.75); }
-      .parentbar{ background:rgba(148,163,184,0.75); }
+      .taskbar{ background:rgba(123,30,58,0.82); }
+      .parentbar{ background:rgba(166,77,101,0.72); }
 
       .today{ position:absolute; top:0; bottom:0; width:2px; background:#ef4444; z-index:5; }
       .todaylabel{ position:absolute; top:6px; font-size:11px; font-weight:800; color:#ef4444; z-index:6; }
