@@ -37,7 +37,7 @@ def render_login():
     with col_form:
         st.subheader("Acceso por grupo")
 
-       grupo = st.selectbox(
+        grupo = st.selectbox(
             "Grupo",
             options=[f"Grupo {i:02d}" for i in range(1, 6)]
             + [f"WGrupo {i:02d}" for i in range(1, 9)],
