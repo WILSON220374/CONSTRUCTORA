@@ -358,6 +358,9 @@ def _cargar_directos() -> pd.DataFrame:
     cantidades_por_node = {}
 
     for it in items_presupuesto:
+        if not isinstance(it, dict):
+            continue
+
         item_key = _safe_str(it.get("ITEM", ""))
         node_key = _safe_str(it.get("node_id", ""))
         cantidad = _safe_float(
