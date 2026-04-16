@@ -349,40 +349,6 @@ def _get_aiu_pct_global() -> float:
     return _safe_float(config.get("aiu_pct_global", 0.0), 0.0)
 
 
-
-def _cargar_directos() -> pd.DataFrame:
-    aiu_pct = _get_aiu_pct_global()
-    directos_guardados = presupuesto_obra_datos.get("flujo_fondos_directos", []) or []
-
-    rows: List[dict] = []
-    for rec in directos_guardados:
-        node_id = _safe_str(rec.get("node_id", ""))
-        descripcion = _safe_str(rec.get("DESCRIPCIÓN", rec.get("DESCRIPCION", "")))
-        item = _safe_str(rec.get("ITEM", ""))
-        valor_base = _safe_float(rec.get("VALOR BASE", 0.0), 0.0)
-        cantidad_total = _safe_float(rec.get("CANT", rec.get("CANTIDAD", 0.0)), 0.0)
-
-        if valor_base <= 0 or not descripcion:
-            continue
-
-        rows.append(
-            {
-                "ROW_ID": f"DIR|{node_id or item or descripcion}",
-                "NODE_ID": node_id,
-                "ITEM": item,
-                "TIPO": "DIRECTO",
-                "DESCRIPCIÓN": descripcion,
-                "CANTIDAD TOTAL": round(cantidad_total, 4),
-                "VALOR BASE": round(valor_base, 2),
-                "AIU %": round(aiu_pct, 2),
-                "VALOR CON AIU": round(valor_base * (1 + aiu_pct / 100.0), 2),
-            }
-        )
-
-    return pd.DataFrame(rows)
-
-
-
 def _cargar_directos() -> pd.DataFrame:
     aiu_pct = _get_aiu_pct_global()
     directos_guardados = presupuesto_obra_datos.get("flujo_fondos_directos", []) or []
@@ -442,6 +408,81 @@ def _cargar_directos() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _cargar_indirectos(max_periodo_directos: int) -> pd.DataFrame:
+    config = presupuesto_obra_datos.get("configuracion") or {}
+    indirectos = (
+        config.get("otros_costos_indirectos", [])
+        or alcance_datos.get("otros_costos_indirectos_proyecto", [])
+        or []
+    )
+    registros = costos_indirectos_datos.get("registros_por_oci") or {}
+
+    rows: List[dict] = []
+    for item in indirectos:
+        oci_id = _safe_str(item.get("id", ""))
+        if not oci_id:
+            continue
+        nombre = _safe_str(item.get("nombre", "Costo indirecto"))
+        reg = registros.get(oci_id, {}) or {}
+        valor_base = _safe_float(reg.get("valor_total_final", item.get("valor", 0.0)), 0.0)
+
+        rows.append(
+            {
+                "ROW_ID": f"OCI|{oci_id}",
+                "NODE_ID": oci_id,
+                "ITEM": "",
+                "TIPO": "INDIRECTO",
+                "DESCRIPCIÓN": nombre,
+                "CANTIDAD TOTAL": None,
+                "VALOR BASE": round(valor_base, 2),
+                "AIU %": 0.0,
+                "VALOR CON AIU": round(valor_base, 2),
+                "MAX_PERIODO": max_periodo_directos,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _max_periodo_directos() -> int:
+    activos_directos = _periodos_activos_directos()
+    max_periodo = 0
+    for periodos in activos_directos.values():
+        if periodos:
+            max_periodo = max(max_periodo, max(periodos))
+    return max(max_periodo, 1)
+
+
+def _cargar_base_actividades() -> pd.DataFrame:
+    max_periodo = _max_periodo_directos()
+    directos = _cargar_directos()
+    indirectos = _cargar_indirectos(max_periodo)
+    frames = [df for df in [directos, indirectos] if not df.empty]
+    if not frames:
+        return pd.DataFrame(columns=["ROW_ID", "NODE_ID", "ITEM", "TIPO", "DESCRIPCIÓN", "CANTIDAD TOTAL", "VALOR BASE", "AIU %", "VALOR CON AIU"])
+
+    base = pd.concat(frames, ignore_index=True).reset_index(drop=True)
+    base["_orden_item"] = base["ITEM"].apply(_key_codigo_natural)
+    base["_orden_tipo"] = base["TIPO"].apply(lambda x: 0 if _safe_str(x) == "DIRECTO" else 1)
+    base = base.sort_values(by=["_orden_tipo", "_orden_item", "DESCRIPCIÓN"], ascending=[True, True, True]).reset_index(drop=True)
+    return base.drop(columns=["_orden_item", "_orden_tipo"], errors="ignore")
+
+
+def _periodos_cronograma() -> List[str]:
+    max_periodo = _max_periodo_directos()
+    return [f"Periodo {i}" for i in range(1, max_periodo + 1)]
+
+
+def _mapa_periodos_activos(base_df: pd.DataFrame, periodos: List[str]) -> Dict[str, Set[int]]:
+    directos = _periodos_activos_directos()
+    max_p = len(periodos)
+    out: Dict[str, Set[int]] = {}
+    for _, row in base_df.iterrows():
+        row_id = _safe_str(row["ROW_ID"])
+        if _safe_str(row["TIPO"]) == "DIRECTO":
+            out[row_id] = set(directos.get(_safe_str(row["NODE_ID"]), set()))
+        else:
+            out[row_id] = set(range(1, max_p + 1))
+    return out
 # ==========================================================
 # Programación y cálculos
 # ==========================================================
