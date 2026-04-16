@@ -115,14 +115,16 @@ if "modo_vista_specs" not in st.session_state:
 # --- 3. DISEÑO CSS (TECNIC) ---
 st.markdown("""
     <style>
-    .titulo-seccion { font-size: 32px !important; font-weight: 800 !important; color: #145A32; }
+    .titulo-seccion { font-size: 32px !important; font-weight: 800 !important; color: #000000; }
     .subtitulo-gris { font-size: 16px !important; color: #666; margin-bottom: 15px; }
-    div[data-testid="stProgress"] > div > div > div > div { background-color: #00FF7F !important; }
+    div[data-testid="stProgress"] > div > div > div > div { background-color: #000000 !important; }
     section[data-testid="stSidebar"] { background-color: #f1f3f6; }
-    .stButton > button { width: 100%; border-radius: 5px; height: 3em; font-weight: bold; }
-    button[kind="primary"] { background-color: #2e7d32 !important; border-color: #2e7d32 !important; color: white !important; }
-    button[kind="primary"]:hover { background-color: #1b5e20 !important; border-color: #1b5e20 !important; }
-    button[kind="primary"]:focus:not(:active) { border-color: #1b5e20 !important; box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.5) !important; }
+    .stButton > button { width: 100%; border-radius: 5px; height: 3em; font-weight: bold; color: #000000 !important; border-color: #000000 !important; }
+    button[kind="primary"] { background-color: #000000 !important; border-color: #000000 !important; color: white !important; }
+    button[kind="primary"]:hover { background-color: #1a1a1a !important; border-color: #1a1a1a !important; }
+    button[kind="primary"]:focus:not(:active) { border-color: #000000 !important; box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25) !important; }
+    button[kind="secondary"] { color: #000000 !important; border-color: #000000 !important; }
+    button[kind="secondary"]:hover { color: #000000 !important; border-color: #000000 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -570,20 +572,6 @@ elif st.session_state["seccion_activa"] == "🗂️ EDT Gráfica":
         df = pd.DataFrame(flat_table)
         def aplicar_estilos_grises(row): return [f'background-color: {row["ColorBG"]}; color: black; font-weight: bold' for _ in row]
         st.dataframe(df.style.apply(aplicar_estilos_grises, axis=1), column_order=("Código", "Nombre"), use_container_width=True, hide_index=True, height=(len(df) * 36) + 40)
-
-        # --- NUEVA SECCIÓN: DESCRIPCIÓN DE LA EDT (AUTO-AJUSTABLE Y GUARDADO INVISIBLE) ---
-        st.divider()
-        st.markdown("#### 📝 Descripción")
-        st.info("💡 **Nota:** Haz clic fuera de la caja de texto tras escribir para que el tamaño se ajuste automáticamente y se guarde la información.")
-        with st.container(border=True):
-            k_desc_edt = "input_desc_edt"
-            v_desc_edt = st.session_state.get(k_desc_edt, datos.get("descripcion_edt", ""))
-            n_desc_edt = st.text_area("Descripción de la EDT", value=datos.get("descripcion_edt", ""), height=calcular_altura(v_desc_edt, 120), key=k_desc_edt, label_visibility="collapsed")
-            
-        if n_desc_edt != datos.get("descripcion_edt", ""):
-            datos["descripcion_edt"] = n_desc_edt
-            guardar_estado("alcance", datos)
-            st.rerun()
 
 # ==========================================
 # SECCIÓN 3: ESPECIFICACIONES TÉCNICAS (NAVEGACIÓN MANUAL 100% SEGURA)
