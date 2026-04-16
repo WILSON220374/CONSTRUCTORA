@@ -970,7 +970,7 @@ else:
         font-size: 12px;
       }
 
-      .header{ display:flex; align-items:center; height:34px; box-sizing:border-box; background:#0B3D2E; color:#fff; font-weight:800; font-size:12px; border-bottom:1px solid #e5e7eb; }
+      .header{ display:flex; align-items:center; height:34px; box-sizing:border-box; background:#7B1E3A; color:#fff; font-weight:800; font-size:12px; border-bottom:1px solid #e5e7eb; }
       .hcell{ padding:8px 10px; border-right:1px solid rgba(255,255,255,0.18); }
       .h-code{ width:80px; }
       .h-name{ width:340px; }
