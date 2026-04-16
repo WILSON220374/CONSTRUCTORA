@@ -93,18 +93,29 @@ def render_login():
 
         if st.button("INGRESAR", use_container_width=True):
             clear_auth()
-            email = grupo_to_email(grupo)
+            emails = grupo_to_emails(grupo)
 
             try:
-                auth_resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                auth_resp = None
+                email_ok = None
+
+                for email in emails:
+                    try:
+                        intento = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                        if intento and intento.session and intento.user:
+                            auth_resp = intento
+                            email_ok = email
+                            break
+                    except Exception:
+                        continue
 
                 if not auth_resp or not auth_resp.session or not auth_resp.user:
-                    st.error("Login falló: respuesta incompleta de Supabase.")
+                    st.error("Credenciales inválidas o error de autenticación.")
                     clear_auth()
                     st.stop()
 
                 st.session_state["auth_ok"] = True
-                st.session_state["auth_email"] = email
+                st.session_state["auth_email"] = email_ok
                 st.session_state["auth_user_id"] = str(auth_resp.user.id)
                 st.session_state["access_token"] = auth_resp.session.access_token
                 st.session_state["refresh_token"] = auth_resp.session.refresh_token
