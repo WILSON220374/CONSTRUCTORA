@@ -1003,11 +1003,14 @@ def _flujo_fondos_obra_datos():
 
     if not isinstance(flujo_data, dict) or not flujo_data:
         return {
+            "df_programa_obra": pd.DataFrame(),
             "df_calculado": pd.DataFrame(),
             "df_resumen": pd.DataFrame(),
             "grafico_png": None,
         }
 
+    tablas_guardadas = flujo_data.get("__tablas__", {}) if isinstance(flujo_data, dict) else {}
+    
     def _ordenar_periodos(cols):
         periodos = []
         for c in cols:
@@ -1018,12 +1021,21 @@ def _flujo_fondos_obra_datos():
         periodos = sorted(set(periodos), key=lambda x: int(x.replace("Periodo ", "")))
         return periodos
 
+    if tablas_guardadas:
+        return {
+            "df_programa_obra": pd.DataFrame(tablas_guardadas.get("df_programa_obra", []) or []),
+            "df_calculado": pd.DataFrame(tablas_guardadas.get("df_calculado", []) or []),
+            "df_resumen": pd.DataFrame(tablas_guardadas.get("df_resumen", []) or []),
+            "grafico_png": None,
+        }
+
     periodos = _ordenar_periodos(
         [k for row in flujo_data.values() if isinstance(row, dict) for k in row.keys()]
     )
 
     if not periodos:
         return {
+            "df_programa_obra": pd.DataFrame(),
             "df_calculado": pd.DataFrame(),
             "df_resumen": pd.DataFrame(),
             "grafico_png": None,
