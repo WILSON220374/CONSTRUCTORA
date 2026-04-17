@@ -352,17 +352,17 @@ def _get_aiu_pct_global() -> float:
 def _cargar_directos() -> pd.DataFrame:
     aiu_pct = _get_aiu_pct_global()
     directos_guardados = presupuesto_obra_datos.get("flujo_fondos_directos", []) or []
-    items_presupuesto = presupuesto_obra_datos.get("items", []) or []
+    items_presupuesto = presupuesto_obra_datos.get("items", {}) or {}
 
     cantidades_por_item = {}
     cantidades_por_node = {}
 
-    for it in items_presupuesto:
+    for node_key, it in items_presupuesto.items():
         if not isinstance(it, dict):
             continue
 
-        item_key = _safe_str(it.get("ITEM", ""))
-        node_key = _safe_str(it.get("node_id", ""))
+        node_key = _safe_str(node_key)
+        item_key = _safe_str(it.get("item_catalogo", it.get("ITEM", "")))
         cantidad = _safe_float(
             it.get("cant", it.get("CANT", it.get("CANT.", it.get("CANTIDAD", it.get("cantidad", 0.0))))),
             0.0,
