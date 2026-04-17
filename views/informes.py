@@ -2611,7 +2611,7 @@ with tab5:
     flujo = datos_documento["flujo_fondos_obra"]
 
     with st.container(border=True):
-        st.markdown("**Progrma de inversiones**")
+        st.markdown("**Programa de inversiones**")
         if not flujo["df_calculado"].empty:
             st.dataframe(flujo["df_calculado"], width="stretch", hide_index=True)
         else:
