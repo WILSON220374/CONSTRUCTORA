@@ -1124,6 +1124,7 @@ def _flujo_fondos_obra_datos():
             "ITEM": _safe_str(row["ITEM"]),
             "TIPO": _safe_str(row["TIPO"]),
             "DESCRIPCIÓN": _safe_str(row["DESCRIPCIÓN"]),
+            "CANTIDAD TOTAL": round(_safe_float(row.get("CANTIDAD TOTAL", 0.0)), 4),
             "VALOR BASE": round(_safe_float(row["VALOR BASE"]), 2),
             "AIU %": round(_safe_float(row["AIU %"]), 2),
             "VALOR CON AIU": round(_safe_float(row["VALOR CON AIU"]), 2),
