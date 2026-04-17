@@ -48,7 +48,7 @@ def _parse_fecha(valor):
 def _fecha_a_texto(valor):
     f = _parse_fecha(valor)
     if not f:
-        return ""
+        return _texto(valor)
     return f.strftime("%d/%m/%Y")
 
 
@@ -83,18 +83,6 @@ def _primero_no_vacio(*valores):
     return ""
 
 
-def _valor_por_claves(datos, claves):
-    for clave in claves:
-        if clave in datos:
-            valor = datos.get(clave)
-            if isinstance(valor, str):
-                if valor.strip():
-                    return valor.strip()
-            elif valor not in (None, "", []):
-                return valor
-    return ""
-
-
 def _partes_fecha(valor):
     f = _parse_fecha(valor)
     if not f:
@@ -106,7 +94,6 @@ def _mostrar_imagen_guardada(info):
     if not isinstance(info, dict):
         return
     b64 = info.get("data")
-    mime = info.get("mime", "image/png")
     if not b64:
         return
     try:
@@ -209,9 +196,6 @@ fecha_inicio_obra = _primero_no_vacio(
     contrato_obra.get("fecha_inicio_contrato"),
 )
 
-if not _parse_fecha(fecha_inicio_obra) and plazo_dias > 0:
-    fecha_inicio_obra = acta_inicio.get("fecha_inicio")
-
 fecha_fin_obra = None
 if _parse_fecha(fecha_inicio_obra) and plazo_dias > 0:
     fecha_fin_obra = _parse_fecha(fecha_inicio_obra) + timedelta(days=plazo_dias)
@@ -228,12 +212,14 @@ director_obra = _primero_no_vacio(
 
 director_interventoria = _primero_no_vacio(
     acta_inicio.get("nombre_firma_interventor"),
+    contrato_interventoria.get("nombre_interventor"),
+    contrato_interventoria.get("firmante_interventor"),
     contrato_obra.get("nombre_interventor"),
-    contrato_obra.get("nombre_interventoria"),
 )
 
 supervisor_interventoria = _primero_no_vacio(
     acta_inicio.get("nombre_firma_supervisor"),
+    contrato_interventoria.get("firmante_entidad"),
     contrato_obra.get("nombre_supervisor"),
 )
 
@@ -248,23 +234,12 @@ fecha_contrato_obra = _primero_no_vacio(
     contrato_obra.get("fecha_contrato"),
 )
 
-contrato_interventoria_no = _valor_por_claves(
-    contrato_interventoria,
-    [
-        "numero_proceso_contratacion",
-        "numero_del_proceso_de_contratacion",
-        "numero_contrato",
-        "numero_proceso",
-    ],
+contrato_interventoria_no = _primero_no_vacio(
+    contrato_interventoria.get("numero_proceso_contratacion"),
 )
 
-fecha_contrato_interventoria = _valor_por_claves(
-    contrato_interventoria,
-    [
-        "fecha_suscripcion",
-        "fecha_contrato",
-        "fecha_perfeccionamiento",
-    ],
+fecha_contrato_interventoria = _primero_no_vacio(
+    contrato_interventoria.get("fecha_suscripcion"),
 )
 
 objeto_contrato_obra = _primero_no_vacio(
@@ -290,8 +265,9 @@ contratista_obra = _primero_no_vacio(
 
 interventor_obra = _primero_no_vacio(
     acta_inicio.get("interventor"),
+    contrato_interventoria.get("nombre_interventor"),
+    contrato_interventoria.get("nombre_empresa_interventora"),
     contrato_obra.get("nombre_interventor"),
-    contrato_obra.get("nombre_interventoria"),
 )
 
 dia_ini, mes_ini, anio_ini = _partes_fecha(fecha_inicio_obra)
@@ -303,16 +279,6 @@ st.markdown(
     .titulo-principal {
         text-align: center;
         font-size: 30px;
-        font-weight: 800;
-        margin-bottom: 10px;
-    }
-    .seccion-acta {
-        padding: 10px 12px;
-        border: 1.5px solid #222;
-        margin-bottom: 12px;
-    }
-    .subtitulo-seccion {
-        font-size: 18px;
         font-weight: 800;
         margin-bottom: 10px;
     }
