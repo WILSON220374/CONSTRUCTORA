@@ -902,11 +902,8 @@ st.data_editor(
     disabled=list(df_obra.columns),
 )
 
-if st.button("Guardar y recalcular", width="stretch"):
-    _guardar_desde_df(df_pct, periodos, df_obra, df_val, df_resumen)
-    st.success("Programación guardada y recalculada correctamente.")
-    st.rerun()
-
+guardar_y_recalcular = st.button("Guardar y recalcular", width="stretch")
+de
 st.subheader("Programa de iversiones")
 df_val = _tabla_valores(df_pct, periodos)
 column_order_val = ["ITEM", "TIPO", "DESCRIPCIÓN", "VALOR CON AIU"] + [f"{p} $" for p in periodos] + ["TOTAL PROGRAMADO"]
@@ -953,6 +950,11 @@ st.data_editor(
     column_config=column_config_res,
     disabled=list(df_resumen.columns),
 )
+
+if guardar_y_recalcular:
+    _guardar_desde_df(df_pct, periodos, df_obra, df_val, df_resumen)
+    st.success("Programación guardada y recalculada correctamente.")
+    st.rerun()
 
 st.markdown("<div style='height: 112px;'></div>", unsafe_allow_html=True)
 
