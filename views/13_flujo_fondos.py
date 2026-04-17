@@ -590,11 +590,18 @@ def _recalcular_bloqueos(df_pct: pd.DataFrame, periodos: List[str], mapa_activos
 
 
 
-def _guardar_desde_df(df_pct: pd.DataFrame, periodos: List[str]):
+def _guardar_desde_df(df_pct: pd.DataFrame, periodos: List[str], df_obra: pd.DataFrame | None = None, df_val: pd.DataFrame | None = None, df_resumen: pd.DataFrame | None = None):
     payload = {}
     for _, row in df_pct.iterrows():
         row_id = _safe_str(row["ROW_ID"])
         payload[row_id] = {f"{p} %": _safe_float(row[f"{p} %"]) for p in periodos}
+
+    payload["__tablas__"] = {
+        "df_programa_obra": [] if df_obra is None else df_obra.to_dict(orient="records"),
+        "df_calculado": [] if df_val is None else df_val.to_dict(orient="records"),
+        "df_resumen": [] if df_resumen is None else df_resumen.to_dict(orient="records"),
+    }
+
     _guardar_programacion(payload)
 
 
@@ -786,7 +793,30 @@ if not row_sel_df.empty:
         else:
             payload_pct = editor_df_edit.iloc[0].to_dict() if not editor_df_edit.empty else {}
             df_pct_aplicado = _aplicar_editor_a_tabla(df_pct_base, str(row_id_sel), payload_pct, periodos, mapa_activos)
-            _guardar_desde_df(df_pct_aplicado, periodos)
+            df_obra_aplicado = df_pct_aplicado[["ITEM", "TIPO", "DESCRIPCIÓN"]].copy()
+
+            cantidades_base_aplicado = {}
+            for _, row_base in base_df.iterrows():
+                cantidades_base_aplicado[_safe_str(row_base.get("ROW_ID", ""))] = _safe_float(row_base.get("CANTIDAD TOTAL", 0.0), 0.0)
+
+            df_obra_aplicado["CANTIDAD TOTAL"] = df_pct_aplicado["ROW_ID"].apply(lambda rid: round(cantidades_base_aplicado.get(_safe_str(rid), 0.0), 4))
+
+            for periodo in periodos:
+                df_obra_aplicado[periodo] = (
+                    df_obra_aplicado["CANTIDAD TOTAL"] * df_pct_aplicado[f"{periodo} %"].apply(lambda x: _safe_float(x, 0.0) / 100.0)
+                ).round(4)
+
+            df_val_aplicado = _tabla_valores(df_pct_aplicado, periodos)
+            total_periodo_ap, acumulado_ap, pct_acum_ap = _resumen(df_val_aplicado, periodos)
+            df_resumen_aplicado = pd.DataFrame(
+                [
+                    {"CONCEPTO": "TOTAL POR PERIODO", **{p: total_periodo_ap[p] for p in periodos}},
+                    {"CONCEPTO": "ACUMULADO", **{p: acumulado_ap[p] for p in periodos}},
+                    {"CONCEPTO": "% ACUMULADO", **{p: pct_acum_ap[p] for p in periodos}},
+                ]
+            )
+
+            _guardar_desde_df(df_pct_aplicado, periodos, df_obra_aplicado, df_val_aplicado, df_resumen_aplicado)
             st.success("Actividad aplicada a la tabla correctamente.")
             st.rerun()
 
@@ -829,7 +859,7 @@ df_pct = _recalcular_bloqueos(df_pct_base.copy(), periodos, mapa_activos)
 invalidas = df_pct[~df_pct["TOTAL %"].round(2).eq(100.0)]
 
 if st.button("Guardar y recalcular", width="stretch"):
-    _guardar_desde_df(df_pct, periodos)
+    _guardar_desde_df(df_pct, periodos, df_obra, df_val, df_resumen)
     st.success("Programación guardada y recalculada correctamente.")
     st.rerun()
 
