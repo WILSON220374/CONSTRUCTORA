@@ -858,11 +858,6 @@ st.data_editor(
 df_pct = _recalcular_bloqueos(df_pct_base.copy(), periodos, mapa_activos)
 invalidas = df_pct[~df_pct["TOTAL %"].round(2).eq(100.0)]
 
-if st.button("Guardar y recalcular", width="stretch"):
-    _guardar_desde_df(df_pct, periodos, df_obra, df_val, df_resumen)
-    st.success("Programación guardada y recalculada correctamente.")
-    st.rerun()
-
 if invalidas.empty:
     st.success("Todas las actividades suman 100%.")
 else:
@@ -906,6 +901,11 @@ st.data_editor(
     column_config=column_config_obra,
     disabled=list(df_obra.columns),
 )
+
+if st.button("Guardar y recalcular", width="stretch"):
+    _guardar_desde_df(df_pct, periodos, df_obra, df_val, df_resumen)
+    st.success("Programación guardada y recalculada correctamente.")
+    st.rerun()
 
 st.subheader("Programa de iversiones")
 df_val = _tabla_valores(df_pct, periodos)
