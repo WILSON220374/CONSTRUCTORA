@@ -102,7 +102,10 @@ _inicializar_estado()
 datos = st.session_state["acta_inicio_obra_datos"]
 contrato = _leer_contrato_obra()
 
-plazo_dias = _extraer_dias_plazo(contrato.get("plazo_ejecucion", ""))
+plazo_dias = int(contrato.get("plazo_ejecucion_dias", 0) or 0)
+if plazo_dias <= 0:
+    plazo_dias = _extraer_dias_plazo(contrato.get("plazo_ejecucion", ""))
+    
 fecha_inicio = datos.get("fecha_inicio")
 fecha_terminacion = fecha_inicio + timedelta(days=plazo_dias) if isinstance(fecha_inicio, date) else None
 
