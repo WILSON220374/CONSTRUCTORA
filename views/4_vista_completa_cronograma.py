@@ -1,13 +1,28 @@
 import calendar
 import json
 import math
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from string import Template
 
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+def _parse_fecha_segura(valor):
+    if isinstance(valor, date):
+        return valor
+    if isinstance(valor, str) and valor.strip():
+        txt = valor.strip()
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%m/%d/%Y"):
+            try:
+                return datetime.strptime(txt, fmt).date()
+            except Exception:
+                continue
+        try:
+            return datetime.fromisoformat(txt).date()
+        except Exception:
+            return date.today()
+    return date.today()
 
 def key_codigo_natural(codigo: str):
     partes = str(codigo).split(".")
@@ -377,7 +392,7 @@ for nodo in sorted(lista_nodos, key=lambda x: key_codigo_natural(x["codigo"])):
 df_master = pd.DataFrame(audit_rows)
 _ = df_master.drop(columns=["_parent"])
 
-fecha_inicio = cronograma_datos.get("fecha_inicio", date.today())
+fecha_inicio = _parse_fecha_segura(cronograma_datos.get("fecha_inicio", date.today()))
 mostrar_hoy = bool(cronograma_datos.get("mostrar_hoy", False))
 hoy_offset = int(cronograma_datos.get("hoy_offset", 0))
 modo_calendario = bool(cronograma_datos.get("modo_calendario", False))
