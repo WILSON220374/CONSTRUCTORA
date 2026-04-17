@@ -397,12 +397,15 @@ with col_firma_2:
     )
     st.markdown("**CONTRATISTA**")
 
-st.text_input(
-    "Nombre supervisor",
-    value=_texto_seguro(datos.get("nombre_firma_supervisor", "")),
-    key="nombre_firma_supervisor",
-)
-st.markdown("**SUPERVISOR**")
+col_firma_3, col_firma_4 = st.columns(2)
 
-if st.button("💾 Guardar acta de inicio", type="primary", key="guardar_acta_inicio_principal"):
-    _guardar()
+with col_firma_3:
+    st.text_input(
+        "Nombre supervisor",
+        value=_texto_seguro(datos.get("nombre_firma_supervisor", "")),
+        key="nombre_firma_supervisor",
+    )
+    st.markdown("**SUPERVISOR**")
+
+with col_firma_4:
+    st.markdown("")
