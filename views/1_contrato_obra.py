@@ -32,6 +32,34 @@ def calcular_altura(texto, min_h=110):
     altura_calculada = (lineas_totales + 2) * 26
     return max(min_h, altura_calculada)
 
+def _plazo_a_dias_calendario(valor):
+    txt = str(valor or "").strip().upper()
+    if not txt:
+        return 0
+
+    numero_txt = ""
+    for ch in txt:
+        if ch.isdigit():
+            numero_txt += ch
+        elif numero_txt:
+            break
+
+    if not numero_txt:
+        return 0
+
+    try:
+        numero = int(numero_txt)
+    except Exception:
+        return 0
+
+    if "MES" in txt:
+        return numero * 30
+
+    if "DIA" in txt or "DÍA" in txt:
+        return numero
+
+    return numero
+
 
 def inicializar_contrato():
     if "contrato_obra_datos" not in st.session_state:
@@ -77,6 +105,7 @@ def inicializar_contrato():
         "dias_pago": "",
 
         "plazo_ejecucion": "",
+        "plazo_ejecucion_dias": 0,
 
         "clausula_penal_numeros": "",
         "clausula_penal_letras": "",
@@ -407,6 +436,7 @@ with st.expander("7. Plazo", expanded=False):
     )
 
     if st.button("Guardar sección 7", key="guardar_7"):
+        datos["plazo_ejecucion_dias"] = _plazo_a_dias_calendario(datos["plazo_ejecucion"])
         guardar_y_refrescar()
 
 
