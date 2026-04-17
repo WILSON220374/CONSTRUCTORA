@@ -989,6 +989,15 @@ def _flujo_fondos_obra_datos():
     except Exception:
         flujo_data = {}
 
+    tablas_guardadas = flujo_data.get("__tablas__", {}) if isinstance(flujo_data, dict) else {}
+    if tablas_guardadas:
+        return {
+            "df_programa_obra": pd.DataFrame(tablas_guardadas.get("df_programa_obra", []) or []),
+            "df_calculado": pd.DataFrame(tablas_guardadas.get("df_calculado", []) or []),
+            "df_resumen": pd.DataFrame(tablas_guardadas.get("df_resumen", []) or []),
+            "grafico_png": None,
+        }
+        
     datos_obra = (st.session_state.get("presupuesto_obra_datos", {}) or {}).copy()
     if not datos_obra:
         try:
@@ -1099,6 +1108,7 @@ def _flujo_fondos_obra_datos():
     base_df = pd.DataFrame(rows)
     if base_df.empty:
         return {
+            "df_programa_obra": pd.DataFrame(),
             "df_calculado": pd.DataFrame(),
             "df_resumen": pd.DataFrame(),
             "grafico_png": None,
