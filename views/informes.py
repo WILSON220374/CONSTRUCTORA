@@ -1119,25 +1119,40 @@ def _flujo_fondos_obra_datos():
 
     df_pct = pd.DataFrame(filas_pct)
 
-    out = []
+        out = []
+    out_obra = []
     for _, row in df_pct.iterrows():
         valor_con_aiu = _safe_float(row["VALOR CON AIU"], 0.0)
+        cantidad_total = _safe_float(row.get("CANTIDAD TOTAL", 0.0), 0.0)
+
         rec = {
             "ITEM": _safe_str(row["ITEM"]),
             "TIPO": _safe_str(row["TIPO"]),
             "DESCRIPCIÓN": _safe_str(row["DESCRIPCIÓN"]),
             "VALOR CON AIU": round(valor_con_aiu, 2),
         }
+
+        rec_obra = {
+            "ITEM": _safe_str(row["ITEM"]),
+            "TIPO": _safe_str(row["TIPO"]),
+            "DESCRIPCIÓN": _safe_str(row["DESCRIPCIÓN"]),
+            "CANTIDAD TOTAL": round(cantidad_total, 4),
+        }
+
         total_prog = 0.0
         for periodo in periodos:
             pct = _safe_float(row.get(f"{periodo} %", 0.0), 0.0) / 100.0
             val = valor_con_aiu * pct
             rec[f"{periodo} $"] = round(val, 2)
+            rec_obra[periodo] = round(cantidad_total * pct, 4)
             total_prog += val
+
         rec["TOTAL PROGRAMADO"] = round(total_prog, 2)
         out.append(rec)
+        out_obra.append(rec_obra)
 
     df_calculado = pd.DataFrame(out)
+    df_programa_obra = pd.DataFrame(out_obra)
 
     total_periodo = {}
     acumulado = {}
@@ -1188,6 +1203,7 @@ def _flujo_fondos_obra_datos():
         grafico_png = None
 
     return {
+        "df_programa_obra": df_programa_obra,
         "df_calculado": df_calculado,
         "df_resumen": df_resumen,
         "grafico_png": grafico_png,
@@ -1196,6 +1212,7 @@ def _flujo_fondos_obra_datos():
 
 def _agregar_flujo_fondos_obra(doc, cfg, datos):
     flujo = datos.get("flujo_fondos_obra", {}) or {}
+    df_programa_obra = flujo.get("df_programa_obra", pd.DataFrame())
     df_calculado = flujo.get("df_calculado", pd.DataFrame())
     df_resumen = flujo.get("df_resumen", pd.DataFrame())
     grafico_png = flujo.get("grafico_png")
@@ -1221,7 +1238,26 @@ def _agregar_flujo_fondos_obra(doc, cfg, datos):
 
     doc.add_paragraph()
 
+    doc.add_paragraph("Programa de obra")
+    if not df_programa_obra.empty:
+        table = doc.add_table(rows=1, cols=len(df_programa_obra.columns))
+        table.style = "Table Grid"
+        hdr = table.rows[0].cells
+        for idx, col in enumerate(df_programa_obra.columns):
+            hdr[idx].text = str(col)
+            for paragraph in hdr[idx].paragraphs:
+                for run in paragraph.runs:
+                    run.bold = True
+        for _, row in df_programa_obra.iterrows():
+            row_cells = table.add_row().cells
+            for idx, col in enumerate(df_programa_obra.columns):
+                row_cells[idx].text = str(row[col])
+    else:
+        doc.add_paragraph("No hay información disponible.")
+
+    doc.add_paragraph()
     doc.add_paragraph("Progama de inversiones")
+
     if not df_calculado.empty:
         table = doc.add_table(rows=1, cols=len(df_calculado.columns))
         table.style = "Table Grid"
@@ -2611,6 +2647,12 @@ with tab5:
     flujo = datos_documento["flujo_fondos_obra"]
 
     with st.container(border=True):
+        st.markdown("**Programa de obra**")
+        if not flujo.get("df_programa_obra", pd.DataFrame()).empty:
+            st.dataframe(flujo["df_programa_obra"], width="stretch", hide_index=True)
+        else:
+            st.info("No hay información disponible.")
+
         st.markdown("**Programa de inversiones**")
         if not flujo["df_calculado"].empty:
             st.dataframe(flujo["df_calculado"], width="stretch", hide_index=True)
