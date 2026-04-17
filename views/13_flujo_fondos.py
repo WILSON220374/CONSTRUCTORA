@@ -364,7 +364,7 @@ def _cargar_directos() -> pd.DataFrame:
         item_key = _safe_str(it.get("ITEM", ""))
         node_key = _safe_str(it.get("node_id", ""))
         cantidad = _safe_float(
-            it.get("CANT", it.get("CANT.", it.get("CANTIDAD", it.get("cantidad", 0.0)))),
+            it.get("cant", it.get("CANT", it.get("CANT.", it.get("CANTIDAD", it.get("cantidad", 0.0))))),
             0.0,
         )
 
@@ -387,7 +387,7 @@ def _cargar_directos() -> pd.DataFrame:
             cantidad_total = cantidades_por_node[node_id]
         else:
             cantidad_total = _safe_float(
-                rec.get("CANT", rec.get("CANT.", rec.get("CANTIDAD", rec.get("cantidad", 0.0)))),
+                rec.get("cant", rec.get("CANT", rec.get("CANT.", rec.get("CANTIDAD", rec.get("cantidad", 0.0))))),
                 0.0,
             )
 
