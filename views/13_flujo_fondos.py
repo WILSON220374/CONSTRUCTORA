@@ -903,7 +903,7 @@ st.data_editor(
 )
 
 guardar_y_recalcular = st.button("Guardar y recalcular", width="stretch")
-de
+
 st.subheader("Programa de iversiones")
 df_val = _tabla_valores(df_pct, periodos)
 column_order_val = ["ITEM", "TIPO", "DESCRIPCIÓN", "VALOR CON AIU"] + [f"{p} $" for p in periodos] + ["TOTAL PROGRAMADO"]
