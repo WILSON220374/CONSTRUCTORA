@@ -991,11 +991,62 @@ def _flujo_fondos_obra_datos():
 
     tablas_guardadas = flujo_data.get("__tablas__", {}) if isinstance(flujo_data, dict) else {}
     if tablas_guardadas:
+        df_programa_obra = pd.DataFrame(tablas_guardadas.get("df_programa_obra", []) or [])
+        df_calculado = pd.DataFrame(tablas_guardadas.get("df_calculado", []) or [])
+        df_resumen = pd.DataFrame(tablas_guardadas.get("df_resumen", []) or [])
+
+        columnas_fijas_obra = ["ITEM", "DESCRIPCIÓN", "TIPO", "CANTIDAD TOTAL"]
+        columnas_periodos_obra = [c for c in df_programa_obra.columns if str(c).startswith("Periodo ")]
+        columnas_obra = [c for c in columnas_fijas_obra if c in df_programa_obra.columns] + [
+            c for c in columnas_periodos_obra if c not in columnas_fijas_obra
+        ]
+        if columnas_obra:
+            df_programa_obra = df_programa_obra[columnas_obra]
+
+        columnas_fijas_val = ["ITEM", "DESCRIPCIÓN", "TIPO", "VALOR CON AIU"]
+        columnas_periodos_val = [c for c in df_calculado.columns if str(c).startswith("Periodo ") and str(c).endswith(" $")]
+        columnas_finales_val = [c for c in columnas_fijas_val if c in df_calculado.columns] + columnas_periodos_val
+        if "TOTAL PROGRAMADO" in df_calculado.columns:
+            columnas_finales_val.append("TOTAL PROGRAMADO")
+        if columnas_finales_val:
+            df_calculado = df_calculado[columnas_finales_val]
+
+        grafico_png = None
+        try:
+            if not df_resumen.empty:
+                periodos = [c for c in df_resumen.columns if c != "CONCEPTO"]
+                fila_total = df_resumen[df_resumen["CONCEPTO"].astype(str) == "TOTAL POR PERIODO"]
+                fila_acum = df_resumen[df_resumen["CONCEPTO"].astype(str) == "ACUMULADO"]
+
+                if not fila_total.empty and not fila_acum.empty and periodos:
+                    y_total = [_safe_float(fila_total.iloc[0][p], 0.0) for p in periodos]
+                    y_acum = [_safe_float(fila_acum.iloc[0][p], 0.0) for p in periodos]
+                    y_prev = [0.0] + y_acum[:-1]
+
+                    fig, ax = plt.subplots(figsize=(10, 5))
+                    ax.bar(periodos, y_prev, label="Acumulado previo", alpha=0.35)
+                    ax.bar(periodos, y_total, bottom=y_prev, label="Ejecutado en el periodo", alpha=0.85)
+                    ax.plot(periodos, y_acum, marker="o", linewidth=2.5, label="Acumulado")
+
+                    ax.set_xlabel("Periodo")
+                    ax.set_ylabel("Valor")
+                    ax.tick_params(axis="x", rotation=0)
+                    ax.legend()
+
+                    buf = io.BytesIO()
+                    fig.tight_layout()
+                    fig.savefig(buf, format="png", dpi=180, bbox_inches="tight")
+                    plt.close(fig)
+                    buf.seek(0)
+                    grafico_png = buf.getvalue()
+        except Exception:
+            grafico_png = None
+
         return {
-            "df_programa_obra": pd.DataFrame(tablas_guardadas.get("df_programa_obra", []) or []),
-            "df_calculado": pd.DataFrame(tablas_guardadas.get("df_calculado", []) or []),
-            "df_resumen": pd.DataFrame(tablas_guardadas.get("df_resumen", []) or []),
-            "grafico_png": None,
+            "df_programa_obra": df_programa_obra,
+            "df_calculado": df_calculado,
+            "df_resumen": df_resumen,
+            "grafico_png": grafico_png,
         }
         
     return {
