@@ -1404,25 +1404,40 @@ def _flujo_fondos_consultoria_datos():
     df_pct = pd.DataFrame(filas_pct)
 
     out = []
+    out_obra = []
     for _, row in df_pct.iterrows():
-        valor_base = _safe_float(row["VALOR BASE"], 0.0)
+        valor_con_aiu = _safe_float(row["VALOR CON AIU"], 0.0)
+        cantidad_total = _safe_float(row.get("CANTIDAD TOTAL", 0.0), 0.0)
+
         rec = {
             "ITEM": _safe_str(row["ITEM"]),
             "TIPO": _safe_str(row["TIPO"]),
             "DESCRIPCIÓN": _safe_str(row["DESCRIPCIÓN"]),
-            "VALOR BASE": round(valor_base, 2),
+            "VALOR CON AIU": round(valor_con_aiu, 2),
         }
+
+        rec_obra = {
+            "ITEM": _safe_str(row["ITEM"]),
+            "TIPO": _safe_str(row["TIPO"]),
+            "DESCRIPCIÓN": _safe_str(row["DESCRIPCIÓN"]),
+            "CANTIDAD TOTAL": round(cantidad_total, 4),
+        }
+
         total_prog = 0.0
         for periodo in periodos:
             pct = _safe_float(row.get(f"{periodo} %", 0.0), 0.0) / 100.0
-            val = valor_base * pct
+            val = valor_con_aiu * pct
             rec[f"{periodo} $"] = round(val, 2)
+            rec_obra[periodo] = round(cantidad_total * pct, 4)
             total_prog += val
+
         rec["TOTAL PROGRAMADO"] = round(total_prog, 2)
         out.append(rec)
+        out_obra.append(rec_obra)
 
     df_calculado = pd.DataFrame(out)
-
+    df_programa_obra = pd.DataFrame(out_obra)
+    
     total_periodo = {}
     acumulado = {}
     pct_acum = {}
