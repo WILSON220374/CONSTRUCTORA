@@ -436,7 +436,7 @@ def _cargar_indirectos(max_periodo_directos: int) -> pd.DataFrame:
                 "ITEM": "",
                 "TIPO": "INDIRECTO",
                 "DESCRIPCIÓN": nombre,
-                "CANTIDAD TOTAL": None,
+                "CANTIDAD TOTAL": 1.0,
                 "VALOR BASE": round(valor_base, 2),
                 "AIU %": 0.0,
                 "VALOR CON AIU": round(valor_base, 2),
