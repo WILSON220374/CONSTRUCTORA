@@ -396,15 +396,16 @@ def _cargar_directos() -> pd.DataFrame:
 
         rows.append(
             {
-                "ROW_ID": f"DIR|{node_id or item or descripcion}",
-                "NODE_ID": node_id,
-                "ITEM": item,
-                "TIPO": "DIRECTO",
-                "DESCRIPCIÓN": descripcion,
-                "CANTIDAD TOTAL": round(cantidad_total, 4),
+                "ROW_ID": f"OCI|{oci_id}",
+                "NODE_ID": oci_id,
+                "ITEM": "",
+                "TIPO": "INDIRECTO",
+                "DESCRIPCIÓN": nombre,
+                "CANTIDAD TOTAL": 1.0,
                 "VALOR BASE": round(valor_base, 2),
-                "AIU %": round(aiu_pct, 2),
-                "VALOR CON AIU": round(valor_base * (1 + aiu_pct / 100.0), 2),
+                "AIU %": 0.0,
+                "VALOR CON AIU": round(valor_base, 2),
+                "MAX_PERIODO": max_periodo_directos,
             }
         )
 
