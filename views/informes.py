@@ -1119,7 +1119,7 @@ def _flujo_fondos_obra_datos():
 
     df_pct = pd.DataFrame(filas_pct)
 
-        out = []
+    out = []
     out_obra = []
     for _, row in df_pct.iterrows():
         valor_con_aiu = _safe_float(row["VALOR CON AIU"], 0.0)
