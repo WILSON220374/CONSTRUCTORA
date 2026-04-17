@@ -213,7 +213,7 @@ with f2:
         key="acta_fecha_terminacion_input",
     )
 
-st.caption(f"Plazo aplicado desde la hoja 1: {plazo_dias} días calendario.")
+st.caption(f"Plazo en dias: {plazo_dias} ")
 
 st.divider()
 
