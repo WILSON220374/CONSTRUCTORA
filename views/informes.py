@@ -1221,7 +1221,7 @@ def _agregar_flujo_fondos_obra(doc, cfg, datos):
 
     doc.add_paragraph()
 
-    doc.add_paragraph("Flujo de fondos calculado")
+    doc.add_paragraph("Progama de inversiones")
     if not df_calculado.empty:
         table = doc.add_table(rows=1, cols=len(df_calculado.columns))
         table.style = "Table Grid"
