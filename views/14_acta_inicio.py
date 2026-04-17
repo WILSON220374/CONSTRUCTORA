@@ -60,16 +60,45 @@ def _extraer_dias_plazo(valor):
         return 0
 
 
+def _texto_seguro(valor):
+    if valor is None:
+        return ""
+    return str(valor)
+
+
 def _inicializar_estado():
     if "acta_inicio_obra_datos" not in st.session_state:
         st.session_state["acta_inicio_obra_datos"] = cargar_estado("acta_inicio_obra") or {}
 
     datos = st.session_state["acta_inicio_obra_datos"]
 
-    if "fecha_inicio" not in datos:
-        datos["fecha_inicio"] = None
+    valores_defecto = {
+        "fecha_presente_acta": None,
+        "requisitos": [
+            {
+                "REQUISITOS": "Garantías y su aprobación",
+                "ESTADO": "N.A.",
+            }
+        ],
+        "certificaciones": [
+            {
+                "CERTIFICACION": "Afiliacion a Riesgos Laborales",
+                "ESTADO": "N.A.",
+                "FECHA DE INICIO DE COBERTURA": None,
+            }
+        ],
+        "nombre_firma_interventor": "",
+        "nombre_firma_contratista": "",
+        "nombre_firma_supervisor": "",
+    }
 
-    if "requisitos" not in datos or not isinstance(datos["requisitos"], list) or len(datos["requisitos"]) == 0:
+    for k, v in valores_defecto.items():
+        if k not in datos:
+            datos[k] = v
+
+    datos["fecha_presente_acta"] = _parse_fecha(datos.get("fecha_presente_acta"))
+
+    if not isinstance(datos.get("requisitos"), list) or len(datos["requisitos"]) == 0:
         datos["requisitos"] = [
             {
                 "REQUISITOS": "Garantías y su aprobación",
@@ -77,7 +106,7 @@ def _inicializar_estado():
             }
         ]
 
-    if "certificaciones" not in datos or not isinstance(datos["certificaciones"], list) or len(datos["certificaciones"]) == 0:
+    if not isinstance(datos.get("certificaciones"), list) or len(datos["certificaciones"]) == 0:
         datos["certificaciones"] = [
             {
                 "CERTIFICACION": "Afiliacion a Riesgos Laborales",
@@ -85,8 +114,6 @@ def _inicializar_estado():
                 "FECHA DE INICIO DE COBERTURA": None,
             }
         ]
-
-    datos["fecha_inicio"] = _parse_fecha(datos.get("fecha_inicio"))
 
     for fila in datos["certificaciones"]:
         if isinstance(fila, dict):
@@ -105,119 +132,194 @@ contrato = _leer_contrato_obra()
 plazo_dias = int(contrato.get("plazo_ejecucion_dias", 0) or 0)
 if plazo_dias <= 0:
     plazo_dias = _extraer_dias_plazo(contrato.get("plazo_ejecucion", ""))
-    
-fecha_inicio = datos.get("fecha_inicio")
-fecha_terminacion = fecha_inicio + timedelta(days=plazo_dias) if isinstance(fecha_inicio, date) else None
 
-st.markdown("""
-<style>
-.titulo-seccion { font-size: 32px !important; font-weight: 800 !important; color: #7A0019; }
-.subtitulo-gris { font-size: 16px !important; color: #666; margin-bottom: 15px; }
-div[data-testid="stProgress"] > div > div > div > div { background-color: #C62828 !important; }
-section[data-testid="stSidebar"] { background-color: #f4f4f4; }
-.stButton > button { width: 100%; border-radius: 6px; height: 3em; font-weight: bold; }
-button[kind="primary"] {
-    background-color: #7A0019 !important;
-    border-color: #7A0019 !important;
-    color: white !important;
-}
-button[kind="primary"]:hover {
-    background-color: #5C0013 !important;
-    border-color: #5C0013 !important;
-    color: white !important;
-}
-</style>
-""", unsafe_allow_html=True)
+if not datos.get("fecha_presente_acta"):
+    datos["fecha_presente_acta"] = date.today()
 
-col_t, col_l = st.columns([4, 1], vertical_alignment="center")
-with col_t:
-    st.markdown('<div class="titulo-seccion">📋 Acta de inicio de obra</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="subtitulo-gris">Diligencie la información base del acta de inicio a partir de los datos del contrato de obra.</div>',
-        unsafe_allow_html=True
+fecha_terminacion = None
+if isinstance(datos.get("fecha_presente_acta"), date):
+    fecha_terminacion = datos["fecha_presente_acta"] + timedelta(days=plazo_dias)
+
+if not datos.get("nombre_firma_interventor"):
+    datos["nombre_firma_interventor"] = _texto_seguro(
+        contrato.get("nombre_interventor") or contrato.get("nombre_supervisor") or ""
     )
-with col_l:
-    try:
-        st.image("unnamed.jpg", use_container_width=True)
-    except Exception:
-        pass
 
-st.divider()
+if not datos.get("nombre_firma_contratista"):
+    datos["nombre_firma_contratista"] = _texto_seguro(contrato.get("nombre_contratista", ""))
+
+if not datos.get("nombre_firma_supervisor"):
+    datos["nombre_firma_supervisor"] = _texto_seguro(contrato.get("nombre_supervisor", ""))
+
+st.markdown(
+    """
+    <style>
+    .acta-titulo {
+        text-align: center;
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 14px;
+    }
+    .acta-label {
+        font-weight: 700;
+        font-size: 15px;
+        margin-top: 4px;
+        margin-bottom: 6px;
+    }
+    .acta-bloque {
+        border: 2px solid #111;
+        padding: 14px;
+        margin-bottom: 0;
+    }
+    .acta-bloque-suave {
+        border-left: 2px solid #111;
+        border-right: 2px solid #111;
+        border-bottom: 2px solid #111;
+        padding: 14px;
+    }
+    .acta-nota {
+        border-left: 2px solid #111;
+        border-right: 2px solid #111;
+        border-bottom: 2px solid #111;
+        padding: 14px;
+        text-align: justify;
+        font-size: 15px;
+    }
+    .acta-firma {
+        border-left: 2px solid #111;
+        border-right: 2px solid #111;
+        border-bottom: 2px solid #111;
+        padding: 14px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 with st.sidebar:
     st.header("🧭 Acciones")
     if st.button("💾 Guardar acta", type="primary", key="guardar_acta_inicio_sidebar"):
         _guardar()
-    st.markdown("---")
-    st.markdown("**Módulo actual:** Acta de inicio de obra")
 
-st.subheader("1. Datos del contrato de obra")
+st.markdown('<div class="acta-titulo">ACTA DE INICIACIÓN CONTRATO</div>', unsafe_allow_html=True)
 
-c1, c2 = st.columns(2)
-with c1:
-    st.text_input(
-        "Número de contrato",
-        value=str(contrato.get("numero_contrato", "") or ""),
-        disabled=True,
-        key="acta_numero_contrato_mostrar",
-    )
-    st.text_input(
-        "Nombre del proyecto",
-        value=str(contrato.get("nombre_proyecto", "") or ""),
-        disabled=True,
-        key="acta_nombre_proyecto_mostrar",
-    )
-    st.text_input(
-        "Contratista",
-        value=str(contrato.get("nombre_contratista", "") or ""),
-        disabled=True,
-        key="acta_nombre_contratista_mostrar",
-    )
-
-with c2:
-    st.text_input(
-        "Objeto del contrato",
-        value=str(contrato.get("objeto_general", "") or ""),
-        disabled=True,
-        key="acta_objeto_general_mostrar",
-    )
-    st.text_input(
-        "Plazo de ejecución (días calendario)",
-        value=str(contrato.get("plazo_ejecucion", "") or ""),
-        disabled=True,
-        key="acta_plazo_ejecucion_mostrar",
-    )
-
-st.divider()
-
-st.subheader("2. Fechas del acta")
-
-f1, f2 = st.columns(2)
-
-with f1:
-    fecha_inicio_seleccionada = st.date_input(
-        "Fecha de inicio",
-        value=fecha_inicio or date.today(),
+with st.container(border=True):
+    st.markdown("### FECHA PRESENTE ACTA:")
+    datos["fecha_presente_acta"] = st.date_input(
+        "FECHA PRESENTE ACTA",
+        value=datos["fecha_presente_acta"],
         format="DD/MM/YYYY",
-        key="acta_fecha_inicio_input",
+        label_visibility="collapsed",
+        key="fecha_presente_acta",
     )
-    datos["fecha_inicio"] = fecha_inicio_seleccionada
 
-with f2:
-    fecha_terminacion = datos["fecha_inicio"] + timedelta(days=plazo_dias) if isinstance(datos["fecha_inicio"], date) else None
+with st.container(border=True):
+    st.markdown("### CONTRATO No:")
+    st.text_input(
+        "CONTRATO No",
+        value=_texto_seguro(contrato.get("numero_contrato", "")),
+        label_visibility="collapsed",
+        disabled=True,
+        key="acta_numero_contrato",
+    )
+
+with st.container(border=True):
+    c1, c2 = st.columns([4, 2])
+    with c1:
+        st.markdown("### CONTRATANTE:")
+        st.text_input(
+            "CONTRATANTE",
+            value=_texto_seguro(contrato.get("nombre_entidad", "")),
+            label_visibility="collapsed",
+            disabled=True,
+            key="acta_contratante",
+        )
+    with c2:
+        st.markdown("### NIT. C.C.")
+        st.text_input(
+            "NIT. C.C. CONTRATANTE",
+            value=_texto_seguro(contrato.get("nit_entidad", "")),
+            label_visibility="collapsed",
+            disabled=True,
+            key="acta_nit_contratante",
+        )
+
+with st.container(border=True):
+    c1, c2 = st.columns([4, 2])
+    with c1:
+        st.markdown("### CONTRATISTA:")
+        st.text_input(
+            "CONTRATISTA",
+            value=_texto_seguro(contrato.get("nombre_contratista", "")),
+            label_visibility="collapsed",
+            disabled=True,
+            key="acta_contratista",
+        )
+    with c2:
+        st.markdown("### NIT. C.C.")
+        st.text_input(
+            "NIT. C.C. CONTRATISTA",
+            value=_texto_seguro(contrato.get("nit_contratista", "")),
+            label_visibility="collapsed",
+            disabled=True,
+            key="acta_nit_contratista",
+        )
+
+with st.container(border=True):
+    st.markdown("### INTERVENTOR:")
+    st.text_input(
+        "INTERVENTOR",
+        value=_texto_seguro(contrato.get("nombre_interventor") or contrato.get("nombre_supervisor") or ""),
+        label_visibility="collapsed",
+        disabled=True,
+        key="acta_interventor",
+    )
+
+with st.container(border=True):
+    st.markdown("### OBJETO:")
+    st.text_area(
+        "OBJETO",
+        value=_texto_seguro(contrato.get("objeto_general", "")),
+        label_visibility="collapsed",
+        disabled=True,
+        height=120,
+        key="acta_objeto",
+    )
+
+with st.container(border=True):
+    st.markdown("### VALOR:")
+    st.text_input(
+        "VALOR",
+        value=_texto_seguro(contrato.get("valor_total_numeros", "")),
+        label_visibility="collapsed",
+        disabled=True,
+        key="acta_valor",
+    )
+
+with st.container(border=True):
+    st.markdown("### PLAZO DE EJECUCIÓN:")
+    st.text_input(
+        "PLAZO DE EJECUCIÓN",
+        value=_texto_seguro(contrato.get("plazo_ejecucion", "")),
+        label_visibility="collapsed",
+        disabled=True,
+        key="acta_plazo",
+    )
+
+with st.container(border=True):
+    st.markdown("### FECHA DE TERMINACIÓN:")
     st.date_input(
-        "Fecha de terminación",
+        "FECHA DE TERMINACIÓN",
         value=fecha_terminacion or date.today(),
         format="DD/MM/YYYY",
+        label_visibility="collapsed",
         disabled=True,
-        key="acta_fecha_terminacion_input",
+        key="acta_fecha_terminacion",
     )
 
-st.caption(f"Plazo en dias: {plazo_dias} ")
-
-st.divider()
-
-st.markdown("**Marque con una X el requisito que aplique para la legalización y ejecución del contrato:**")
+st.markdown(
+    "Marque con una X el requisito que aplique para la legalización y ejecución del contrato:"
+)
 
 df_requisitos = pd.DataFrame(datos["requisitos"])
 df_requisitos_edit = st.data_editor(
@@ -270,7 +372,37 @@ for fila in certificaciones:
         fila["FECHA DE INICIO DE COBERTURA"] = _parse_fecha(fila.get("FECHA DE INICIO DE COBERTURA"))
 datos["certificaciones"] = certificaciones
 
-st.divider()
+st.markdown(
+    """
+    En constancia se firma por los que en ésta intervinieron, dejando constancia que se han reunido todos
+    y cada uno de los requisitos necesarios tanto para la legalización del contrato como para su ejecución.
+    """
+)
+
+col_firma_1, col_firma_2 = st.columns(2)
+
+with col_firma_1:
+    st.text_input(
+        "Nombre interventor y/o supervisor",
+        value=_texto_seguro(datos.get("nombre_firma_interventor", "")),
+        key="nombre_firma_interventor",
+    )
+    st.markdown("**INTERVENTOR Y/O SUPERVISOR**")
+
+with col_firma_2:
+    st.text_input(
+        "Nombre contratista",
+        value=_texto_seguro(datos.get("nombre_firma_contratista", "")),
+        key="nombre_firma_contratista",
+    )
+    st.markdown("**CONTRATISTA**")
+
+st.text_input(
+    "Nombre supervisor",
+    value=_texto_seguro(datos.get("nombre_firma_supervisor", "")),
+    key="nombre_firma_supervisor",
+)
+st.markdown("**SUPERVISOR**")
 
 if st.button("💾 Guardar acta de inicio", type="primary", key="guardar_acta_inicio_principal"):
     _guardar()
