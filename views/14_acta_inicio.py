@@ -181,9 +181,19 @@ def _generar_word_acta_inicio(contrato, datos, fecha_terminacion):
     )
 
     doc.add_paragraph("")
-    doc.add_paragraph(f"INTERVENTOR Y/O SUPERVISOR: {_texto_seguro(datos.get('nombre_firma_interventor', ''))}")
-    doc.add_paragraph(f"CONTRATISTA: {_texto_seguro(datos.get('nombre_firma_contratista', ''))}")
-    doc.add_paragraph(f"SUPERVISOR: {_texto_seguro(datos.get('nombre_firma_supervisor', ''))}")
+
+    tabla_firmas = doc.add_table(rows=2, cols=2)
+    tabla_firmas.style = "Table Grid"
+
+    tabla_firmas.cell(0, 0).text = "INTERVENTOR Y/O SUPERVISOR"
+    tabla_firmas.cell(0, 1).text = "CONTRATISTA"
+
+    tabla_firmas.cell(1, 0).text = _texto_seguro(datos.get("nombre_firma_interventor", ""))
+    tabla_firmas.cell(1, 1).text = _texto_seguro(datos.get("nombre_firma_contratista", ""))
+
+    doc.add_paragraph("")
+    doc.add_paragraph("SUPERVISOR")
+    doc.add_paragraph(_texto_seguro(datos.get("nombre_firma_supervisor", "")))
 
     buffer = BytesIO()
     doc.save(buffer)
