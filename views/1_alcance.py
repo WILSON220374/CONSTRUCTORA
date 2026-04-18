@@ -581,7 +581,7 @@ elif st.session_state["seccion_activa"] == "📋 Especificaciones Técnicas":
     # 1. SELECTOR DE NIVEL
     nivel_seleccionado = st.radio(
         "¿A qué nivel de la EDT desea registrar especificaciones?",
-        ["Objetivos (Nivel 1)", "Productos (Nivel 2)", "Actividades (Nivel 3)", "Paquetes de Trabajo (Nivel 4)"],
+        ["PRODUCTO", "ACTIVIDADES", "SUBACTIVIDADES", "OPERATIVO"],
         horizontal=True
     )
     
@@ -592,19 +592,19 @@ elif st.session_state["seccion_activa"] == "📋 Especificaciones Técnicas":
         for i, obj in enumerate(datos["objetivos"]):
             cod_obj = f"{i+1}"
             nombre_capitulo = f"CAPÍTULO {cod_obj}. {obj['texto'].upper()}"
-            if nivel_seleccionado == "Objetivos (Nivel 1)":
+            if nivel_seleccionado == "PRODUCTO":
                 lista_elementos.append({"id": obj["id"], "codigo": cod_obj, "nombre": obj["texto"], "capitulo": nombre_capitulo, "proyecto": nom_proy_txt, "data_ref": obj})
             for j, p in enumerate(datos["edt_data"].get(obj["id"], [])):
                 cod_prod = f"{cod_obj}.{j+1}"
-                if nivel_seleccionado == "Productos (Nivel 2)":
+                if nivel_seleccionado == "ACTIVIDADES":
                     lista_elementos.append({"id": p["id"], "codigo": cod_prod, "nombre": p["nombre"], "capitulo": nombre_capitulo, "proyecto": nom_proy_txt, "data_ref": p})
                 for k, a in enumerate(p.get("actividades", [])):
                     cod_act = f"{cod_prod}.{k+1}"
-                    if nivel_seleccionado == "Actividades (Nivel 3)":
+                    if nivel_seleccionado == "SUBACTIVIDADES":
                         lista_elementos.append({"id": a["id"], "codigo": cod_act, "nombre": a["nombre"], "capitulo": nombre_capitulo, "proyecto": nom_proy_txt, "data_ref": a})
                     for l, pq in enumerate(a.get("paquetes", [])):
                         cod_paq = f"{cod_act}.{l+1}"
-                        if nivel_seleccionado == "Paquetes de Trabajo (Nivel 4)":
+                        if nivel_seleccionado == "OPERATIVO":
                             lista_elementos.append({"id": pq["id"], "codigo": cod_paq, "nombre": pq["nombre"], "capitulo": nombre_capitulo, "proyecto": nom_proy_txt, "data_ref": pq})
 
     if datos.get("requiere_costos_indirectos", "No") == "Sí":
@@ -612,7 +612,7 @@ elif st.session_state["seccion_activa"] == "📋 Especificaciones Técnicas":
         nom_proy_txt = datos["nombre_proyecto"] if datos["nombre_proyecto"] else "PROYECTO SIN NOMBRE"
         capitulo_ci = f"CAPÍTULO {len(datos['objetivos']) + 1}. COSTOS INDIRECTOS DEL PROYECTO"
 
-        if nivel_seleccionado == "Objetivos (Nivel 1)" and costos_indirectos:
+        if nivel_seleccionado == "PRODUCTO" and costos_indirectos:
             lista_elementos.append({
                 "id": "costos_indirectos_proyecto",
                 "codigo": f"{len(datos['objetivos']) + 1}",
@@ -622,7 +622,7 @@ elif st.session_state["seccion_activa"] == "📋 Especificaciones Técnicas":
                 "data_ref": datos.setdefault("costos_indirectos_specs", {"specs": {}})
             })
 
-        if nivel_seleccionado == "Productos (Nivel 2)":
+        if nivel_seleccionado == "ACTIVIDADES":
             for j, ci in enumerate(costos_indirectos):
                 lista_elementos.append({
                     "id": ci["id"],
