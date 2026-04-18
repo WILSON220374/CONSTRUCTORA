@@ -352,13 +352,10 @@ def generar_word(datos):
 
     izquierda.text = (
         "Por la Entidad,\n\n"
-        f"{nombre_representante_entidad}\n"
         f"{texto_si_vacio(datos.get('firmante_entidad'))}"
     )
     derecha.text = (
         "Por el Interventor,\n\n"
-        f"{nombre_interventor}\n"
-        f"{nombre_empresa_interventora}\n"
         f"{texto_si_vacio(datos.get('firmante_interventor'))}"
     )
 
