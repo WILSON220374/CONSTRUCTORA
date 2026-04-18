@@ -34,8 +34,7 @@ def calcular_altura(texto, min_h=110):
 
 
 def inicializar_contrato_interventoria():
-    if "contrato_interventoria_datos" not in st.session_state:
-        st.session_state["contrato_interventoria_datos"] = cargar_estado("contrato_interventoria") or {}
+    st.session_state["contrato_interventoria_datos"] = cargar_estado("contrato_interventoria") or {}
 
     d = st.session_state["contrato_interventoria_datos"]
 
@@ -282,8 +281,7 @@ with st.expander("6. Cláusula penal", expanded=False):
 with st.expander("7. Multas", expanded=False):
     st.markdown("**Tabla de multas**")
 
-    if "df_multas_interventoria" not in st.session_state:
-        st.session_state["df_multas_interventoria"] = pd.DataFrame(datos["multas_interventoria"])
+    st.session_state["df_multas_interventoria"] = pd.DataFrame(datos["multas_interventoria"])
 
     df_multas = st.data_editor(
         st.session_state["df_multas_interventoria"],
@@ -315,8 +313,7 @@ with st.expander("8. Garantías", expanded=False):
         disabled=True
     )
 
-    if "df_garantias_interventoria" not in st.session_state:
-        st.session_state["df_garantias_interventoria"] = pd.DataFrame(datos["garantias_interventoria"])
+    st.session_state["df_garantias_interventoria"] = pd.DataFrame(datos["garantias_interventoria"])
 
     df_editado = st.data_editor(
         st.session_state["df_garantias_interventoria"],
