@@ -173,12 +173,9 @@ def _columnas_meses(cantidad_meses: int):
 
 def _fila_vacia(columnas_meses):
     fila = {
-        "ACTIVIDAD": "",
         "ÍTEM No.": "",
         "DESCRIPCIÓN DEL ÍTEM": "",
         "VALOR": 0.0,
-        "VALOR PROGRAMA APROBADO": 0.0,
-        "%": 0.0,
     }
     for col in columnas_meses:
         fila[col] = 0.0
@@ -239,16 +236,15 @@ def _recalcular_filas(datos, mapa_catalogo, valor_anticipo):
 
     for fila in datos.get("rows", []):
         fila_nueva = _fila_vacia(columnas_meses)
-        actividad = _texto(fila.get("ACTIVIDAD"))
+        actividad = _texto(fila.get("DESCRIPCIÓN DEL ÍTEM"))
 
         if actividad and actividad in mapa_catalogo:
             info = mapa_catalogo[actividad]
-            fila_nueva["ACTIVIDAD"] = actividad
             fila_nueva["ÍTEM No."] = info["item_no"]
             fila_nueva["DESCRIPCIÓN DEL ÍTEM"] = info["descripcion"]
             fila_nueva["VALOR"] = _safe_float(info["valor"], 0.0)
         else:
-            fila_nueva["ACTIVIDAD"] = actividad
+            fila_nueva["DESCRIPCIÓN DEL ÍTEM"] = actividad
 
         suma_meses = 0.0
         for col in columnas_meses:
@@ -281,7 +277,7 @@ def _duplicados_actividad(rows):
     vistos = set()
     repetidos = set()
     for fila in rows:
-        actividad = _texto(fila.get("ACTIVIDAD"))
+        actividad = _texto(fila.get("DESCRIPCIÓN DEL ÍTEM"))
         if not actividad:
             continue
         if actividad in vistos:
@@ -496,13 +492,13 @@ with st.container(border=True):
     df_editor = _dataframe_para_editor(datos, columnas_meses)
 
     config = {
-        "ACTIVIDAD": st.column_config.SelectboxColumn(
-            "Seleccionar actividad",
+        "ÍTEM No.": st.column_config.TextColumn("Ítem No.", disabled=True),
+        "DESCRIPCIÓN DEL ÍTEM": st.column_config.SelectboxColumn(
+            "Descripción del ítem",
             options=[x["codigo"] for x in catalogo_presupuesto],
             required=False,
+            width="large",
         ),
-        "ÍTEM No.": st.column_config.TextColumn("Ítem No.", disabled=True),
-        "DESCRIPCIÓN DEL ÍTEM": st.column_config.TextColumn("Descripción del ítem", disabled=True, width="large"),
         "VALOR": st.column_config.NumberColumn("Valor", format="$ %.2f", disabled=True),
         "VALOR PROGRAMA APROBADO": st.column_config.NumberColumn("Valor programa aprobado", format="$ %.2f", disabled=True),
         "%": st.column_config.NumberColumn("%", format="%.4f", disabled=True),
@@ -511,7 +507,7 @@ with st.container(border=True):
     for col in columnas_meses:
         config[col] = st.column_config.NumberColumn(col, min_value=0.0, step=0.01, format="$ %.2f")
 
-    columnas_editor = ["ACTIVIDAD", "ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM", "VALOR"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
+    columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM", "VALOR"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
 
     df_editado = st.data_editor(
         df_editor,
