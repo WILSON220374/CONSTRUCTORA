@@ -488,15 +488,6 @@ with st.container(border=True):
         st.text_input("Contrato de interventoría No.", value=_texto(contrato_interventoria_no), disabled=True, key="pia_contrato_interventoria")
         st.text_input("Interventor", value=_texto(interventor), disabled=True, key="pia_interventor")
 
-with st.container(border=True):
-    col_btn_1, col_btn_2 = st.columns(2)
-    with col_btn_1:
-        if st.button("➕ Agregar fila", use_container_width=True, key="pia_agregar_fila"):
-            _agregar_fila(datos)
-    with col_btn_2:
-        if st.button("➖ Quitar última fila", use_container_width=True, key="pia_quitar_fila"):
-            _quitar_fila(datos)
-
 columnas_meses = _recalcular_filas(datos, mapa_catalogo, valor_anticipo)
 
 with st.container(border=True):
@@ -526,7 +517,7 @@ with st.container(border=True):
         df_editor,
         width="stretch",
         hide_index=True,
-        num_rows="fixed",
+        num_rows="dynamic",
         key="plan_anticipo_editor",
         column_order=columnas_editor,
         column_config=config,
