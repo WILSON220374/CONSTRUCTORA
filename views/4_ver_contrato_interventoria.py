@@ -426,15 +426,12 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown(
         f"**Por la Entidad**  \n"
-        f"{texto_si_vacio(datos.get('nombre_representante_entidad'))}  \n"
         f"{texto_si_vacio(datos.get('firmante_entidad'))}"
     )
 
 with col2:
     st.markdown(
         f"**Por el Interventor**  \n"
-        f"{texto_si_vacio(datos.get('nombre_interventor'))}  \n"
-        f"{texto_si_vacio(datos.get('nombre_empresa_interventora'))}  \n"
         f"{texto_si_vacio(datos.get('firmante_interventor'))}"
     )
 
