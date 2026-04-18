@@ -289,8 +289,7 @@ def construir_contrato(datos):
     elif tipo_seguimiento == "Solo interventoría":
         bloque_supervision = "La supervisión no aplica para el presente contrato."
 
-    contrato = f"""# Contrato de obra pública {numero_contrato} para la ejecución del proyecto {nombre_proyecto} del {fecha_contrato}, celebrado entre {nombre_entidad} y {nombre_contratista}.
-
+    contrato = f"""# Contrato de obra pública {numero_contrato} para la ejecución del proyecto {nombre_proyecto}, celebrado entre {nombre_entidad} y {nombre_contratista}.
 Entre los suscritos: {rep_entidad_nombre}, identificado con {rep_entidad_tipo_doc} No. {rep_entidad_num_doc}, expedida en {rep_entidad_municipio_expedicion}, en su calidad de {rep_entidad_cargo}, actuando en nombre y representación de {nombre_entidad}, con NIT {nit_entidad}, quien para los efectos del presente contrato se denomina la Entidad Estatal contratante; y por la otra, {rep_contratista_nombre}, identificado con {rep_contratista_tipo_doc} No. {rep_contratista_num_doc}, expedida en {rep_contratista_ciudad_expedicion}, en representación de {nombre_contratista}, identificado con NIT {nit_contratista}, quien para los efectos del presente contrato se denominará el Contratista, hemos convenido en celebrar el presente Contrato de obra pública, teniendo en cuenta las siguientes consideraciones:
 
 I. Que la misión de {nombre_entidad} es {mision_entidad} y el contrato a celebrarse se relaciona con esta misión porque {justificacion_general}.
