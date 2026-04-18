@@ -470,7 +470,7 @@ El presente contrato requiere para su perfeccionamiento de la firma de las parte
 
 Las actividades previstas en el presente Contrato se desarrollarán en {lugar_ejecucion}.
 
-Para constancia, se firma en {lugar_celebracion} el {fecha_contrato}.
+En constancia, se firma en {lugar_celebracion} el {fecha_contrato}.
 """
     return contrato
 
