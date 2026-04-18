@@ -1,12 +1,13 @@
-import json
 import re
 from io import BytesIO
 from datetime import date, datetime, timedelta
+
 import pandas as pd
 import streamlit as st
+from docx import Document
+
 from supabase_state import cargar_estado
 from supabase_state import guardar_estado as guardar_estado_bd
-from docx import Document
 
 
 def guardar_estado(clave, datos):
@@ -35,11 +36,24 @@ def _parse_fecha(valor):
     if isinstance(valor, datetime):
         return valor.date()
     if isinstance(valor, str) and valor.strip():
+        txt = valor.strip()
         try:
-            return datetime.fromisoformat(valor.strip()).date()
+            return datetime.fromisoformat(txt).date()
         except Exception:
-            return None
+            pass
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%m/%d/%Y"):
+            try:
+                return datetime.strptime(txt, fmt).date()
+            except Exception:
+                continue
     return None
+
+
+def _fecha_texto(valor):
+    f = _parse_fecha(valor)
+    if not f:
+        return ""
+    return f.strftime("%d/%m/%Y")
 
 
 def _extraer_dias_plazo(valor):
@@ -124,12 +138,6 @@ def _guardar():
     guardar_estado("acta_inicio_obra", st.session_state["acta_inicio_obra_datos"])
     st.success("Acta de inicio guardada correctamente.")
 
-def _fecha_texto(valor):
-    f = _parse_fecha(valor)
-    if not f:
-        return ""
-    return f.strftime("%d/%m/%Y")
-
 
 def _generar_word_acta_inicio(contrato, datos, fecha_terminacion):
     doc = Document()
@@ -142,7 +150,9 @@ def _generar_word_acta_inicio(contrato, datos, fecha_terminacion):
     doc.add_paragraph(f"NIT. C.C. CONTRATANTE: {_texto_seguro(contrato.get('nit_entidad', ''))}")
     doc.add_paragraph(f"CONTRATISTA: {_texto_seguro(contrato.get('nombre_contratista', ''))}")
     doc.add_paragraph(f"NIT. C.C. CONTRATISTA: {_texto_seguro(contrato.get('nit_contratista', ''))}")
-    doc.add_paragraph(f"INTERVENTOR: {_texto_seguro(contrato.get('nombre_interventor') or contrato.get('nombre_supervisor') or '')}")
+    doc.add_paragraph(
+        f"INTERVENTOR: {_texto_seguro(contrato.get('nombre_interventor') or contrato.get('nombre_supervisor') or '')}"
+    )
     doc.add_paragraph(f"OBJETO: {_texto_seguro(contrato.get('objeto_general', ''))}")
     doc.add_paragraph(f"VALOR: {_texto_seguro(contrato.get('valor_total_numeros', ''))}")
     doc.add_paragraph(f"PLAZO DE EJECUCIÓN: {_texto_seguro(contrato.get('plazo_ejecucion', ''))}")
@@ -215,37 +225,6 @@ st.markdown(
         font-size: 32px;
         font-weight: 800;
         margin-bottom: 14px;
-    }
-    .acta-label {
-        font-weight: 700;
-        font-size: 15px;
-        margin-top: 4px;
-        margin-bottom: 6px;
-    }
-    .acta-bloque {
-        border: 2px solid #111;
-        padding: 14px;
-        margin-bottom: 0;
-    }
-    .acta-bloque-suave {
-        border-left: 2px solid #111;
-        border-right: 2px solid #111;
-        border-bottom: 2px solid #111;
-        padding: 14px;
-    }
-    .acta-nota {
-        border-left: 2px solid #111;
-        border-right: 2px solid #111;
-        border-bottom: 2px solid #111;
-        padding: 14px;
-        text-align: justify;
-        font-size: 15px;
-    }
-    .acta-firma {
-        border-left: 2px solid #111;
-        border-right: 2px solid #111;
-        border-bottom: 2px solid #111;
-        padding: 14px;
     }
     </style>
     """,
@@ -373,9 +352,7 @@ with st.container(border=True):
         key="acta_fecha_terminacion",
     )
 
-st.markdown(
-    "Marque con una X el requisito que aplique para la legalización y ejecución del contrato:"
-)
+st.markdown("Marque con una X el requisito que aplique para la legalización y ejecución del contrato:")
 
 df_requisitos = pd.DataFrame(datos["requisitos"])
 df_requisitos_edit = st.data_editor(
