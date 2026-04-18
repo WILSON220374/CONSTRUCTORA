@@ -746,79 +746,88 @@ seleccion = st.selectbox(
 row_id_sel = _safe_str(seleccion)
 row_sel_df = df_pct_base[df_pct_base["ROW_ID"].astype(str).eq(str(row_id_sel))].copy()
 
-if not row_sel_df.empty:
-    row_sel = row_sel_df.iloc[0]
-    activos_sel = mapa_activos.get(str(row_id_sel), set())
+total_editor = 0.0
+editor_df_edit = pd.DataFrame()
+aplicar_programacion = False
 
-    st.write(f"**Actividad:** {_safe_str(row_sel['DESCRIPCIÓN'])}")
-    st.write(f"**Periodos habilitados:** {', '.join([str(i) for i in sorted(activos_sel)]) if activos_sel else 'Ninguno'}")
+with st.form("flujo_fondos_editor_form"):
+    if not row_sel_df.empty:
+        row_sel = row_sel_df.iloc[0]
+        activos_sel = mapa_activos.get(str(row_id_sel), set())
 
-    editor_payload = {f"{p} %": [_safe_float(row_sel[f'{p} %'])] for p in periodos}
-    editor_df = pd.DataFrame(editor_payload)
+        st.write(f"**Actividad:** {_safe_str(row_sel['DESCRIPCIÓN'])}")
+        st.write(f"**Periodos habilitados:** {', '.join([str(i) for i in sorted(activos_sel)]) if activos_sel else 'Ninguno'}")
 
-    editor_config = {}
-    for i, p in enumerate(periodos, start=1):
-        editor_config[f"{p} %"] = st.column_config.NumberColumn(
-            f"{p} %",
-            min_value=0.0,
-            max_value=100.0,
-            step=0.01,
-            format="%.2f",
-            disabled=(i not in activos_sel),
-        )
+        editor_payload = {f"{p} %": [_safe_float(row_sel[f'{p} %'])] for p in periodos}
+        editor_df = pd.DataFrame(editor_payload)
 
-    editor_df_edit = st.data_editor(
-        editor_df,
-        width="stretch",
-        hide_index=True,
-        num_rows="fixed",
-        key="flujo_fondos_editor_superior",
-        column_config=editor_config,
-    )
-
-    total_editor = 0.0
-    if not editor_df_edit.empty:
-        for p in periodos:
-            total_editor += _safe_float(editor_df_edit.iloc[0].get(f"{p} %", 0.0))
-    total_editor = round(total_editor, 2)
-    st.write(f"**TOTAL % a cargar:** {total_editor:.2f}")
-
-    if st.button("Aplicar a la tabla", width="stretch"):
-        total_editor = round(float(total_editor), 2)
-
-        if total_editor < 100.0:
-            st.error("La suma de los porcentajes no puede ser menor a 100.00.")
-        elif total_editor > 100.0:
-            st.error("La suma de los porcentajes no puede ser mayor a 100.00.")
-        else:
-            payload_pct = editor_df_edit.iloc[0].to_dict() if not editor_df_edit.empty else {}
-            df_pct_aplicado = _aplicar_editor_a_tabla(df_pct_base, str(row_id_sel), payload_pct, periodos, mapa_activos)
-            df_obra_aplicado = df_pct_aplicado[["ITEM", "TIPO", "DESCRIPCIÓN"]].copy()
-
-            cantidades_base_aplicado = {}
-            for _, row_base in base_df.iterrows():
-                cantidades_base_aplicado[_safe_str(row_base.get("ROW_ID", ""))] = _safe_float(row_base.get("CANTIDAD TOTAL", 0.0), 0.0)
-
-            df_obra_aplicado["CANTIDAD TOTAL"] = df_pct_aplicado["ROW_ID"].apply(lambda rid: round(cantidades_base_aplicado.get(_safe_str(rid), 0.0), 4))
-
-            for periodo in periodos:
-                df_obra_aplicado[periodo] = (
-                    df_obra_aplicado["CANTIDAD TOTAL"] * df_pct_aplicado[f"{periodo} %"].apply(lambda x: _safe_float(x, 0.0) / 100.0)
-                ).round(4)
-
-            df_val_aplicado = _tabla_valores(df_pct_aplicado, periodos)
-            total_periodo_ap, acumulado_ap, pct_acum_ap = _resumen(df_val_aplicado, periodos)
-            df_resumen_aplicado = pd.DataFrame(
-                [
-                    {"CONCEPTO": "TOTAL POR PERIODO", **{p: total_periodo_ap[p] for p in periodos}},
-                    {"CONCEPTO": "ACUMULADO", **{p: acumulado_ap[p] for p in periodos}},
-                    {"CONCEPTO": "% ACUMULADO", **{p: pct_acum_ap[p] for p in periodos}},
-                ]
+        editor_config = {}
+        for i, p in enumerate(periodos, start=1):
+            editor_config[f"{p} %"] = st.column_config.NumberColumn(
+                f"{p} %",
+                min_value=0.0,
+                max_value=100.0,
+                step=0.01,
+                format="%.2f",
+                disabled=(i not in activos_sel),
             )
 
-            _guardar_desde_df(df_pct_aplicado, periodos, df_obra_aplicado, df_val_aplicado, df_resumen_aplicado)
-            st.success("Actividad aplicada a la tabla correctamente.")
-            st.rerun()
+        editor_df_edit = st.data_editor(
+            editor_df,
+            width="stretch",
+            hide_index=True,
+            num_rows="fixed",
+            key="flujo_fondos_editor_superior",
+            column_config=editor_config,
+        )
+
+        if not editor_df_edit.empty:
+            for p in periodos:
+                total_editor += _safe_float(editor_df_edit.iloc[0].get(f"{p} %", 0.0))
+        total_editor = round(total_editor, 2)
+        st.write(f"**TOTAL % a cargar:** {total_editor:.2f}")
+
+    aplicar_programacion = st.form_submit_button("Aplicar a la tabla", width="stretch")
+
+if not row_sel_df.empty and aplicar_programacion:
+    total_editor = round(float(total_editor), 2)
+
+    if total_editor < 100.0:
+        st.error("La suma de los porcentajes no puede ser menor a 100.00.")
+    elif total_editor > 100.0:
+        st.error("La suma de los porcentajes no puede ser mayor a 100.00.")
+    else:
+        payload_pct = editor_df_edit.iloc[0].to_dict() if not editor_df_edit.empty else {}
+        df_pct_aplicado = _aplicar_editor_a_tabla(df_pct_base, str(row_id_sel), payload_pct, periodos, mapa_activos)
+        df_obra_aplicado = df_pct_aplicado[["ITEM", "TIPO", "DESCRIPCIÓN"]].copy()
+
+        cantidades_base_aplicado = {}
+        for _, row_base in base_df.iterrows():
+            cantidades_base_aplicado[_safe_str(row_base.get("ROW_ID", ""))] = _safe_float(row_base.get("CANTIDAD TOTAL", 0.0), 0.0)
+
+        df_obra_aplicado["CANTIDAD TOTAL"] = df_pct_aplicado["ROW_ID"].apply(
+            lambda rid: round(cantidades_base_aplicado.get(_safe_str(rid), 0.0), 4)
+        )
+
+        for periodo in periodos:
+            df_obra_aplicado[periodo] = (
+                df_obra_aplicado["CANTIDAD TOTAL"] *
+                df_pct_aplicado[f"{periodo} %"].apply(lambda x: _safe_float(x, 0.0) / 100.0)
+            ).round(4)
+
+        df_val_aplicado = _tabla_valores(df_pct_aplicado, periodos)
+        total_periodo_ap, acumulado_ap, pct_acum_ap = _resumen(df_val_aplicado, periodos)
+        df_resumen_aplicado = pd.DataFrame(
+            [
+                {"CONCEPTO": "TOTAL POR PERIODO", **{p: total_periodo_ap[p] for p in periodos}},
+                {"CONCEPTO": "ACUMULADO", **{p: acumulado_ap[p] for p in periodos}},
+                {"CONCEPTO": "% ACUMULADO", **{p: pct_acum_ap[p] for p in periodos}},
+            ]
+        )
+
+        _guardar_desde_df(df_pct_aplicado, periodos, df_obra_aplicado, df_val_aplicado, df_resumen_aplicado)
+        st.success("Actividad aplicada a la tabla correctamente.")
+        st.rerun()
 
 column_order_pct = [
     "ITEM",
