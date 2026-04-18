@@ -311,10 +311,6 @@ Los documentos que a continuación se relacionan hacen parte integral del contra
 {documentos_txt}
 
 En constancia se firma el presente contrato en {lugar_perfeccionamiento}, el {fecha_suscripcion}.
-
-**Por la Entidad:** {nombre_representante_entidad}  
-**Por el Interventor:** {nombre_interventor}  
-**Empresa interventora:** {nombre_empresa_interventora}
 """
     return contrato
 
