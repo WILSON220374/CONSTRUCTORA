@@ -15,7 +15,7 @@ def obtener_datos_contrato():
 
 def texto_si_vacio(valor, pendiente="PENDIENTE"):
     if valor is None:
-        return pendienteF
+        return pendiente
     if isinstance(valor, str):
         return valor.strip() if valor.strip() else pendiente
     return str(valor)
