@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from io import BytesIO
 
 import streamlit as st
@@ -25,6 +26,128 @@ def texto_si_vacio(valor, pendiente="PENDIENTE"):
 
 def escapar_tabla(valor):
     return texto_si_vacio(valor).replace("|", "\\|")
+
+def _numero_a_letras_basico(n):
+    unidades = {
+        0: "",
+        1: "uno",
+        2: "dos",
+        3: "tres",
+        4: "cuatro",
+        5: "cinco",
+        6: "seis",
+        7: "siete",
+        8: "ocho",
+        9: "nueve",
+        10: "diez",
+        11: "once",
+        12: "doce",
+        13: "trece",
+        14: "catorce",
+        15: "quince",
+        16: "dieciseis",
+        17: "diecisiete",
+        18: "dieciocho",
+        19: "diecinueve",
+        20: "veinte",
+        21: "veintiuno",
+        22: "veintidos",
+        23: "veintitres",
+        24: "veinticuatro",
+        25: "veinticinco",
+        26: "veintiseis",
+        27: "veintisiete",
+        28: "veintiocho",
+        29: "veintinueve",
+    }
+
+    decenas = {
+        30: "treinta",
+        40: "cuarenta",
+        50: "cincuenta",
+        60: "sesenta",
+        70: "setenta",
+        80: "ochenta",
+        90: "noventa",
+    }
+
+    centenas = {
+        100: "cien",
+        200: "doscientos",
+        300: "trescientos",
+        400: "cuatrocientos",
+        500: "quinientos",
+        600: "seiscientos",
+        700: "setecientos",
+        800: "ochocientos",
+        900: "novecientos",
+    }
+
+    if n in unidades:
+        return unidades[n]
+
+    if n < 100:
+        d = (n // 10) * 10
+        u = n % 10
+        return decenas[d] if u == 0 else f"{decenas[d]} y {unidades[u]}"
+
+    if n == 100:
+        return "cien"
+
+    if n < 200:
+        return f"ciento {_numero_a_letras_basico(n - 100)}"
+
+    if n < 1000:
+        c = (n // 100) * 100
+        r = n % 100
+        return centenas[c] if r == 0 else f"{centenas[c]} {_numero_a_letras_basico(r)}"
+
+    if n == 1000:
+        return "mil"
+
+    if n < 2000:
+        return f"mil {_numero_a_letras_basico(n - 1000)}"
+
+    if n < 1000000:
+        m = n // 1000
+        r = n % 1000
+        base = f"{_numero_a_letras_basico(m)} mil"
+        return base if r == 0 else f"{base} {_numero_a_letras_basico(r)}"
+
+    return str(n)
+
+
+def fecha_en_letras(valor):
+    txt = texto_si_vacio(valor, "")
+    if not txt:
+        return ""
+
+    meses = {
+        1: "enero",
+        2: "febrero",
+        3: "marzo",
+        4: "abril",
+        5: "mayo",
+        6: "junio",
+        7: "julio",
+        8: "agosto",
+        9: "septiembre",
+        10: "octubre",
+        11: "noviembre",
+        12: "diciembre",
+    }
+
+    formatos = ("%d-%m-%Y", "%d/%m/%Y", "%Y-%m-%d")
+    for fmt in formatos:
+        try:
+            f = datetime.strptime(txt, fmt)
+            dia_letras = _numero_a_letras_basico(f.day)
+            anio_letras = _numero_a_letras_basico(f.year)
+            return f"a los {dia_letras} dias del mes de {meses[f.month]} de {anio_letras}"
+        except Exception:
+            continue
+
+    return txt
 
 
 def construir_tabla_garantias_markdown(garantias):
@@ -154,7 +277,7 @@ def construir_contrato(datos):
     dias_presentacion_garantia = texto_si_vacio(datos.get("dias_presentacion_garantia"))
     lugar_ejecucion = texto_si_vacio(datos.get("lugar_ejecucion"))
     lugar_perfeccionamiento = texto_si_vacio(datos.get("lugar_perfeccionamiento"))
-    fecha_suscripcion = texto_si_vacio(datos.get("fecha_suscripcion"))
+    fecha_suscripcion = fecha_en_letras(datos.get("fecha_suscripcion"))
     termino_liquidacion = texto_si_vacio(datos.get("termino_liquidacion"))
 
     firmante_entidad = texto_si_vacio(datos.get("firmante_entidad"))
