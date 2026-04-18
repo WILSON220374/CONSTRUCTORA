@@ -899,13 +899,7 @@ st.session_state["presupuesto_obra_datos"]["resumen"] = {
 c1 = st.columns([1], vertical_alignment="bottom")[0]
 
 with c1:
-    if st.button("Guardar presupuesto", use_container_width=True):
-        try:
-            guardar_estado("presupuesto_obra", _json_clone(st.session_state["presupuesto_obra_datos"]))
-            st.success("Presupuesto de obra guardado correctamente.")
-        except Exception as e:
-            st.error("No se pudo guardar en la nube en este momento. Verifica la sesión e inténtalo de nuevo.")
-            st.code(str(e))
+        guardar_presupuesto = st.button("Guardar presupuesto", use_container_width=True)
 
 st.divider()
 
@@ -1324,6 +1318,16 @@ st.session_state["presupuesto_obra_datos"]["configuracion"] = config
 
 total_otros_costos = sum(_safe_float(x.get("valor", 0.0), 0.0) for x in otros_costos_indirectos)
 total_presupuesto = subtotal_presupuesto + total_otros_costos
+
+_actualizar_snapshot_presupuesto_obra(grupos_calculados, alcance)
+
+if guardar_presupuesto:
+    try:
+        guardar_estado("presupuesto_obra", _json_clone(st.session_state["presupuesto_obra_datos"]))
+        st.success("Presupuesto de obra guardado correctamente.")
+    except Exception as e:
+        st.error("No se pudo guardar en la nube en este momento. Verifica la sesión e inténtalo de nuevo.")
+        st.code(str(e))
 
 def _pct_total_presupuesto(valor):
     if total_presupuesto <= 0:
