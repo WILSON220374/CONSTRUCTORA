@@ -1,7 +1,10 @@
 import base64
+from io import BytesIO
 from datetime import date, datetime, timedelta
 
 import streamlit as st
+from docx import Document
+from docx.shared import Inches
 
 from supabase_state import cargar_estado
 from supabase_state import guardar_estado as guardar_estado_bd
@@ -156,6 +159,110 @@ def _guardar():
     guardar_estado("reunion_tecnica_inicial", st.session_state["reunion_tecnica_inicial_datos"])
     st.success("Acta de reunión técnica inicial guardada correctamente.")
 
+def _agregar_imagen_docx(doc, info, titulo):
+    if not isinstance(info, dict):
+        return
+
+    b64 = info.get("data")
+    if not b64:
+        return
+
+    try:
+        contenido = base64.b64decode(b64)
+        doc.add_paragraph(titulo)
+        doc.add_picture(BytesIO(contenido), width=Inches(5.5))
+    except Exception:
+        doc.add_paragraph(f"{titulo}: no fue posible insertar la imagen.")
+
+
+def _generar_word_reunion_tecnica(
+    datos,
+    entidad_contratante,
+    director_obra,
+    director_interventoria,
+    supervisor_interventoria,
+    contrato_obra_no,
+    fecha_contrato_obra,
+    contrato_interventoria_no,
+    fecha_contrato_interventoria,
+    objeto_contrato_obra,
+    plazo_contrato_obra,
+    dia_ini,
+    mes_ini,
+    anio_ini,
+    dia_fin,
+    mes_fin,
+    anio_fin,
+    valor_total_contrato_obra,
+    contratista_obra,
+    interventor_obra,
+):
+    doc = Document()
+
+    doc.add_heading("ACTA DE REUNIÓN TÉCNICA INICIAL", level=1)
+
+    doc.add_paragraph(f"Fecha: {_fecha_a_texto(datos.get('fecha_reunion'))}")
+    doc.add_paragraph(f"Entidad contratante: {_texto(entidad_contratante)}")
+    doc.add_paragraph(f"Lugar de reunión: {_texto(datos.get('lugar_reunion', ''))}")
+    doc.add_paragraph(f"Director de obra: {_texto(director_obra)}")
+    doc.add_paragraph(f"Director de interventoría: {_texto(director_interventoria)}")
+    doc.add_paragraph(f"Supervisor del contrato de interventoría: {_texto(supervisor_interventoria)}")
+
+    doc.add_paragraph("")
+    doc.add_paragraph(f"Contrato de obra No.: {_texto(contrato_obra_no)}")
+    doc.add_paragraph(f"Fecha contrato de obra: {_fecha_a_texto(fecha_contrato_obra)}")
+    doc.add_paragraph(f"Contrato de interventoría No.: {_texto(contrato_interventoria_no)}")
+    doc.add_paragraph(f"Fecha contrato de interventoría: {_fecha_a_texto(fecha_contrato_interventoria)}")
+
+    doc.add_paragraph("")
+    doc.add_paragraph(f"Objeto del contrato de obra: {_texto(objeto_contrato_obra)}")
+    doc.add_paragraph(f"Plazo del contrato de obra: {_texto(plazo_contrato_obra)}")
+    doc.add_paragraph(f"Fecha de inicio del contrato de obra: {dia_ini}/{mes_ini}/{anio_ini}")
+    doc.add_paragraph(f"Fecha de vencimiento del contrato de obra: {dia_fin}/{mes_fin}/{anio_fin}")
+    doc.add_paragraph(f"Valor total contrato de obra: {_texto(valor_total_contrato_obra)}")
+    doc.add_paragraph(f"Contratista de obra: {_texto(contratista_obra)}")
+    doc.add_paragraph(f"Interventor: {_texto(interventor_obra)}")
+
+    doc.add_paragraph("")
+    doc.add_paragraph("COMPROMISOS RELACIONADOS CON EL CONTRATISTA")
+    doc.add_paragraph(f"Estudios y diseños: {_texto(datos.get('estudios_disenos_contratista', ''))}")
+    doc.add_paragraph(f"Análisis de precios unitarios: {_texto(datos.get('apu_contratista', ''))}")
+    doc.add_paragraph(f"Programa de obra: {_texto(datos.get('programa_obra', ''))}")
+    doc.add_paragraph(f"Programa de inversiones: {_texto(datos.get('programa_inversiones', ''))}")
+    doc.add_paragraph(f"Plan de inversión del anticipo: {_texto(datos.get('plan_inversion_anticipo', ''))}")
+    doc.add_paragraph(f"Flujo de caja: {_texto(datos.get('flujo_caja', ''))}")
+    doc.add_paragraph(f"Requisitos ambientales: {_texto(datos.get('requisitos_ambientales', ''))}")
+    doc.add_paragraph(f"Requisitos sociales: {_texto(datos.get('requisitos_sociales', ''))}")
+
+    doc.add_paragraph("")
+    doc.add_paragraph("COMPROMISOS RELACIONADOS CON LA INTERVENTORÍA")
+    doc.add_paragraph(f"Estudios y/o diseños: {_texto(datos.get('estudios_disenos_interventoria', ''))}")
+    doc.add_paragraph(f"Aprobación análisis de precios unitarios: {_texto(datos.get('aprobacion_apu', ''))}")
+    doc.add_paragraph(f"Aprobación programa de obra: {_texto(datos.get('aprobacion_programa_obra', ''))}")
+    doc.add_paragraph(f"Aprobación programa de inversiones: {_texto(datos.get('aprobacion_programa_inversiones', ''))}")
+
+    doc.add_paragraph("")
+    doc.add_paragraph(f"Fecha de apertura de bitácora: {_fecha_a_texto(datos.get('fecha_apertura_bitacora'))}")
+
+    doc.add_paragraph("")
+    doc.add_paragraph("ANEXOS")
+    _agregar_imagen_docx(doc, datos.get("anexo_imagen_1"), "Anexo imagen 1")
+    _agregar_imagen_docx(doc, datos.get("anexo_imagen_2"), "Anexo imagen 2")
+
+    doc.add_paragraph("")
+    tabla_firmas = doc.add_table(rows=2, cols=3)
+    tabla_firmas.style = "Table Grid"
+    tabla_firmas.cell(0, 0).text = "DIRECTOR DE OBRA"
+    tabla_firmas.cell(0, 1).text = "DIRECTOR DE INTERVENTORÍA"
+    tabla_firmas.cell(0, 2).text = "SUPERVISOR"
+    tabla_firmas.cell(1, 0).text = _texto(director_obra)
+    tabla_firmas.cell(1, 1).text = _texto(director_interventoria)
+    tabla_firmas.cell(1, 2).text = _texto(supervisor_interventoria)
+
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 def _bloque_texto_etiqueta(etiqueta, valor, key, disabled=True, altura=68):
     st.markdown(f"**{etiqueta}**")
@@ -478,5 +585,40 @@ with st.container(border=True):
         )
         st.markdown("**Nombre Supervisor**")
 
-if st.button("💾 Guardar acta de reunión técnica inicial", type="primary", key="guardar_reunion_tecnica_principal"):
-    _guardar()
+col_accion_1, col_accion_2 = st.columns(2)
+
+with col_accion_1:
+    if st.button("💾 Guardar acta de reunión técnica inicial", type="primary", key="guardar_reunion_tecnica_principal"):
+        _guardar()
+
+with col_accion_2:
+    word_reunion_tecnica = _generar_word_reunion_tecnica(
+        datos,
+        entidad_contratante,
+        director_obra,
+        director_interventoria,
+        supervisor_interventoria,
+        contrato_obra_no,
+        fecha_contrato_obra,
+        contrato_interventoria_no,
+        fecha_contrato_interventoria,
+        objeto_contrato_obra,
+        plazo_contrato_obra,
+        dia_ini,
+        mes_ini,
+        anio_ini,
+        dia_fin,
+        mes_fin,
+        anio_fin,
+        valor_total_contrato_obra,
+        contratista_obra,
+        interventor_obra,
+    )
+    st.download_button(
+        "📥 Descargar acta en Word",
+        data=word_reunion_tecnica,
+        file_name="acta_reunion_tecnica_inicial.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        use_container_width=True,
+        key="descargar_word_reunion_tecnica",
+    )
