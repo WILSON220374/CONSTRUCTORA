@@ -165,39 +165,38 @@ def _generar_word_acta_inicio(contrato, datos, fecha_terminacion):
             f"{_texto_seguro(fila.get('REQUISITOS', ''))}: {_texto_seguro(fila.get('ESTADO', ''))}"
         )
 
-doc.add_paragraph("")
-doc.add_paragraph("CERTIFICACIÓN")
-for fila in datos.get("certificaciones", []):
+    doc.add_paragraph("")
+    doc.add_paragraph("CERTIFICACIÓN")
+    for fila in datos.get("certificaciones", []):
+        doc.add_paragraph(
+            f"{_texto_seguro(fila.get('CERTIFICACION', ''))}: "
+            f"{_texto_seguro(fila.get('ESTADO', ''))} | "
+            f"FECHA DE INICIO DE COBERTURA: {_fecha_texto(fila.get('FECHA DE INICIO DE COBERTURA'))}"
+        )
+
+    doc.add_paragraph("")
     doc.add_paragraph(
-        f"{_texto_seguro(fila.get('CERTIFICACION', ''))}: "
-        f"{_texto_seguro(fila.get('ESTADO', ''))} | "
-        f"FECHA DE INICIO DE COBERTURA: {_fecha_texto(fila.get('FECHA DE INICIO DE COBERTURA'))}"
+        "En constancia se firma por los que en ésta intervinieron, dejando constancia que se han reunido "
+        "todos y cada uno de los requisitos necesarios tanto para la legalización del contrato como para su ejecución."
     )
 
-doc.add_paragraph("")
-doc.add_paragraph(
-    "En constancia se firma por los que en ésta intervinieron, dejando constancia que se han reunido "
-    "todos y cada uno de los requisitos necesarios tanto para la legalización del contrato como para su ejecución."
-)
+    doc.add_paragraph("")
 
-doc.add_paragraph("")
+    tabla_firmas = doc.add_table(rows=2, cols=3)
+    tabla_firmas.style = "Table Grid"
 
-tabla_firmas = doc.add_table(rows=2, cols=3)
-tabla_firmas.style = "Table Grid"
+    tabla_firmas.cell(0, 0).text = "INTERVENTOR Y/O SUPERVISOR"
+    tabla_firmas.cell(0, 1).text = "CONTRATISTA"
+    tabla_firmas.cell(0, 2).text = "SUPERVISOR"
 
-tabla_firmas.cell(0, 0).text = "INTERVENTOR Y/O SUPERVISOR"
-tabla_firmas.cell(0, 1).text = "CONTRATISTA"
-tabla_firmas.cell(0, 2).text = "SUPERVISOR"
+    tabla_firmas.cell(1, 0).text = _texto_seguro(datos.get("nombre_firma_interventor", ""))
+    tabla_firmas.cell(1, 1).text = _texto_seguro(datos.get("nombre_firma_contratista", ""))
+    tabla_firmas.cell(1, 2).text = _texto_seguro(datos.get("nombre_firma_supervisor", ""))
 
-tabla_firmas.cell(1, 0).text = _texto_seguro(datos.get("nombre_firma_interventor", ""))
-tabla_firmas.cell(1, 1).text = _texto_seguro(datos.get("nombre_firma_contratista", ""))
-tabla_firmas.cell(1, 2).text = _texto_seguro(datos.get("nombre_firma_supervisor", ""))
-
-buffer = BytesIO()
-doc.save(buffer)
-buffer.seek(0)
-return buffer.getvalue()
-
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 _inicializar_estado()
 datos = st.session_state["acta_inicio_obra_datos"]
