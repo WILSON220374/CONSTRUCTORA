@@ -195,6 +195,10 @@ def _generar_word_acta_inicio(contrato, datos, fecha_terminacion):
     doc.add_paragraph("SUPERVISOR")
     doc.add_paragraph(_texto_seguro(datos.get("nombre_firma_supervisor", "")))
 
+    doc.add_paragraph("")
+    doc.add_paragraph("SUPERVISOR")
+    doc.add_paragraph(_texto_seguro(datos.get("nombre_firma_supervisor", "")))
+
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
