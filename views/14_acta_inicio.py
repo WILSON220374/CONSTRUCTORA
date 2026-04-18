@@ -377,6 +377,10 @@ datos["requisitos"] = df_requisitos_edit.to_dict(orient="records")
 st.markdown("")
 
 df_cert = pd.DataFrame(datos["certificaciones"])
+
+if "FECHA DE INICIO DE COBERTURA" in df_cert.columns:
+    df_cert["FECHA DE INICIO DE COBERTURA"] = df_cert["FECHA DE INICIO DE COBERTURA"].apply(_parse_fecha)
+
 df_cert_edit = st.data_editor(
     df_cert,
     width="stretch",
@@ -399,10 +403,12 @@ df_cert_edit = st.data_editor(
     disabled=["CERTIFICACION"],
 )
 
-certificaciones = df_cert_edit.to_dict(orient="records")
-for fila in certificaciones:
+certificaciones = []
+for fila in df_cert_edit.to_dict(orient="records"):
     if isinstance(fila, dict):
         fila["FECHA DE INICIO DE COBERTURA"] = _parse_fecha(fila.get("FECHA DE INICIO DE COBERTURA"))
+        certificaciones.append(fila)
+
 datos["certificaciones"] = certificaciones
 
 st.markdown(
