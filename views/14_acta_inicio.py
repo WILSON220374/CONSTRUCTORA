@@ -24,9 +24,7 @@ def guardar_estado(clave, datos):
 
 
 def _leer_contrato_obra():
-    datos = st.session_state.get("contrato_obra_datos", {})
-    if not isinstance(datos, dict) or not datos:
-        datos = cargar_estado("contrato_obra") or {}
+    datos = cargar_estado("contrato_obra") or {}
     return datos if isinstance(datos, dict) else {}
 
 
@@ -81,8 +79,8 @@ def _texto_seguro(valor):
 
 
 def _inicializar_estado():
-    if "acta_inicio_obra_datos" not in st.session_state:
-        st.session_state["acta_inicio_obra_datos"] = cargar_estado("acta_inicio_obra") or {}
+    st.session_state["acta_inicio_obra_datos"] = cargar_estado("acta_inicio_obra") or {}
+    datos = st.session_state["acta_inicio_obra_datos"]
 
     datos = st.session_state["acta_inicio_obra_datos"]
 
