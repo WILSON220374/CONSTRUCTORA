@@ -132,7 +132,6 @@ st.markdown("""
 col_t, col_l = st.columns([4, 1], vertical_alignment="center")
 with col_t:
     st.markdown('<div class="titulo-seccion">🎯 1. Alcance del Proyecto</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitulo-gris">Esta hoja solo conserva el nombre del proyecto, la EDT y los costos indirectos.</div>', unsafe_allow_html=True)
     campos_clave = [datos["nombre_proyecto"]]
     completos = sum([1 for x in campos_clave if x])
     st.progress(completos / 1, text=f"Progreso General: {int((completos/1)*100)}%")
