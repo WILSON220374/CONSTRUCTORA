@@ -56,23 +56,17 @@ def _fecha_a_texto(valor):
 
 
 def _leer_contrato_obra():
-    datos = st.session_state.get("contrato_obra_datos", {})
-    if not isinstance(datos, dict) or not datos:
-        datos = cargar_estado("contrato_obra") or {}
+    datos = cargar_estado("contrato_obra") or {}
     return datos if isinstance(datos, dict) else {}
 
 
 def _leer_acta_inicio():
-    datos = st.session_state.get("acta_inicio_obra_datos", {})
-    if not isinstance(datos, dict) or not datos:
-        datos = cargar_estado("acta_inicio_obra") or {}
+    datos = cargar_estado("acta_inicio_obra") or {}
     return datos if isinstance(datos, dict) else {}
 
 
 def _leer_contrato_interventoria():
-    datos = st.session_state.get("contrato_interventoria_datos", {})
-    if not isinstance(datos, dict) or not datos:
-        datos = cargar_estado("contrato_interventoria") or {}
+    datos = cargar_estado("contrato_interventoria") or {}
     return datos if isinstance(datos, dict) else {}
 
 
