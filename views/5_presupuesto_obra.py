@@ -593,6 +593,101 @@ def _construir_grupos_calculados():
 
     return grupos_out, total_general_directo
 
+def _actualizar_snapshot_presupuesto_obra(grupos_calculados, alcance_data):
+    datos = st.session_state["presupuesto_obra_datos"]
+
+    grupos_snapshot = []
+    costo_directo_total = 0.0
+
+    for grupo in grupos_calculados:
+        filas_snapshot = []
+        costo_directo_grupo = _safe_float(grupo.get("costo_directo_grupo", 0.0), 0.0)
+        aiu_grupo = _safe_float(grupo.get("aiu_grupo", 0.0), 0.0)
+
+        for fila in grupo.get("rows", []):
+            filas_snapshot.append(
+                {
+                    "ITEM": str(fila.get("ITEM", "") or "").strip(),
+                    "ITEM GOBER": str(fila.get("ÍTEM CATÁLOGO", "") or "").strip(),
+                    "DESCRIPCIÓN": str(fila.get("DESCRIPCIÓN", "") or "").strip(),
+                    "FUENTE": str(fila.get("FUENTE", "") or "").strip(),
+                    "UNIDAD": str(fila.get("UNIDAD", "") or "").strip(),
+                    "CANT": _safe_float(fila.get("CANT", 0.0), 0.0),
+                    "VR UNITARIO": _safe_float(fila.get("VR UNITARIO", 0.0), 0.0),
+                    "DIST.": str(fila.get("DIST.", "") or "").strip(),
+                    "FACTOR": _safe_float(fila.get("FACTOR", 0.0), 0.0),
+                    "VR AFECTADO POR FACTOR": _safe_float(fila.get("VR AFECTADO POR FACTOR", 0.0), 0.0),
+                    "VR TOTAL": _safe_float(fila.get("VR TOTAL", 0.0), 0.0),
+                    "%": _safe_float(fila.get("%", 0.0), 0.0),
+                }
+            )
+
+        costo_directo_total += costo_directo_grupo
+        grupos_snapshot.append(
+            {
+                "group_id": str(grupo.get("group_id", "") or "").strip(),
+                "titulo": f"{str(grupo.get('group_code', '') or '').strip()} {str(grupo.get('group_name', '') or '').strip()}".strip(),
+                "rows": filas_snapshot,
+                "costo_directo_grupo": costo_directo_grupo,
+                "aiu_grupo": aiu_grupo,
+            }
+        )
+
+    try:
+        aiu_datos = cargar_estado("aiu") or {}
+    except Exception:
+        aiu_datos = {}
+
+    aiu_administracion_valor = _safe_float(aiu_datos.get("administracion_valor", 0.0), 0.0)
+    aiu_imprevistos_valor = _safe_float(aiu_datos.get("imprevistos_valor", 0.0), 0.0)
+    aiu_utilidad_valor = _safe_float(aiu_datos.get("utilidad_valor", 0.0), 0.0)
+    aiu_total = aiu_administracion_valor + aiu_imprevistos_valor + aiu_utilidad_valor
+    subtotal_presupuesto = costo_directo_total + aiu_total
+
+    alcance_costos_indirectos = alcance_data.get("otros_costos_indirectos_proyecto", []) or []
+    otros_costos_indirectos = []
+
+    try:
+        costos_indirectos_datos = cargar_estado("costos_indirectos") or {}
+    except Exception:
+        costos_indirectos_datos = {}
+
+    registros_por_oci = costos_indirectos_datos.get("registros_por_oci", {}) or {}
+
+    for ci in alcance_costos_indirectos:
+        ci_id = str(ci.get("id", "") or "").strip()
+        ci_nombre = str(ci.get("nombre", "") or "").strip()
+        if not ci_id or not ci_nombre:
+            continue
+
+        registro_oci = registros_por_oci.get(ci_id, {}) or {}
+        otros_costos_indirectos.append(
+            {
+                "id": ci_id,
+                "nombre": ci_nombre,
+                "valor": _safe_float(registro_oci.get("valor_total_final", 0.0), 0.0),
+            }
+        )
+
+    total_otros_costos = sum(_safe_float(x.get("valor", 0.0), 0.0) for x in otros_costos_indirectos)
+    total_presupuesto = subtotal_presupuesto + total_otros_costos
+
+    datos["__tablas__"] = {
+        "grupos_presupuesto_obra": grupos_snapshot,
+        "resumen_presupuesto_obra": {
+            "costo_directo_total": costo_directo_total,
+            "aiu_total": aiu_total,
+            "aiu_administracion_valor": aiu_administracion_valor,
+            "aiu_imprevistos_valor": aiu_imprevistos_valor,
+            "aiu_utilidad_valor": aiu_utilidad_valor,
+            "subtotal_presupuesto": subtotal_presupuesto,
+            "otros_costos_indirectos": otros_costos_indirectos,
+            "total_presupuesto": total_presupuesto,
+        },
+    }
+
+    st.session_state["presupuesto_obra_datos"] = datos
+
 
 def _persistir_ediciones_desde_df(df_editado, rows_originales):
     datos = st.session_state["presupuesto_obra_datos"]
