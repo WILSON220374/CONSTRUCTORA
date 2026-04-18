@@ -260,7 +260,7 @@ def _recalcular_filas(datos, mapa_catalogo, valor_anticipo):
 
 
 def _dataframe_para_editor(datos, columnas_meses):
-    columnas = ["ACTIVIDAD", "ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM", "VALOR"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
+    columnas = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM", "VALOR"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
     return pd.DataFrame(datos.get("rows", []), columns=columnas)
 
 
