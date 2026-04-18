@@ -66,11 +66,15 @@ def _fecha_texto(valor) -> str:
 
 def _safe_float(valor, default=0.0) -> float:
     if valor is None:
+        if default is None:
+            return 0.0
         return float(default)
     if isinstance(valor, (int, float)):
         return float(valor)
     txt = str(valor).strip()
     if not txt:
+        if default is None:
+            return 0.0
         return float(default)
     txt = txt.replace("$", "").replace("%", "").replace(" ", "")
     txt = txt.replace(".", "").replace(",", ".") if txt.count(",") == 1 and txt.count(".") >= 1 else txt
@@ -78,6 +82,8 @@ def _safe_float(valor, default=0.0) -> float:
     try:
         return float(txt)
     except Exception:
+        if default is None:
+            return 0.0
         return float(default)
 
 
