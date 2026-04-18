@@ -718,6 +718,49 @@ def _estructura_costos_obra(alcance_data: dict) -> dict:
         except Exception:
             datos_obra = {}
 
+    tablas_guardadas = datos_obra.get("__tablas__", {}) if isinstance(datos_obra, dict) else {}
+    grupos_guardados = tablas_guardadas.get("grupos_presupuesto_obra", []) or []
+    resumen_guardado = tablas_guardadas.get("resumen_presupuesto_obra", {}) or {}
+
+    if grupos_guardados and resumen_guardado:
+        grupos_render = []
+
+        for grupo in grupos_guardados:
+            filas = grupo.get("rows", []) or []
+            df_grupo = pd.DataFrame(
+                filas,
+                columns=[
+                    "ITEM",
+                    "ITEM GOBER",
+                    "DESCRIPCIÓN",
+                    "FUENTE",
+                    "UNIDAD",
+                    "CANT",
+                    "VR UNITARIO",
+                    "DIST.",
+                    "FACTOR",
+                    "VR AFECTADO POR FACTOR",
+                    "VR TOTAL",
+                    "%",
+                ],
+            )
+
+            grupos_render.append(
+                {
+                    "group_id": _safe_str(grupo.get("group_id")),
+                    "titulo": _safe_str(grupo.get("titulo")),
+                    "df": df_grupo,
+                    "costo_directo_grupo": _safe_float(grupo.get("costo_directo_grupo", 0.0), 0.0),
+                    "aiu_grupo": _safe_float(grupo.get("aiu_grupo", 0.0), 0.0),
+                }
+            )
+
+        return {
+            "grupos": grupos_render,
+            "resumen": resumen_guardado,
+            "total_presupuesto": _safe_float(resumen_guardado.get("total_presupuesto", 0.0), 0.0),
+        }
+
     items_state = datos_obra.get("items", {}) or {}
     grupos_base = _extraer_grupos_desde_edt_obra(alcance_data)
     catalog_index = _build_catalog_index_informes()
