@@ -1,12 +1,12 @@
 import json
 import re
+from io import BytesIO
 from datetime import date, datetime, timedelta
-
 import pandas as pd
 import streamlit as st
-
 from supabase_state import cargar_estado
 from supabase_state import guardar_estado as guardar_estado_bd
+from docx import Document
 
 
 def guardar_estado(clave, datos):
@@ -123,6 +123,62 @@ def _inicializar_estado():
 def _guardar():
     guardar_estado("acta_inicio_obra", st.session_state["acta_inicio_obra_datos"])
     st.success("Acta de inicio guardada correctamente.")
+
+def _fecha_texto(valor):
+    f = _parse_fecha(valor)
+    if not f:
+        return ""
+    return f.strftime("%d/%m/%Y")
+
+
+def _generar_word_acta_inicio(contrato, datos, fecha_terminacion):
+    doc = Document()
+
+    doc.add_heading("ACTA DE INICIACIÓN CONTRATO", level=1)
+
+    doc.add_paragraph(f"FECHA PRESENTE ACTA: {_fecha_texto(datos.get('fecha_presente_acta'))}")
+    doc.add_paragraph(f"CONTRATO No: {_texto_seguro(contrato.get('numero_contrato', ''))}")
+    doc.add_paragraph(f"CONTRATANTE: {_texto_seguro(contrato.get('nombre_entidad', ''))}")
+    doc.add_paragraph(f"NIT. C.C. CONTRATANTE: {_texto_seguro(contrato.get('nit_entidad', ''))}")
+    doc.add_paragraph(f"CONTRATISTA: {_texto_seguro(contrato.get('nombre_contratista', ''))}")
+    doc.add_paragraph(f"NIT. C.C. CONTRATISTA: {_texto_seguro(contrato.get('nit_contratista', ''))}")
+    doc.add_paragraph(f"INTERVENTOR: {_texto_seguro(contrato.get('nombre_interventor') or contrato.get('nombre_supervisor') or '')}")
+    doc.add_paragraph(f"OBJETO: {_texto_seguro(contrato.get('objeto_general', ''))}")
+    doc.add_paragraph(f"VALOR: {_texto_seguro(contrato.get('valor_total_numeros', ''))}")
+    doc.add_paragraph(f"PLAZO DE EJECUCIÓN: {_texto_seguro(contrato.get('plazo_ejecucion', ''))}")
+    doc.add_paragraph(f"FECHA DE TERMINACIÓN: {_fecha_texto(fecha_terminacion)}")
+
+    doc.add_paragraph("")
+    doc.add_paragraph("REQUISITOS")
+    for fila in datos.get("requisitos", []):
+        doc.add_paragraph(
+            f"{_texto_seguro(fila.get('REQUISITOS', ''))}: {_texto_seguro(fila.get('ESTADO', ''))}"
+        )
+
+    doc.add_paragraph("")
+    doc.add_paragraph("CERTIFICACIÓN")
+    for fila in datos.get("certificaciones", []):
+        doc.add_paragraph(
+            f"{_texto_seguro(fila.get('CERTIFICACION', ''))}: "
+            f"{_texto_seguro(fila.get('ESTADO', ''))} | "
+            f"FECHA DE INICIO DE COBERTURA: {_fecha_texto(fila.get('FECHA DE INICIO DE COBERTURA'))}"
+        )
+
+    doc.add_paragraph("")
+    doc.add_paragraph(
+        "En constancia se firma por los que en ésta intervinieron, dejando constancia que se han reunido "
+        "todos y cada uno de los requisitos necesarios tanto para la legalización del contrato como para su ejecución."
+    )
+
+    doc.add_paragraph("")
+    doc.add_paragraph(f"INTERVENTOR Y/O SUPERVISOR: {_texto_seguro(datos.get('nombre_firma_interventor', ''))}")
+    doc.add_paragraph(f"CONTRATISTA: {_texto_seguro(datos.get('nombre_firma_contratista', ''))}")
+    doc.add_paragraph(f"SUPERVISOR: {_texto_seguro(datos.get('nombre_firma_supervisor', ''))}")
+
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 _inicializar_estado()
@@ -382,7 +438,7 @@ st.markdown(
 col_firma_1, col_firma_2 = st.columns(2)
 
 with col_firma_1:
-    st.text_input(
+    datos["nombre_firma_interventor"] = st.text_input(
         "Nombre interventor y/o supervisor",
         value=_texto_seguro(datos.get("nombre_firma_interventor", "")),
         key="nombre_firma_interventor",
@@ -390,7 +446,7 @@ with col_firma_1:
     st.markdown("**INTERVENTOR Y/O SUPERVISOR**")
 
 with col_firma_2:
-    st.text_input(
+    datos["nombre_firma_contratista"] = st.text_input(
         "Nombre contratista",
         value=_texto_seguro(datos.get("nombre_firma_contratista", "")),
         key="nombre_firma_contratista",
@@ -400,7 +456,7 @@ with col_firma_2:
 col_firma_3, col_firma_4 = st.columns(2)
 
 with col_firma_3:
-    st.text_input(
+    datos["nombre_firma_supervisor"] = st.text_input(
         "Nombre supervisor",
         value=_texto_seguro(datos.get("nombre_firma_supervisor", "")),
         key="nombre_firma_supervisor",
@@ -409,3 +465,22 @@ with col_firma_3:
 
 with col_firma_4:
     st.markdown("")
+
+st.divider()
+
+col_accion_1, col_accion_2 = st.columns(2)
+
+with col_accion_1:
+    if st.button("💾 Guardar acta de inicio", type="primary", key="guardar_acta_inicio_principal"):
+        _guardar()
+
+with col_accion_2:
+    word_acta_inicio = _generar_word_acta_inicio(contrato, datos, fecha_terminacion)
+    st.download_button(
+        "📥 Descargar acta de inicio en Word",
+        data=word_acta_inicio,
+        file_name="acta_inicio_obra.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        use_container_width=True,
+        key="descargar_word_acta_inicio",
+    )
