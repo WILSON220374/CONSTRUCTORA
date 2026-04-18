@@ -138,11 +138,11 @@ def _valor_contrato_desde_fuentes(acta_inicio: dict, contrato_obra: dict) -> flo
 
 
 def _construir_catalogo_presupuesto(presupuesto_obra: dict):
-    tablas = presupuesto_obra.get("__tablas__", {}) if isinstance(presupuesto_obra, dict) else {}
-    grupos = tablas.get("grupos_presupuesto_obra", []) or []
-
     catalogo = []
     mapa = {}
+
+    tablas = presupuesto_obra.get("__tablas__", {}) if isinstance(presupuesto_obra, dict) else {}
+    grupos = tablas.get("grupos_presupuesto_obra", []) or []
 
     for grupo in grupos:
         for fila in grupo.get("rows", []) or []:
@@ -159,8 +159,28 @@ def _construir_catalogo_presupuesto(presupuesto_obra: dict):
                 "descripcion": descripcion,
                 "valor": valor_total,
             }
-            catalogo.append(registro)
-            mapa[descripcion] = registro
+            if descripcion not in mapa:
+                catalogo.append(registro)
+                mapa[descripcion] = registro
+
+    if not catalogo:
+        for fila in presupuesto_obra.get("items", []) or []:
+            item_no = _texto(fila.get("ITEM"))
+            descripcion = _texto(fila.get("DESCRIPCIÓN"))
+            valor_total = _safe_float(fila.get("VR TOTAL"), 0.0)
+
+            if not item_no or not descripcion:
+                continue
+
+            registro = {
+                "codigo": descripcion,
+                "item_no": item_no,
+                "descripcion": descripcion,
+                "valor": valor_total,
+            }
+            if descripcion not in mapa:
+                catalogo.append(registro)
+                mapa[descripcion] = registro
 
     catalogo = sorted(catalogo, key=lambda x: (x["descripcion"], x["item_no"]))
     return catalogo, mapa
