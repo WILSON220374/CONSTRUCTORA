@@ -536,8 +536,6 @@ with st.container(border=True):
 
     total_programado, total_porcentaje = _sumas_totales(df_final, columnas_meses)
 
-    st.dataframe(df_final, width="stretch", hide_index=True)
-
     st.markdown(f"**Valor del anticipo:** {_formato_moneda(valor_anticipo)}")
     st.markdown(f"**Total valor programa aprobado:** {_formato_moneda(total_programado)}")
     st.markdown(f"**Total porcentaje:** {total_porcentaje:.4f}%")
