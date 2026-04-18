@@ -516,7 +516,7 @@ with st.container(border=True):
         key="plan_anticipo_editor",
         column_order=columnas_editor,
         column_config=config,
-        disabled=["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM", "VALOR", "VALOR PROGRAMA APROBADO", "%"],
+        disabled=["ÍTEM No.", "VALOR", "VALOR PROGRAMA APROBADO", "%"],
     )
 
     datos["rows"] = df_editado.to_dict(orient="records")
