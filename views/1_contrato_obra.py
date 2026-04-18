@@ -65,6 +65,7 @@ def inicializar_contrato():
     st.session_state["contrato_obra_datos"] = cargar_estado("contrato_obra") or {}
 
     d = st.session_state["contrato_obra_datos"]
+    st.session_state["df_garantias_contrato"] = pd.DataFrame(d.get("garantias", []))
 
     valores_defecto = {
         "numero_contrato": "",
@@ -459,8 +460,7 @@ with st.expander("8. Cláusula penal", expanded=False):
 
 
 with st.expander("9. Garantías", expanded=False):
-    if "df_garantias_contrato" not in st.session_state:
-        st.session_state["df_garantias_contrato"] = pd.DataFrame(datos["garantias"])
+    st.session_state["df_garantias_contrato"] = pd.DataFrame(datos["garantias"])
 
     with st.form("form_garantias_contrato"):
         df_editado = st.data_editor(
