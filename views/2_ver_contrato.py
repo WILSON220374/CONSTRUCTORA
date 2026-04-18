@@ -9,11 +9,8 @@ from supabase_state import cargar_estado
 
 
 def obtener_datos_contrato():
-    datos = st.session_state.get("contrato_obra_datos")
-    if not datos:
-        datos = cargar_estado("contrato_obra") or {}
-        st.session_state["contrato_obra_datos"] = datos
-    return datos
+    datos = cargar_estado("contrato_obra") or {}
+    return datos if isinstance(datos, dict) else {}
 
 
 def texto_si_vacio(valor, pendiente="PENDIENTE"):
