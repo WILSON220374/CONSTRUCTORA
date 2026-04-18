@@ -62,8 +62,7 @@ def _plazo_a_dias_calendario(valor):
 
 
 def inicializar_contrato():
-    if "contrato_obra_datos" not in st.session_state:
-        st.session_state["contrato_obra_datos"] = cargar_estado("contrato_obra") or {}
+    st.session_state["contrato_obra_datos"] = cargar_estado("contrato_obra") or {}
 
     d = st.session_state["contrato_obra_datos"]
 
