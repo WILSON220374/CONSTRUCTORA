@@ -153,17 +153,16 @@ def _construir_catalogo_presupuesto(presupuesto_obra: dict):
             if not item_no or not descripcion:
                 continue
 
-            codigo = f"{item_no} | {descripcion}"
             registro = {
-                "codigo": codigo,
+                "codigo": descripcion,
                 "item_no": item_no,
                 "descripcion": descripcion,
                 "valor": valor_total,
             }
             catalogo.append(registro)
-            mapa[codigo] = registro
+            mapa[descripcion] = registro
 
-    catalogo = sorted(catalogo, key=lambda x: (x["item_no"], x["descripcion"]))
+    catalogo = sorted(catalogo, key=lambda x: (x["descripcion"], x["item_no"]))
     return catalogo, mapa
 
 
@@ -495,7 +494,7 @@ with st.container(border=True):
         "ÍTEM No.": st.column_config.TextColumn("Ítem No.", disabled=True),
         "DESCRIPCIÓN DEL ÍTEM": st.column_config.SelectboxColumn(
             "Descripción del ítem",
-            options=[x["codigo"] for x in catalogo_presupuesto],
+            options=[x["descripcion"] for x in catalogo_presupuesto],
             required=False,
             width="large",
         ),
