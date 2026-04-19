@@ -489,7 +489,7 @@ with st.container(border=True):
         porcentaje_anticipo = _safe_float(datos.get("porcentaje_anticipo"), PORCENTAJE_ANTICIPO)
         valor_anticipo = round(valor_contrato * (porcentaje_anticipo / 100.0), 2)
     with c3:
-        st.text_input("Valor del anticipo", value=_formato_moneda(valor_anticipo), disabled=True, key="pia_valor_anticipo")
+        st.text_input("Valor del anticipo", value=_formato_moneda(valor_anticipo), disabled=True)
 
 with st.container(border=True):
     c1, c2 = st.columns(2)
