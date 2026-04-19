@@ -366,24 +366,24 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-with st.sidebar:
-    st.header("🧭 Acciones")
-    if st.button("➕ Nueva incidencia", type="primary", key="bitacora_nueva_incidencia"):
-        nuevo_folio = _crear_nueva_incidencia(acta_inicio, contrato_obra)
-        _guardar()
-        st.session_state["bitacora_selector_folio"] = nuevo_folio
-        st.rerun()
-
-    if st.button("💾 Guardar bitácora", key="bitacora_guardar_sidebar"):
-        _guardar()
-
 folio_opciones = [int(x.get("folio") or 0) for x in incidencias]
 folio_activo_default = int(datos.get("folio_activo") or folio_opciones[0])
 
 st.markdown('<div class="bitacora-titulo">BITÁCORA DE OBRA</div>', unsafe_allow_html=True)
 st.markdown('<div class="bitacora-subtitulo">Registro diario de obra</div>', unsafe_allow_html=True)
 
-col_selector, col_fecha = st.columns([1, 1])
+col_nueva, col_guardar, col_selector, col_fecha = st.columns([1, 1, 1, 1])
+
+with col_nueva:
+    if st.button("➕ Nueva incidencia", type="primary", key="bitacora_nueva_incidencia"):
+        nuevo_folio = _crear_nueva_incidencia(acta_inicio, contrato_obra)
+        _guardar()
+        st.session_state["bitacora_selector_folio"] = nuevo_folio
+        st.rerun()
+
+with col_guardar:
+    if st.button("💾 Guardar bitácora", key="bitacora_guardar_principal"):
+        _guardar()
 
 with col_selector:
     folio_activo = st.selectbox(
