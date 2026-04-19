@@ -209,30 +209,31 @@ def _normalizar_filas(rows, columnas_meses):
 
     return rows_out
 
-
 def _inicializar_estado():
     group_id_actual = _texto(st.session_state.get("group_id"))
     cache_group = _texto(st.session_state.get("_plan_inversion_anticipo_group"))
 
     if cache_group != group_id_actual or "plan_inversion_anticipo_datos" not in st.session_state:
-    cargado = cargar_estado(CLAVE_GUARDADO) or {}
-    if not isinstance(cargado, dict):
-        cargado = {}
+        cargado = cargar_estado(CLAVE_GUARDADO) or {}
+        if not isinstance(cargado, dict):
+            cargado = {}
 
-    cantidad_meses = int(cargado.get("cantidad_meses", MIN_MESES) or MIN_MESES)
-    columnas_meses = _columnas_meses(cantidad_meses)
+        cantidad_meses = int(cargado.get("cantidad_meses", MIN_MESES) or MIN_MESES)
+        columnas_meses = _columnas_meses(cantidad_meses)
 
-    st.session_state["plan_inversion_anticipo_datos"] = {
-        "fecha_documento": _parse_fecha(cargado.get("fecha_documento")) or date.today(),
-        "cantidad_meses": cantidad_meses,
-        "porcentaje_anticipo": _safe_float(cargado.get("porcentaje_anticipo"), PORCENTAJE_ANTICIPO),
-        "rows": _normalizar_filas(cargado.get("rows", []), columnas_meses),
-    }
+        st.session_state["plan_inversion_anticipo_datos"] = {
+            "fecha_documento": _parse_fecha(cargado.get("fecha_documento")) or date.today(),
+            "cantidad_meses": cantidad_meses,
+            "porcentaje_anticipo": _safe_float(cargado.get("porcentaje_anticipo"), PORCENTAJE_ANTICIPO),
+            "rows": _normalizar_filas(cargado.get("rows", []), columnas_meses),
+        }
+
+        st.session_state["_plan_inversion_anticipo_group"] = group_id_actual
+
 
 def _guardar():
     guardar_estado(CLAVE_GUARDADO, st.session_state["plan_inversion_anticipo_datos"])
     st.success("Plan de inversión del anticipo guardado correctamente.")
-
 
 # ==========================================================
 # Reglas de negocio
