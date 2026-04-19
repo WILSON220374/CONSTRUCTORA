@@ -462,7 +462,7 @@ with st.container(border=True):
     with col2:
         datos["cantidad_meses"] = int(
             st.number_input(
-                "Cantidad total de meses",
+                "Periodos en los que se invertira el anticipo",
                 min_value=MIN_MESES,
                 value=int(datos.get("cantidad_meses", MIN_MESES) or MIN_MESES),
                 step=1,
