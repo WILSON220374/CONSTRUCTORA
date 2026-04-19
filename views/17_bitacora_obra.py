@@ -305,10 +305,6 @@ def _recalcular_actividades(incidencia, mapa_catalogo):
     actividades_base = _normalizar_actividades(incidencia.get("actividades", []))
     actividades_out = []
 
-def _recalcular_actividades(incidencia, mapa_catalogo):
-    actividades_base = _normalizar_actividades(incidencia.get("actividades", []))
-    actividades_out = []
-
     for fila in actividades_base:
         descripcion = _texto(fila.get("DESCRIPCIÓN DEL ÍTEM"))
         fila_nueva = _fila_actividad_vacia()
