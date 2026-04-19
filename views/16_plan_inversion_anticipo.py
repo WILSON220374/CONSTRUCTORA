@@ -448,8 +448,6 @@ st.markdown('<div class="titulo-plan">PLAN DE INVERSIÓN DEL ANTICIPO</div>', un
 
 with st.sidebar:
     st.header("🧭 Acciones")
-    if st.button("💾 Guardar plan", type="primary", key="guardar_plan_anticipo_sidebar"):
-        _guardar()
 
 with st.container(border=True):
     col1, col2 = st.columns(2)
