@@ -563,7 +563,7 @@ with st.container(border=True):
     with col_total_2:
         st.markdown(f"**TOTAL VALOR PROGRAMA APROBADO: {_formato_moneda(total_programado)}**")
     with col_total_3:
-        st.markdown(f"**TOTAL PORCENTAJE: {total_porcentaje:.4f}%**")%")
+        st.markdown(f"**TOTAL PORCENTAJE: {total_porcentaje:.4f}%**")
 
     if abs(total_programado - valor_anticipo) < 0.01:
         st.success("La suma del valor programa aprobado coincide con el valor del anticipo.")
