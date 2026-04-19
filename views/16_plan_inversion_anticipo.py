@@ -528,31 +528,10 @@ with st.container(border=True):
 
     columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
 
-    total_programado, total_porcentaje = _sumas_totales(df_editor, columnas_meses)
-
-    totales_fila = {
-        "ÍTEM No.": "",
-        "DESCRIPCIÓN DEL ÍTEM": "TOTAL",
-        "VALOR PROGRAMA APROBADO": total_programado,
-        "%": total_porcentaje,
-    }
-
-    for col in columnas_meses:
-        totales_fila[col] = _safe_float(df_editor[col].sum(), 0.0) if col in df_editor.columns else 0.0
-
-    df_mostrar = pd.concat(
-        [
-            df_editor,
-            pd.DataFrame(
-                [[totales_fila.get(col, "") for col in columnas_editor]],
-                columns=columnas_editor,
-            ),
-        ],
-        ignore_index=True,
-    )
+        total_programado, total_porcentaje = _sumas_totales(df_editor, columnas_meses)
 
     df_editado = st.data_editor(
-        df_mostrar,
+        df_editor,
         width="stretch",
         hide_index=True,
         num_rows="dynamic",
@@ -562,7 +541,7 @@ with st.container(border=True):
         disabled=["ÍTEM No.", "VALOR PROGRAMA APROBADO", "%"],
     )
 
-    rows_antes = df_editado.iloc[:-1].to_dict(orient="records")
+    rows_antes = df_editado.to_dict(orient="records")
     datos["rows"] = rows_antes
     columnas_meses = _recalcular_filas(datos, mapa_catalogo, valor_anticipo)
     df_final = _dataframe_para_editor(datos, columnas_meses)
@@ -577,9 +556,14 @@ with st.container(border=True):
     if repetidos:
         st.error("No se puede repetir un ítem del presupuesto en más de una fila.")
 
-    st.markdown(f"**Valor del anticipo:** {_formato_moneda(valor_anticipo)}")
-    st.markdown(f"**Total valor programa aprobado:** {_formato_moneda(total_programado)}")
-    st.markdown(f"**Total porcentaje:** {total_porcentaje:.4f}%")
+    col_total_1, col_total_2, col_total_3 = st.columns(3)
+
+    with col_total_1:
+        st.markdown(f"**VALOR DEL ANTICIPO: {_formato_moneda(valor_anticipo)}**")
+    with col_total_2:
+        st.markdown(f"**TOTAL VALOR PROGRAMA APROBADO: {_formato_moneda(total_programado)}**")
+    with col_total_3:
+        st.markdown(f"**TOTAL PORCENTAJE: {total_porcentaje:.4f}%**")%")
 
     if abs(total_programado - valor_anticipo) < 0.01:
         st.success("La suma del valor programa aprobado coincide con el valor del anticipo.")
