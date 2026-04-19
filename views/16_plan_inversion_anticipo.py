@@ -518,10 +518,10 @@ with st.container(border=True):
         "%": st.column_config.NumberColumn("%", format="%.4f", disabled=True),
     }
 
-for col in columnas_meses:
-    column_config[col] = st.column_config.NumberColumn(col, min_value=0.0, step=0.01, format="$ %.2f")
+    for col in columnas_meses:
+        column_config[col] = st.column_config.NumberColumn(col, min_value=0.0, step=0.01, format="$ %.2f")
 
-columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
+    columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
 
     for col in columnas_meses:
         column_config[col] = st.column_config.NumberColumn(col, min_value=0.0, step=0.01, format="$ %.2f")
