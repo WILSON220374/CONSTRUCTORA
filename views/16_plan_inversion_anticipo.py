@@ -542,7 +542,7 @@ with st.container(border=True):
     rows_antes = df_editado.to_dict(orient="records")
     datos["rows"] = rows_antes
     columnas_meses = _recalcular_filas(datos, mapa_catalogo, valor_anticipo)
-    df_final = _dataframe_para_editor(datos, columnas_meses)
+    total_programado, total_porcentaje = _sumas_totales(df_final, columnas_meses)
 
     rows_despues = df_final.to_dict(orient="records")
     if rows_despues != rows_antes:
