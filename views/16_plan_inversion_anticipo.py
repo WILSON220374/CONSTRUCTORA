@@ -528,7 +528,7 @@ with st.container(border=True):
 
     columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
 
-        total_programado, total_porcentaje = _sumas_totales(df_editor, columnas_meses)
+    total_programado, total_porcentaje = _sumas_totales(df_editor, columnas_meses)
 
     df_editado = st.data_editor(
         df_editor,
