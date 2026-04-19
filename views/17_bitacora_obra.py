@@ -442,7 +442,7 @@ folio_activo_default = int(datos.get("folio_activo") or folio_opciones[0])
 st.markdown('<div class="bitacora-titulo">BITÁCORA DE OBRA</div>', unsafe_allow_html=True)
 st.markdown('<div class="bitacora-subtitulo">Registro diario de obra</div>', unsafe_allow_html=True)
 
-col_nueva, col_guardar, col_selector, col_fecha = st.columns([1, 1, 1, 1])
+col_nueva, col_guardar, col_word, col_selector, col_fecha = st.columns([1, 1, 1.2, 1, 1])
 
 with col_nueva:
     if st.button("➕ Nueva incidencia", type="primary", key="bitacora_nueva_incidencia"):
@@ -454,6 +454,17 @@ with col_nueva:
 with col_guardar:
     if st.button("💾 Guardar bitácora", key="bitacora_guardar_principal"):
         _guardar()
+
+with col_word:
+    word_bitacora = _generar_word_bitacora(incidencias)
+    st.download_button(
+        "📄 Descargar Word",
+        data=word_bitacora,
+        file_name="bitacora_de_obra.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        key="bitacora_descargar_word",
+        use_container_width=True,
+    )
 
 with col_selector:
     folio_activo = st.selectbox(
