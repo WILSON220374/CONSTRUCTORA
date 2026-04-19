@@ -394,6 +394,23 @@ with col_selector:
     )
     datos["folio_activo"] = int(folio_activo)
 
+st.markdown("### CONSULTA DE INCIDENCIAS")
+
+df_consulta = pd.DataFrame(
+    [
+        {
+            "No. de Folio": int(x.get("folio") or 0),
+            "Fecha": _parse_fecha(x.get("fecha")).strftime("%d/%m/%Y"),
+            "No. de contrato": _texto(x.get("numero_contrato")),
+            "Contratista": _texto(x.get("contratista")),
+            "Interventor": _texto(x.get("interventor")),
+        }
+        for x in incidencias
+    ]
+)
+
+st.dataframe(df_consulta, use_container_width=True, hide_index=True)
+
 incidencia = _obtener_incidencia_activa()
 incidencia["numero_contrato"] = _primero_no_vacio(
     incidencia.get("numero_contrato"),
