@@ -590,7 +590,7 @@ with st.container(border=True):
             interventor,
             valor_contrato,
             valor_anticipo,
-            PORCENTAJE_ANTICIPO,
+            porcentaje_anticipo,
             nombre_firma_contratista,
             nombre_firma_interventor,
         )
