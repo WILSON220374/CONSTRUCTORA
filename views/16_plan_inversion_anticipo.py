@@ -526,9 +526,15 @@ with st.container(border=True):
         disabled=["ÍTEM No.", "VALOR", "VALOR PROGRAMA APROBADO", "%"],
     )
 
-    datos["rows"] = df_editado.to_dict(orient="records")
+    rows_antes = df_editado.to_dict(orient="records")
+    datos["rows"] = rows_antes
     columnas_meses = _recalcular_filas(datos, mapa_catalogo, valor_anticipo)
     df_final = _dataframe_para_editor(datos, columnas_meses)
+
+    rows_despues = df_final.to_dict(orient="records")
+    if rows_despues != rows_antes:
+        datos["rows"] = rows_despues
+        st.rerun()
 
     repetidos = _duplicados_descripcion(datos["rows"])
     if repetidos:
