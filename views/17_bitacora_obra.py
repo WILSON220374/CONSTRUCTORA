@@ -338,6 +338,77 @@ def _bytes_desde_imagen(imagen):
     except Exception:
         return b""
 
+def _generar_word_bitacora(incidencias):
+    doc = Document()
+    doc.add_heading("BITÁCORA DE OBRA", level=0)
+
+    incidencias_ordenadas = sorted(
+        incidencias,
+        key=lambda x: int(x.get("folio") or 0)
+    )
+
+    for idx, incidencia in enumerate(incidencias_ordenadas, start=1):
+        doc.add_heading(f"Incidencia / Folio {int(incidencia.get('folio') or 0)}", level=1)
+
+        tabla_info = doc.add_table(rows=5, cols=2)
+        tabla_info.style = "Table Grid"
+        tabla_info.cell(0, 0).text = "Fecha"
+        tabla_info.cell(0, 1).text = _parse_fecha(incidencia.get("fecha")).strftime("%d/%m/%Y")
+        tabla_info.cell(1, 0).text = "No. de contrato"
+        tabla_info.cell(1, 1).text = _texto(incidencia.get("numero_contrato"))
+        tabla_info.cell(2, 0).text = "No. de folio"
+        tabla_info.cell(2, 1).text = str(int(incidencia.get("folio") or 0))
+        tabla_info.cell(3, 0).text = "Contratista"
+        tabla_info.cell(3, 1).text = _texto(incidencia.get("contratista"))
+        tabla_info.cell(4, 0).text = "Interventor"
+        tabla_info.cell(4, 1).text = _texto(incidencia.get("interventor"))
+
+        doc.add_paragraph("")
+        doc.add_paragraph("ACTIVIDADES A DESARROLLAR")
+
+        actividades = incidencia.get("actividades", []) or []
+        if actividades:
+            tabla_act = doc.add_table(rows=1, cols=2)
+            tabla_act.style = "Table Grid"
+            tabla_act.rows[0].cells[0].text = "ÍTEM No."
+            tabla_act.rows[0].cells[1].text = "DESCRIPCIÓN DEL ÍTEM"
+
+            for fila in actividades:
+                row = tabla_act.add_row().cells
+                row[0].text = _texto(fila.get("ÍTEM No."))
+                row[1].text = _texto(fila.get("DESCRIPCIÓN DEL ÍTEM"))
+        else:
+            doc.add_paragraph("Sin actividades registradas.")
+
+        doc.add_paragraph("")
+        doc.add_paragraph("ANOTACIONES")
+        doc.add_paragraph(_texto(incidencia.get("anotaciones")) or "Sin anotaciones.")
+
+        imagenes = incidencia.get("imagenes", []) or []
+        if imagenes:
+            doc.add_paragraph("")
+            doc.add_paragraph("REGISTRO FOTOGRÁFICO")
+            for imagen in imagenes:
+                contenido = _bytes_desde_imagen(imagen)
+                if contenido:
+                    try:
+                        doc.add_picture(BytesIO(contenido), width=Inches(5.5))
+                        nombre_imagen = _texto(imagen.get("nombre"))
+                        if nombre_imagen:
+                            doc.add_paragraph(nombre_imagen)
+                    except Exception:
+                        nombre_imagen = _texto(imagen.get("nombre"))
+                        if nombre_imagen:
+                            doc.add_paragraph(f"No fue posible insertar la imagen: {nombre_imagen}")
+
+        if idx < len(incidencias_ordenadas):
+            doc.add_page_break()
+
+    salida = BytesIO()
+    doc.save(salida)
+    salida.seek(0)
+    return salida
+
 
 acta_inicio = _leer_acta_inicio()
 contrato_obra = _leer_contrato_obra()
