@@ -155,7 +155,6 @@ def _fila_actividad_vacia():
     return {
         "ÍTEM No.": "",
         "DESCRIPCIÓN DEL ÍTEM": "",
-        "VALOR REFERENCIA": 0.0,
     }
 
 
@@ -303,6 +302,10 @@ def _recalcular_actividades(incidencia, mapa_catalogo):
     actividades_base = _normalizar_actividades(incidencia.get("actividades", []))
     actividades_out = []
 
+def _recalcular_actividades(incidencia, mapa_catalogo):
+    actividades_base = _normalizar_actividades(incidencia.get("actividades", []))
+    actividades_out = []
+
     for fila in actividades_base:
         descripcion = _texto(fila.get("DESCRIPCIÓN DEL ÍTEM"))
         fila_nueva = _fila_actividad_vacia()
@@ -310,10 +313,6 @@ def _recalcular_actividades(incidencia, mapa_catalogo):
 
         if descripcion and descripcion in mapa_catalogo:
             fila_nueva["ÍTEM No."] = _texto(mapa_catalogo[descripcion].get("item_no"))
-            fila_nueva["VALOR REFERENCIA"] = _safe_float(
-                mapa_catalogo[descripcion].get("valor_referencia"),
-                0.0,
-            )
 
         actividades_out.append(fila_nueva)
 
@@ -451,7 +450,7 @@ _recalcular_actividades(incidencia, mapa_catalogo)
 
 df_actividades = pd.DataFrame(
     incidencia.get("actividades", []),
-    columns=["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM", "VALOR REFERENCIA"],
+    columns=["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"],
 )
 
 df_editado = st.data_editor(
@@ -465,11 +464,6 @@ df_editado = st.data_editor(
             "DESCRIPCIÓN DEL ÍTEM",
             options=_descripciones_catalogo,
             required=False,
-        ),
-        "VALOR REFERENCIA": st.column_config.NumberColumn(
-            "VALOR REFERENCIA",
-            format="$ %.2f",
-            disabled=True,
         ),
     },
     key=f"bitacora_actividades_{folio_activo}",
