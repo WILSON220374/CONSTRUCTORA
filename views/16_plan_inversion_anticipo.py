@@ -526,7 +526,7 @@ with st.container(border=True):
     for col in columnas_meses:
         column_config[col] = st.column_config.NumberColumn(col, min_value=0.0, step=0.01, format="$ %.2f")
 
-    columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM", "VALOR"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
+    columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
 
     df_editado = st.data_editor(
         df_editor,
