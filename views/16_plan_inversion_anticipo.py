@@ -161,9 +161,32 @@ def _construir_catalogo_presupuesto(presupuesto_obra: dict):
                 catalogo.append(registro)
                 mapa[descripcion] = registro
 
+    resumen = tablas.get("resumen_presupuesto_obra", {}) or {}
+    otros_costos_indirectos = resumen.get("otros_costos_indirectos", []) or []
+
+    for fila in otros_costos_indirectos:
+        if not isinstance(fila, dict):
+            continue
+
+        item_no = _texto(fila.get("id"))
+        descripcion = _texto(fila.get("nombre"))
+        valor_total = _safe_float(fila.get("valor"), 0.0)
+
+        if not descripcion or descripcion.upper() == "INTERVENTORIA":
+            continue
+
+        registro = {
+            "descripcion": descripcion,
+            "item_no": item_no,
+            "valor_referencia": valor_total,
+        }
+
+        if descripcion not in mapa:
+            catalogo.append(registro)
+            mapa[descripcion] = registro
+
     catalogo = sorted(catalogo, key=lambda x: (x["descripcion"], x["item_no"]))
     return catalogo, mapa
-
 
 # ==========================================================
 # Estado propio de la hoja
