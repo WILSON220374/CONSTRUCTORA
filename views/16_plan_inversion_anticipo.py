@@ -222,13 +222,12 @@ def _inicializar_estado():
         cantidad_meses = int(cargado.get("cantidad_meses", MIN_MESES) or MIN_MESES)
         columnas_meses = _columnas_meses(cantidad_meses)
 
-        st.session_state["plan_inversion_anticipo_datos"] = {
+       st.session_state["plan_inversion_anticipo_datos"] = {
             "fecha_documento": _parse_fecha(cargado.get("fecha_documento")) or date.today(),
             "cantidad_meses": cantidad_meses,
+            "porcentaje_anticipo": _safe_float(cargado.get("porcentaje_anticipo"), PORCENTAJE_ANTICIPO),
             "rows": _normalizar_filas(cargado.get("rows", []), columnas_meses),
         }
-        st.session_state["_plan_inversion_anticipo_group"] = group_id_actual
-
 
 def _guardar():
     guardar_estado(CLAVE_GUARDADO, st.session_state["plan_inversion_anticipo_datos"])
