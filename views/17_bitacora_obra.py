@@ -1,9 +1,12 @@
 import base64
 import mimetypes
 from datetime import date, datetime
+from io import BytesIO
 
 import pandas as pd
 import streamlit as st
+from docx import Document
+from docx.shared import Inches
 
 from supabase_state import cargar_estado
 from supabase_state import guardar_estado as guardar_estado_bd
