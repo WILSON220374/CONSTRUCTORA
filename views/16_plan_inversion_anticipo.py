@@ -553,7 +553,25 @@ with st.container(border=True):
     if repetidos:
         st.error("No se puede repetir un ítem del presupuesto en más de una fila.")
 
-    total_programado, total_porcentaje = _sumas_totales(df_final, columnas_meses)
+    totales_fila = {
+        "ÍTEM No.": "",
+        "DESCRIPCIÓN DEL ÍTEM": "TOTAL",
+        "VALOR PROGRAMA APROBADO": total_programado,
+        "%": total_porcentaje,
+    }
+
+    for col in columnas_meses:
+        totales_fila[col] = _safe_float(df_final[col].sum(), 0.0) if col in df_final.columns else 0.0
+
+    columnas_totales = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
+    df_totales = pd.DataFrame([totales_fila], columns=columnas_totales)
+
+    st.dataframe(
+        df_totales,
+        width="stretch",
+        hide_index=True,
+        column_config=column_config,
+    )
 
     st.markdown(f"**Valor del anticipo:** {_formato_moneda(valor_anticipo)}")
     st.markdown(f"**Total valor programa aprobado:** {_formato_moneda(total_programado)}")
