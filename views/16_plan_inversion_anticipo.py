@@ -400,7 +400,8 @@ contrato_obra = _leer_contrato_obra()
 catalogo_presupuesto, mapa_catalogo = _construir_catalogo_presupuesto(presupuesto_obra)
 
 valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
-valor_anticipo = round(valor_contrato * (PORCENTAJE_ANTICIPO / 100.0), 2)
+porcentaje_anticipo = _safe_float(datos.get("porcentaje_anticipo"), PORCENTAJE_ANTICIPO)
+valor_anticipo = round(valor_contrato * (porcentaje_anticipo / 100.0), 2)
 
 contrato_obra_no = _primero_no_vacio(
     acta_inicio.get("numero_contrato"),
@@ -476,7 +477,17 @@ with st.container(border=True):
     with c1:
         st.text_input("Valor del contrato", value=_formato_moneda(valor_contrato), disabled=True, key="pia_valor_contrato")
     with c2:
-        st.text_input("Porcentaje del anticipo", value=f"{PORCENTAJE_ANTICIPO:.2f}%", disabled=True, key="pia_porcentaje_anticipo")
+        datos["porcentaje_anticipo"] = st.number_input(
+            "Porcentaje del anticipo",
+            min_value=0.0,
+            max_value=100.0,
+            value=float(_safe_float(datos.get("porcentaje_anticipo"), PORCENTAJE_ANTICIPO)),
+            step=0.01,
+            format="%.2f",
+            key="pia_porcentaje_anticipo",
+        )
+        porcentaje_anticipo = _safe_float(datos.get("porcentaje_anticipo"), PORCENTAJE_ANTICIPO)
+        valor_anticipo = round(valor_contrato * (porcentaje_anticipo / 100.0), 2)
     with c3:
         st.text_input("Valor del anticipo", value=_formato_moneda(valor_anticipo), disabled=True, key="pia_valor_anticipo")
 
