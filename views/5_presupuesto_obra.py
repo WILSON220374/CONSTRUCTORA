@@ -1136,6 +1136,23 @@ for grupo in grupos_calculados:
 
     editor_key = f"presupuesto_obra_editor_{grupo['group_id']}"
 
+    def _on_change_editor_presupuesto_obra(grupo_id_cb, rows_originales_cb, df_base_cb):
+        editor_key_cb = f"presupuesto_obra_editor_{grupo_id_cb}"
+        widget_state_cb = st.session_state.get(editor_key_cb, {}) or {}
+        edited_rows_cb = widget_state_cb.get("edited_rows", {}) or {}
+
+        if not edited_rows_cb:
+            return
+
+        df_cb = df_base_cb.copy()
+
+        for row_idx, cambios in edited_rows_cb.items():
+            for col_name, valor in cambios.items():
+                if row_idx < len(df_cb) and col_name in df_cb.columns:
+                    df_cb.at[row_idx, col_name] = valor
+
+        _persistir_ediciones_desde_df(df_cb, rows_originales_cb)
+
     edited_df = st.data_editor(
         df_visible,
         hide_index=True,
@@ -1143,6 +1160,8 @@ for grupo in grupos_calculados:
         height=alto_editor,
         key=editor_key,
         num_rows="fixed",
+        on_change=_on_change_editor_presupuesto_obra,
+        args=(grupo["group_id"], rows_originales, df_visible),
         column_config={
             "ITEM": st.column_config.TextColumn("ITEM", disabled=True),
             "SELECCIONAR GOBER": st.column_config.SelectboxColumn(
@@ -1174,12 +1193,6 @@ for grupo in grupos_calculados:
             "%",
         ],
     )
-
-    st.session_state.setdefault("presupuesto_obra_ediciones_pendientes", {})
-    st.session_state["presupuesto_obra_ediciones_pendientes"][grupo["group_id"]] = {
-        "df": edited_df.copy(),
-        "rows_originales": rows_originales,
-    }
     
     # Recalcular después de persistir cambios para reflejar valores actuales
     grupos_recalc, _ = _construir_grupos_calculados()
@@ -1306,15 +1319,8 @@ st.session_state["presupuesto_obra_datos"]["configuracion"] = config
 total_otros_costos = sum(_safe_float(x.get("valor", 0.0), 0.0) for x in otros_costos_indirectos)
 total_presupuesto = subtotal_presupuesto + total_otros_costos
 
-_ediciones_pendientes = st.session_state.get("presupuesto_obra_ediciones_pendientes", {}) or {}
+_actualizar_snapshot_presupuesto_obra(grupos_calculados, alcance)
 
-for payload in ediciones_pendientes.values():
-    df_pendiente = payload.get("df")
-    rows_originales_pendiente = payload.get("rows_originales")
-    if df_pendiente is not None and rows_originales_pendiente is not None:
-        _persistir_ediciones_desde_df(df_pendiente.copy(), rows_originales_pendiente)
-
-_actualizar_snapshot_presupuesto_obra(_construir_grupos_calculados(), alcance)
 if guardar_presupuesto:
     try:
         guardar_estado("presupuesto_obra", _json_clone(st.session_state["presupuesto_obra_datos"]))
