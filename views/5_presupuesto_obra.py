@@ -1180,8 +1180,6 @@ for grupo in grupos_calculados:
         "df": edited_df.copy(),
         "rows_originales": rows_originales,
     }
-
-    _persistir_ediciones_desde_df(edited_df.copy(), rows_originales)
     
     # Recalcular después de persistir cambios para reflejar valores actuales
     grupos_recalc, _ = _construir_grupos_calculados()
