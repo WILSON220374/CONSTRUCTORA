@@ -1175,6 +1175,12 @@ for grupo in grupos_calculados:
         ],
     )
 
+    st.session_state.setdefault("presupuesto_obra_ediciones_pendientes", {})
+    st.session_state["presupuesto_obra_ediciones_pendientes"][grupo["group_id"]] = {
+        "df": edited_df.copy(),
+        "rows_originales": rows_originales,
+    }
+
     _persistir_ediciones_desde_df(edited_df.copy(), rows_originales)
     
     # Recalcular después de persistir cambios para reflejar valores actuales
