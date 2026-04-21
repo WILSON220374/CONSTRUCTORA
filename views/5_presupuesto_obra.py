@@ -1306,8 +1306,15 @@ st.session_state["presupuesto_obra_datos"]["configuracion"] = config
 total_otros_costos = sum(_safe_float(x.get("valor", 0.0), 0.0) for x in otros_costos_indirectos)
 total_presupuesto = subtotal_presupuesto + total_otros_costos
 
-_actualizar_snapshot_presupuesto_obra(grupos_calculados, alcance)
+_ediciones_pendientes = st.session_state.get("presupuesto_obra_ediciones_pendientes", {}) or {}
 
+for payload in ediciones_pendientes.values():
+    df_pendiente = payload.get("df")
+    rows_originales_pendiente = payload.get("rows_originales")
+    if df_pendiente is not None and rows_originales_pendiente is not None:
+        _persistir_ediciones_desde_df(df_pendiente.copy(), rows_originales_pendiente)
+
+_actualizar_snapshot_presupuesto_obra(_construir_grupos_calculados(), alcance)
 if guardar_presupuesto:
     try:
         guardar_estado("presupuesto_obra", _json_clone(st.session_state["presupuesto_obra_datos"]))
