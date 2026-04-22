@@ -415,12 +415,8 @@ acta["desarrollo_reunion"] = st.text_area(
 )
 
 st.markdown("### COMPROMISOS PACTADOS")
-df_compromisos = pd.DataFrame(
-    acta.get("compromisos", []),
-    columns=["COMPROMISOS PACTADOS", "RESPONSABLES", "FECHA DE CUMPLIMIENTO"],
-)
 df_compromisos_editado = st.data_editor(
-    df_compromisos,
+    st.session_state[clave_compromisos],
     hide_index=True,
     use_container_width=True,
     num_rows="dynamic",
@@ -434,15 +430,12 @@ df_compromisos_editado = st.data_editor(
         ),
     },
 )
+st.session_state[clave_compromisos] = df_compromisos_editado.copy()
 acta["compromisos"] = _normalizar_compromisos(df_compromisos_editado.to_dict("records"))
 
 st.markdown("### PARTICIPANTES")
-df_participantes = pd.DataFrame(
-    acta.get("participantes", []),
-    columns=["NOMBRE DEL PARTICIPANTE", "CARGO", "EMPRESA / ENTIDAD"],
-)
 df_participantes_editado = st.data_editor(
-    df_participantes,
+    st.session_state[clave_participantes],
     hide_index=True,
     use_container_width=True,
     num_rows="dynamic",
@@ -453,4 +446,5 @@ df_participantes_editado = st.data_editor(
         "EMPRESA / ENTIDAD": st.column_config.TextColumn("EMPRESA / ENTIDAD"),
     },
 )
+st.session_state[clave_participantes] = df_participantes_editado.copy()
 acta["participantes"] = _normalizar_participantes(df_participantes_editado.to_dict("records"))
