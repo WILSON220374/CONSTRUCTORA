@@ -178,14 +178,26 @@ def _normalizar_acta(acta, acta_inicio, contrato_obra, contrato_interventoria):
     return {
         "acta_no": int(acta.get("acta_no") or 1),
         "fecha": _parse_fecha(acta.get("fecha")).isoformat(),
-        "contrato_obra_no": _primero_no_vacio(acta.get("contrato_obra_no"), encabezado["contrato_obra_no"]),
-        "contratista": _primero_no_vacio(acta.get("contratista"), encabezado["contratista"]),
-        "objeto_contrato_obra": _primero_no_vacio(acta.get("objeto_contrato_obra"), encabezado["objeto_contrato_obra"]),
+        "contrato_obra_no": _primero_no_vacio(
+            acta.get("contrato_obra_no"),
+            encabezado["contrato_obra_no"],
+        ),
+        "contratista": _primero_no_vacio(
+            acta.get("contratista"),
+            encabezado["contratista"],
+        ),
+        "objeto_contrato_obra": _primero_no_vacio(
+            acta.get("objeto_contrato_obra"),
+            encabezado["objeto_contrato_obra"],
+        ),
         "contrato_interventoria_no": _primero_no_vacio(
             acta.get("contrato_interventoria_no"),
             encabezado["contrato_interventoria_no"],
         ),
-        "interventor": _primero_no_vacio(acta.get("interventor"), encabezado["interventor"]),
+        "interventor": _primero_no_vacio(
+            acta.get("interventor"),
+            encabezado["interventor"],
+        ),
         "objetivos_reunion": _texto(acta.get("objetivos_reunion")),
         "desarrollo_reunion": _texto(acta.get("desarrollo_reunion")),
         "compromisos": _normalizar_compromisos(acta.get("compromisos", [])),
@@ -241,7 +253,12 @@ def _obtener_acta_activa():
         datos["acta_activa"] = int(actas[0]["acta_no"])
         return actas[0]
 
-    nueva = _acta_vacia(1, _leer_acta_inicio(), _leer_contrato_obra(), _leer_contrato_interventoria())
+    nueva = _acta_vacia(
+        1,
+        _leer_acta_inicio(),
+        _leer_contrato_obra(),
+        _leer_contrato_interventoria(),
+    )
     datos["actas"] = [nueva]
     datos["acta_activa"] = 1
     return nueva
@@ -285,7 +302,7 @@ st.markdown('<div class="titulo-acta-reunion">ACTA DE REUNIÓN</div>', unsafe_al
 acta_opciones = [int(x.get("acta_no") or 0) for x in actas]
 acta_activa_default = int(datos.get("acta_activa") or acta_opciones[0])
 
-col_nueva, col_guardar, col_acta, col_fecha = st.columns([1, 1, 1, 1])
+col_nueva, col_acta = st.columns([1, 1])
 
 with col_nueva:
     if st.button("➕ Nueva acta", type="primary", key="acta_reunion_nueva"):
@@ -293,10 +310,6 @@ with col_nueva:
         _guardar()
         st.session_state["acta_reunion_selector"] = nueva_no
         st.rerun()
-
-with col_guardar:
-    if st.button("💾 Guardar acta", key="acta_reunion_guardar"):
-        _guardar()
 
 with col_acta:
     acta_activa = st.selectbox(
@@ -309,40 +322,29 @@ with col_acta:
 
 acta = _obtener_acta_activa()
 encabezado = _datos_encabezado(acta_inicio, contrato_obra, contrato_interventoria)
-acta["contrato_obra_no"] = _primero_no_vacio(acta.get("contrato_obra_no"), encabezado["contrato_obra_no"])
-acta["contratista"] = _primero_no_vacio(acta.get("contratista"), encabezado["contratista"])
-acta["objeto_contrato_obra"] = _primero_no_vacio(acta.get("objeto_contrato_obra"), encabezado["objeto_contrato_obra"])
+
+acta["contrato_obra_no"] = _primero_no_vacio(
+    acta.get("contrato_obra_no"),
+    encabezado["contrato_obra_no"],
+)
+acta["contratista"] = _primero_no_vacio(
+    acta.get("contratista"),
+    encabezado["contratista"],
+)
+acta["objeto_contrato_obra"] = _primero_no_vacio(
+    acta.get("objeto_contrato_obra"),
+    encabezado["objeto_contrato_obra"],
+)
 acta["contrato_interventoria_no"] = _primero_no_vacio(
     acta.get("contrato_interventoria_no"),
     encabezado["contrato_interventoria_no"],
 )
-acta["interventor"] = _primero_no_vacio(acta.get("interventor"), encabezado["interventor"])
-
-clave_compromisos = f"acta_reunion_compromisos_data_{acta_activa}"
-clave_participantes = f"acta_reunion_participantes_data_{acta_activa}"
-
-if clave_compromisos not in st.session_state:
-    st.session_state[clave_compromisos] = pd.DataFrame(
-        _normalizar_compromisos(acta.get("compromisos", [])),
-        columns=["COMPROMISOS PACTADOS", "RESPONSABLES", "FECHA DE CUMPLIMIENTO"],
-    )
-
-if clave_participantes not in st.session_state:
-    st.session_state[clave_participantes] = pd.DataFrame(
-        _normalizar_participantes(acta.get("participantes", [])),
-        columns=["NOMBRE DEL PARTICIPANTE", "CARGO", "EMPRESA / ENTIDAD"],
-    )
-
-with col_fecha:
-    acta["fecha"] = st.date_input(
-        "FECHA",
-        value=_parse_fecha(acta.get("fecha")),
-        format="DD/MM/YYYY",
-        key=f"acta_reunion_fecha_{acta_activa}",
-    ).isoformat()
+acta["interventor"] = _primero_no_vacio(
+    acta.get("interventor"),
+    encabezado["interventor"],
+)
 
 st.markdown("### CONSULTA DE ACTAS")
-
 df_consulta = pd.DataFrame(
     [
         {
@@ -357,94 +359,123 @@ df_consulta = pd.DataFrame(
 )
 st.dataframe(df_consulta, use_container_width=True, hide_index=True)
 
-col1, col2 = st.columns(2)
-with col1:
-    st.text_input(
-        "CONTRATO DE OBRA No.",
-        value=_texto(acta.get("contrato_obra_no")),
-        disabled=True,
-        key=f"acta_reunion_contrato_obra_{acta_activa}",
-    )
-with col2:
-    st.text_input(
-        "CONTRATISTA",
-        value=_texto(acta.get("contratista")),
-        disabled=True,
-        key=f"acta_reunion_contratista_{acta_activa}",
-    )
-
-col3, col4 = st.columns(2)
-with col3:
-    st.text_input(
-        "OBJETO DEL CONTRATO DE OBRA",
-        value=_texto(acta.get("objeto_contrato_obra")),
-        disabled=True,
-        key=f"acta_reunion_objeto_obra_{acta_activa}",
-    )
-with col4:
-    st.text_input(
-        "CONTRATO DE INTERVENTORÍA No.",
-        value=_texto(acta.get("contrato_interventoria_no")),
-        disabled=True,
-        key=f"acta_reunion_contrato_interventoria_{acta_activa}",
-    )
-
-st.text_input(
-    "INTERVENTOR",
-    value=_texto(acta.get("interventor")),
-    disabled=True,
-    key=f"acta_reunion_interventor_{acta_activa}",
+compromisos_iniciales = pd.DataFrame(
+    _normalizar_compromisos(acta.get("compromisos", [])),
+    columns=["COMPROMISOS PACTADOS", "RESPONSABLES", "FECHA DE CUMPLIMIENTO"],
 )
 
-st.markdown("### OBJETIVOS DE LA REUNIÓN")
-acta["objetivos_reunion"] = st.text_area(
-    "OBJETIVOS DE LA REUNIÓN",
-    value=_texto(acta.get("objetivos_reunion")),
-    height=140,
-    label_visibility="collapsed",
-    key=f"acta_reunion_objetivos_{acta_activa}",
+participantes_iniciales = pd.DataFrame(
+    _normalizar_participantes(acta.get("participantes", [])),
+    columns=["NOMBRE DEL PARTICIPANTE", "CARGO", "EMPRESA / ENTIDAD"],
 )
 
-st.markdown("### DESARROLLO DE LA REUNIÓN")
-acta["desarrollo_reunion"] = st.text_area(
-    "DESARROLLO DE LA REUNIÓN",
-    value=_texto(acta.get("desarrollo_reunion")),
-    height=220,
-    label_visibility="collapsed",
-    key=f"acta_reunion_desarrollo_{acta_activa}",
-)
-
-st.markdown("### COMPROMISOS PACTADOS")
-df_compromisos_editado = st.data_editor(
-    st.session_state[clave_compromisos],
-    hide_index=True,
-    use_container_width=True,
-    num_rows="dynamic",
-    key=f"acta_reunion_compromisos_{acta_activa}",
-    column_config={
-        "COMPROMISOS PACTADOS": st.column_config.TextColumn("COMPROMISOS PACTADOS"),
-        "RESPONSABLES": st.column_config.TextColumn("RESPONSABLES"),
-        "FECHA DE CUMPLIMIENTO": st.column_config.DateColumn(
-            "FECHA DE CUMPLIMIENTO",
+with st.form(key=f"form_acta_reunion_{acta_activa}", clear_on_submit=False):
+    col1, col2 = st.columns(2)
+    with col1:
+        fecha_form = st.date_input(
+            "FECHA",
+            value=_parse_fecha(acta.get("fecha")),
             format="DD/MM/YYYY",
-        ),
-    },
-)
-st.session_state[clave_compromisos] = df_compromisos_editado.copy()
-acta["compromisos"] = _normalizar_compromisos(df_compromisos_editado.to_dict("records"))
+            key=f"acta_reunion_fecha_{acta_activa}",
+        )
+    with col2:
+        st.text_input(
+            "ACTA DE REUNIÓN No.",
+            value=str(int(acta.get("acta_no") or 0)),
+            disabled=True,
+            key=f"acta_reunion_numero_{acta_activa}",
+        )
 
-st.markdown("### PARTICIPANTES")
-df_participantes_editado = st.data_editor(
-    st.session_state[clave_participantes],
-    hide_index=True,
-    use_container_width=True,
-    num_rows="dynamic",
-    key=f"acta_reunion_participantes_{acta_activa}",
-    column_config={
-        "NOMBRE DEL PARTICIPANTE": st.column_config.TextColumn("NOMBRE DEL PARTICIPANTE"),
-        "CARGO": st.column_config.TextColumn("CARGO"),
-        "EMPRESA / ENTIDAD": st.column_config.TextColumn("EMPRESA / ENTIDAD"),
-    },
-)
-st.session_state[clave_participantes] = df_participantes_editado.copy()
-acta["participantes"] = _normalizar_participantes(df_participantes_editado.to_dict("records"))
+    col3, col4 = st.columns(2)
+    with col3:
+        st.text_input(
+            "CONTRATO DE OBRA No.",
+            value=_texto(acta.get("contrato_obra_no")),
+            disabled=True,
+            key=f"acta_reunion_contrato_obra_{acta_activa}",
+        )
+    with col4:
+        st.text_input(
+            "CONTRATISTA",
+            value=_texto(acta.get("contratista")),
+            disabled=True,
+            key=f"acta_reunion_contratista_{acta_activa}",
+        )
+
+    col5, col6 = st.columns(2)
+    with col5:
+        st.text_input(
+            "OBJETO DEL CONTRATO DE OBRA",
+            value=_texto(acta.get("objeto_contrato_obra")),
+            disabled=True,
+            key=f"acta_reunion_objeto_obra_{acta_activa}",
+        )
+    with col6:
+        st.text_input(
+            "CONTRATO DE INTERVENTORÍA No.",
+            value=_texto(acta.get("contrato_interventoria_no")),
+            disabled=True,
+            key=f"acta_reunion_contrato_interventoria_{acta_activa}",
+        )
+
+    st.text_input(
+        "INTERVENTOR",
+        value=_texto(acta.get("interventor")),
+        disabled=True,
+        key=f"acta_reunion_interventor_{acta_activa}",
+    )
+
+    objetivos_form = st.text_area(
+        "OBJETIVOS DE LA REUNIÓN",
+        value=_texto(acta.get("objetivos_reunion")),
+        height=140,
+        key=f"acta_reunion_objetivos_{acta_activa}",
+    )
+
+    desarrollo_form = st.text_area(
+        "DESARROLLO DE LA REUNIÓN",
+        value=_texto(acta.get("desarrollo_reunion")),
+        height=220,
+        key=f"acta_reunion_desarrollo_{acta_activa}",
+    )
+
+    st.markdown("### COMPROMISOS PACTADOS")
+    compromisos_editados = st.data_editor(
+        compromisos_iniciales,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="dynamic",
+        key=f"acta_reunion_compromisos_{acta_activa}",
+        column_config={
+            "COMPROMISOS PACTADOS": st.column_config.TextColumn("COMPROMISOS PACTADOS"),
+            "RESPONSABLES": st.column_config.TextColumn("RESPONSABLES"),
+            "FECHA DE CUMPLIMIENTO": st.column_config.DateColumn(
+                "FECHA DE CUMPLIMIENTO",
+                format="DD/MM/YYYY",
+            ),
+        },
+    )
+
+    st.markdown("### PARTICIPANTES")
+    participantes_editados = st.data_editor(
+        participantes_iniciales,
+        hide_index=True,
+        use_container_width=True,
+        num_rows="dynamic",
+        key=f"acta_reunion_participantes_{acta_activa}",
+        column_config={
+            "NOMBRE DEL PARTICIPANTE": st.column_config.TextColumn("NOMBRE DEL PARTICIPANTE"),
+            "CARGO": st.column_config.TextColumn("CARGO"),
+            "EMPRESA / ENTIDAD": st.column_config.TextColumn("EMPRESA / ENTIDAD"),
+        },
+    )
+
+    guardar_form = st.form_submit_button("💾 Guardar acta", use_container_width=True)
+
+if guardar_form:
+    acta["fecha"] = fecha_form.isoformat()
+    acta["objetivos_reunion"] = _texto(objetivos_form)
+    acta["desarrollo_reunion"] = _texto(desarrollo_form)
+    acta["compromisos"] = _normalizar_compromisos(compromisos_editados.to_dict("records"))
+    acta["participantes"] = _normalizar_participantes(participantes_editados.to_dict("records"))
+    _guardar()
