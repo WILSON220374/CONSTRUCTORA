@@ -7,11 +7,6 @@ from supabase_state import cargar_estado
 from supabase_state import guardar_estado as guardar_estado_bd
 
 
-CLAVE_GUARDADO = "acta_comite_obra"
-MIN_FILAS_COMPROMISOS = 1
-MIN_FILAS_PARTICIPANTES = 1
-
-
 def guardar_estado(clave, datos):
     def serializar(obj):
         if isinstance(obj, dict):
@@ -102,7 +97,7 @@ def _normalizar_compromisos(rows):
             base["RESPONSABLES"] = _texto(fila.get("RESPONSABLES"))
         filas.append(base)
 
-    while len(filas) < MIN_FILAS_COMPROMISOS:
+    while len(filas) < 1:
         filas.append(_fila_compromiso_vacia())
 
     return filas
@@ -119,7 +114,7 @@ def _normalizar_participantes(rows):
             base["FIRMA"] = _texto(fila.get("FIRMA"))
         filas.append(base)
 
-    while len(filas) < MIN_FILAS_PARTICIPANTES:
+    while len(filas) < 1:
         filas.append(_fila_participante_vacia())
 
     return filas
@@ -141,10 +136,6 @@ def _datos_encabezado(acta_inicio, contrato_obra, contrato_interventoria):
             contrato_obra.get("objeto_contrato"),
             contrato_obra.get("objeto"),
         ),
-        "contrato_interventoria_no": _primero_no_vacio(
-            acta_inicio.get("numero_contrato_interventoria"),
-            contrato_interventoria.get("numero_contrato"),
-        ),
         "interventor": _primero_no_vacio(
             acta_inicio.get("nombre_firma_interventor"),
             contrato_interventoria.get("nombre_contratista"),
@@ -160,12 +151,9 @@ def _acta_vacia(nueva_no: int, acta_inicio, contrato_obra, contrato_interventori
     return {
         "acta_no": int(nueva_no),
         "fecha": date.today().isoformat(),
-        "unidad_ejecutora": "",
-        "direccion_territorial": "",
         "contrato_obra_no": encabezado["contrato_obra_no"],
         "contratista": encabezado["contratista"],
         "objeto_contrato_obra": encabezado["objeto_contrato_obra"],
-        "contrato_interventoria_no": encabezado["contrato_interventoria_no"],
         "interventor": encabezado["interventor"],
         "lectura_acta_anterior": "",
         "temas_comite": "",
@@ -185,8 +173,6 @@ def _normalizar_acta(acta, acta_inicio, contrato_obra, contrato_interventoria):
     return {
         "acta_no": int(acta.get("acta_no") or 1),
         "fecha": _parse_fecha(acta.get("fecha")).isoformat(),
-        "unidad_ejecutora": _texto(acta.get("unidad_ejecutora")),
-        "direccion_territorial": _texto(acta.get("direccion_territorial")),
         "contrato_obra_no": _primero_no_vacio(
             acta.get("contrato_obra_no"),
             encabezado["contrato_obra_no"],
@@ -198,10 +184,6 @@ def _normalizar_acta(acta, acta_inicio, contrato_obra, contrato_interventoria):
         "objeto_contrato_obra": _primero_no_vacio(
             acta.get("objeto_contrato_obra"),
             encabezado["objeto_contrato_obra"],
-        ),
-        "contrato_interventoria_no": _primero_no_vacio(
-            acta.get("contrato_interventoria_no"),
-            encabezado["contrato_interventoria_no"],
         ),
         "interventor": _primero_no_vacio(
             acta.get("interventor"),
@@ -221,7 +203,7 @@ def _inicializar_estado(acta_inicio, contrato_obra, contrato_interventoria):
     cache_group = _texto(st.session_state.get("_acta_comite_obra_group"))
 
     if cache_group != group_id_actual or "acta_comite_obra_datos" not in st.session_state:
-        cargado = cargar_estado(CLAVE_GUARDADO) or {}
+        cargado = cargar_estado("acta_comite_obra") or {}
         if not isinstance(cargado, dict):
             cargado = {}
 
@@ -247,7 +229,7 @@ def _inicializar_estado(acta_inicio, contrato_obra, contrato_interventoria):
 
 
 def _guardar():
-    guardar_estado(CLAVE_GUARDADO, st.session_state["acta_comite_obra_datos"])
+    guardar_estado("acta_comite_obra", st.session_state["acta_comite_obra_datos"])
     st.success("Acta de comité de obra guardada correctamente.")
 
 
@@ -356,10 +338,6 @@ acta["objeto_contrato_obra"] = _primero_no_vacio(
     acta.get("objeto_contrato_obra"),
     encabezado["objeto_contrato_obra"],
 )
-acta["contrato_interventoria_no"] = _primero_no_vacio(
-    acta.get("contrato_interventoria_no"),
-    encabezado["contrato_interventoria_no"],
-)
 acta["interventor"] = _primero_no_vacio(
     acta.get("interventor"),
     encabezado["interventor"],
@@ -409,27 +387,13 @@ with st.form(key=f"form_acta_comite_obra_{acta_activa}", clear_on_submit=False):
 
     col3, col4 = st.columns(2)
     with col3:
-        unidad_ejecutora_form = st.text_input(
-            "UNIDAD EJECUTORA",
-            value=_texto(acta.get("unidad_ejecutora")),
-            key=f"acta_comite_unidad_ejecutora_{acta_activa}",
-        )
-    with col4:
-        direccion_territorial_form = st.text_input(
-            "DIRECCIÓN TERRITORIAL",
-            value=_texto(acta.get("direccion_territorial")),
-            key=f"acta_comite_direccion_territorial_{acta_activa}",
-        )
-
-    col5, col6 = st.columns(2)
-    with col5:
         st.text_input(
             "CONTRATO DE OBRA No.",
             value=_texto(acta.get("contrato_obra_no")),
             disabled=True,
             key=f"acta_comite_contrato_obra_{acta_activa}",
         )
-    with col6:
+    with col4:
         st.text_input(
             "CONTRATISTA",
             value=_texto(acta.get("contratista")),
@@ -437,22 +401,15 @@ with st.form(key=f"form_acta_comite_obra_{acta_activa}", clear_on_submit=False):
             key=f"acta_comite_contratista_{acta_activa}",
         )
 
-    st.text_input(
-        "OBJETO DEL CONTRATO DE OBRA",
-        value=_texto(acta.get("objeto_contrato_obra")),
-        disabled=True,
-        key=f"acta_comite_objeto_obra_{acta_activa}",
-    )
-
-    col7, col8 = st.columns(2)
-    with col7:
+    col5, col6 = st.columns(2)
+    with col5:
         st.text_input(
-            "CONTRATO DE INTERVENTORÍA No.",
-            value=_texto(acta.get("contrato_interventoria_no")),
+            "OBJETO DEL CONTRATO DE OBRA",
+            value=_texto(acta.get("objeto_contrato_obra")),
             disabled=True,
-            key=f"acta_comite_contrato_interventoria_{acta_activa}",
+            key=f"acta_comite_objeto_obra_{acta_activa}",
         )
-    with col8:
+    with col6:
         st.text_input(
             "INTERVENTOR",
             value=_texto(acta.get("interventor")),
@@ -539,8 +496,6 @@ with st.form(key=f"form_acta_comite_obra_{acta_activa}", clear_on_submit=False):
 
 if guardar_form:
     acta["fecha"] = fecha_form.isoformat()
-    acta["unidad_ejecutora"] = _texto(unidad_ejecutora_form)
-    acta["direccion_territorial"] = _texto(direccion_territorial_form)
     acta["lectura_acta_anterior"] = _texto(lectura_acta_anterior_form)
     acta["temas_comite"] = _texto(temas_comite_form)
     acta["desarrollo_comite"] = _texto(desarrollo_comite_form)
