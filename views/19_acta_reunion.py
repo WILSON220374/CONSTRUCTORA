@@ -181,7 +181,10 @@ def _normalizar_acta(acta, acta_inicio, contrato_obra, contrato_interventoria):
         "contrato_obra_no": _primero_no_vacio(acta.get("contrato_obra_no"), encabezado["contrato_obra_no"]),
         "contratista": _primero_no_vacio(acta.get("contratista"), encabezado["contratista"]),
         "objeto_contrato_obra": _primero_no_vacio(acta.get("objeto_contrato_obra"), encabezado["objeto_contrato_obra"]),
-        "contrato_interventoria_no": _primero_no_vacio(acta.get("contrato_interventoria_no"), encabezado["contrato_interventoria_no"]),
+        "contrato_interventoria_no": _primero_no_vacio(
+            acta.get("contrato_interventoria_no"),
+            encabezado["contrato_interventoria_no"],
+        ),
         "interventor": _primero_no_vacio(acta.get("interventor"), encabezado["interventor"]),
         "objetivos_reunion": _texto(acta.get("objetivos_reunion")),
         "desarrollo_reunion": _texto(acta.get("desarrollo_reunion")),
@@ -309,7 +312,10 @@ encabezado = _datos_encabezado(acta_inicio, contrato_obra, contrato_interventori
 acta["contrato_obra_no"] = _primero_no_vacio(acta.get("contrato_obra_no"), encabezado["contrato_obra_no"])
 acta["contratista"] = _primero_no_vacio(acta.get("contratista"), encabezado["contratista"])
 acta["objeto_contrato_obra"] = _primero_no_vacio(acta.get("objeto_contrato_obra"), encabezado["objeto_contrato_obra"])
-acta["contrato_interventoria_no"] = _primero_no_vacio(acta.get("contrato_interventoria_no"), encabezado["contrato_interventoria_no"])
+acta["contrato_interventoria_no"] = _primero_no_vacio(
+    acta.get("contrato_interventoria_no"),
+    encabezado["contrato_interventoria_no"],
+)
 acta["interventor"] = _primero_no_vacio(acta.get("interventor"), encabezado["interventor"])
 
 with col_fecha:
@@ -433,5 +439,3 @@ df_participantes_editado = st.data_editor(
     },
 )
 acta["participantes"] = _normalizar_participantes(df_participantes_editado.to_dict("records"))
-
-_guardar()
