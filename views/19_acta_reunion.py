@@ -332,10 +332,6 @@ acta["objeto_contrato_obra"] = _primero_no_vacio(
     acta.get("objeto_contrato_obra"),
     encabezado["objeto_contrato_obra"],
 )
-acta["contrato_interventoria_no"] = _primero_no_vacio(
-    acta.get("contrato_interventoria_no"),
-    encabezado["contrato_interventoria_no"],
-)
 acta["interventor"] = _primero_no_vacio(
     acta.get("interventor"),
     encabezado["interventor"],
