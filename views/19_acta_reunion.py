@@ -139,7 +139,6 @@ def _datos_encabezado(acta_inicio, contrato_obra, contrato_interventoria):
             contrato_obra.get("objeto_contrato"),
             contrato_obra.get("objeto"),
         ),
-       
         "interventor": _primero_no_vacio(
             acta_inicio.get("nombre_firma_interventor"),
             contrato_interventoria.get("nombre_contratista"),
