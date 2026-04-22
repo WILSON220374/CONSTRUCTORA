@@ -390,21 +390,12 @@ with st.form(key=f"form_acta_reunion_{acta_activa}", clear_on_submit=False):
             key=f"acta_reunion_contratista_{acta_activa}",
         )
 
-    col5, col6 = st.columns(2)
-    with col5:
-        st.text_input(
-            "OBJETO DEL CONTRATO DE OBRA",
-            value=_texto(acta.get("objeto_contrato_obra")),
-            disabled=True,
-            key=f"acta_reunion_objeto_obra_{acta_activa}",
-        )
-    with col6:
-        st.text_input(
-            "CONTRATO DE INTERVENTORÍA No.",
-            value=_texto(acta.get("contrato_interventoria_no")),
-            disabled=True,
-            key=f"acta_reunion_contrato_interventoria_{acta_activa}",
-        )
+    st.text_input(
+        "OBJETO DEL CONTRATO DE OBRA",
+        value=_texto(acta.get("objeto_contrato_obra")),
+        disabled=True,
+        key=f"acta_reunion_objeto_obra_{acta_activa}",
+    )
 
     st.text_input(
         "INTERVENTOR",
