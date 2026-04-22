@@ -318,6 +318,21 @@ acta["contrato_interventoria_no"] = _primero_no_vacio(
 )
 acta["interventor"] = _primero_no_vacio(acta.get("interventor"), encabezado["interventor"])
 
+clave_compromisos = f"acta_reunion_compromisos_data_{acta_activa}"
+clave_participantes = f"acta_reunion_participantes_data_{acta_activa}"
+
+if clave_compromisos not in st.session_state:
+    st.session_state[clave_compromisos] = pd.DataFrame(
+        _normalizar_compromisos(acta.get("compromisos", [])),
+        columns=["COMPROMISOS PACTADOS", "RESPONSABLES", "FECHA DE CUMPLIMIENTO"],
+    )
+
+if clave_participantes not in st.session_state:
+    st.session_state[clave_participantes] = pd.DataFrame(
+        _normalizar_participantes(acta.get("participantes", [])),
+        columns=["NOMBRE DEL PARTICIPANTE", "CARGO", "EMPRESA / ENTIDAD"],
+    )
+
 with col_fecha:
     acta["fecha"] = st.date_input(
         "FECHA",
