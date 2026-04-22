@@ -135,6 +135,7 @@ def _datos_encabezado(acta_inicio, contrato_obra, contrato_interventoria):
         ),
         "objeto_contrato_obra": _primero_no_vacio(
             acta_inicio.get("objeto_contrato"),
+            contrato_obra.get("objeto_general"),
             contrato_obra.get("objeto_contrato"),
             contrato_obra.get("objeto"),
         ),
