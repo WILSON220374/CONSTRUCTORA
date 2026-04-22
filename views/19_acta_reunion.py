@@ -186,10 +186,6 @@ def _normalizar_acta(acta, acta_inicio, contrato_obra, contrato_interventoria):
             acta.get("objeto_contrato_obra"),
             encabezado["objeto_contrato_obra"],
         ),
-        "contrato_interventoria_no": _primero_no_vacio(
-            acta.get("contrato_interventoria_no"),
-            encabezado["contrato_interventoria_no"],
-        ),
         "interventor": _primero_no_vacio(
             acta.get("interventor"),
             encabezado["interventor"],
