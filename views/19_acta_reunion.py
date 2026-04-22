@@ -139,10 +139,7 @@ def _datos_encabezado(acta_inicio, contrato_obra, contrato_interventoria):
             contrato_obra.get("objeto_contrato"),
             contrato_obra.get("objeto"),
         ),
-        "contrato_interventoria_no": _primero_no_vacio(
-            acta_inicio.get("numero_contrato_interventoria"),
-            contrato_interventoria.get("numero_contrato"),
-        ),
+       
         "interventor": _primero_no_vacio(
             acta_inicio.get("nombre_firma_interventor"),
             contrato_interventoria.get("nombre_contratista"),
@@ -161,7 +158,6 @@ def _acta_vacia(nueva_no: int, acta_inicio, contrato_obra, contrato_interventori
         "contrato_obra_no": encabezado["contrato_obra_no"],
         "contratista": encabezado["contratista"],
         "objeto_contrato_obra": encabezado["objeto_contrato_obra"],
-        "contrato_interventoria_no": encabezado["contrato_interventoria_no"],
         "interventor": encabezado["interventor"],
         "objetivos_reunion": "",
         "desarrollo_reunion": "",
