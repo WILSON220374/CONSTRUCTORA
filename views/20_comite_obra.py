@@ -368,6 +368,17 @@ participantes_iniciales = pd.DataFrame(
     columns=["NOMBRE DEL PARTICIPANTE", "CARGO", "EMPRESA / ENTIDAD", "FIRMA"],
 )
 
+acta_anterior = None
+for x in actas:
+    if int(x.get("acta_no") or 0) == int(acta_activa) - 1:
+        acta_anterior = x
+        break
+
+compromisos_acta_anterior = pd.DataFrame(
+    _normalizar_compromisos(acta_anterior.get("compromisos", []) if acta_anterior else []),
+    columns=["COMPROMISOS PACTADOS", "FECHA DE CUMPLIMIENTO", "RESPONSABLES"],
+)
+
 with st.form(key=f"form_acta_comite_obra_{acta_activa}", clear_on_submit=False):
     col1, col2 = st.columns(2)
     with col1:
@@ -416,7 +427,12 @@ with st.form(key=f"form_acta_comite_obra_{acta_activa}", clear_on_submit=False):
             disabled=True,
             key=f"acta_comite_interventor_{acta_activa}",
         )
-
+    st.markdown("### COMPROMISOS DEL ACTA ANTERIOR")
+    if acta_anterior and len(compromisos_acta_anterior) > 0:
+        st.dataframe(compromisos_acta_anterior, width="stretch", hide_index=True)
+    else:
+        st.info("No hay compromisos del acta anterior.")
+        
     lectura_acta_anterior_form = st.text_area(
         "LECTURA ACTA ANTERIOR Y VERIFICACIÓN DE CUMPLIMIENTO DE COMPROMISOS",
         value=_texto(acta.get("lectura_acta_anterior")),
