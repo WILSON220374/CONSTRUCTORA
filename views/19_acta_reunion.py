@@ -435,6 +435,16 @@ with st.form(key=f"form_acta_reunion_{acta_activa}", clear_on_submit=False):
         },
     )
 
+    st.markdown(
+        """
+        1. Las decisiones tomadas en la presente Reunión, no pueden modificar ni modifican por sí solas el Contrato de Obra ni el contrato de Interventoría suscritos. En el evento de requerirse una modificación contractual debe surtirse de manera previa el trámite interno correspondiente.
+
+        2. Se firma la presente Acta de Reunión bajo la responsabilidad expresa de quienes en ella intervienen, de conformidad con las obligaciones y funciones desempeñadas por cada uno de los mismos.
+
+        **LA PRESENTE ACTA DE REUNIÓN ES LEÍDA EN SU INTEGRIDAD ANTES DE LA SUSCRIPCIÓN POR LOS PARTICIPANTES**
+        """
+    )
+    
     st.markdown("### PARTICIPANTES")
     participantes_editados = st.data_editor(
         participantes_iniciales,
