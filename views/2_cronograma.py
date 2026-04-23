@@ -911,17 +911,19 @@ with tab_red:
                     margin="0.12,0.06",
                 )
 
-           # Alinear por ES SOLO cuando no hay foco (Ver Todo)
+             # Alinear por ES SOLO cuando no hay foco (Ver Todo),
+            # pero únicamente en grupos pequeños para evitar fallos de Graphviz
             if foco == "Ver Todo":
                 buckets = {}
                 for nid in nodos_terminales_ids:
                     buckets.setdefault(int(ES.get(nid, 0)), []).append(nid)
 
                 for esv, nodes in sorted(buckets.items(), key=lambda x: x[0]):
-                    with dot.subgraph() as s:
-                        s.attr(rank="same")
-                        for nid in nodes:
-                            s.node(str(nid))
+                    if 1 < len(nodes) <= 4:
+                        with dot.subgraph() as s:
+                            s.attr(rank="same")
+                            for nid in nodes:
+                                s.node(str(nid))
 
             for o, ds in red_aplicada.items():
                 for d in ds:
