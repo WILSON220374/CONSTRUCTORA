@@ -30,14 +30,14 @@ def _texto(valor):
 def _safe_float(valor, default=0.0):
     try:
         if valor is None or valor == "":
-            return float(default)
+            return None if default is None else float(default)
         if isinstance(valor, (int, float)):
             return float(valor)
         txt = str(valor).strip().replace("$", "").replace(" ", "")
         txt = txt.replace(".", "").replace(",", ".")
         return float(txt)
     except Exception:
-        return float(default)
+        return None if default is None else float(default)
 
 
 def _parse_fecha(valor):
