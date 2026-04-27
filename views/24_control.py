@@ -559,9 +559,6 @@ st.markdown("### AVANCE DE OBRA")
     )
 
 guardar_form = st.button("💾 Guardar control", use_container_width=True)
-
-if guardar_form:
-
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
     datos["avance_rows"] = _normalizar_avance(avance_editado.to_dict("records"))
