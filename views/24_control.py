@@ -412,23 +412,23 @@ with c2:
 st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
 
 st.markdown("### AVANCE DE OBRA")
-    df_avance = pd.DataFrame(
-        _normalizar_avance(datos.get("avance_rows", [])),
-        columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
-    )
-    avance_editado = st.data_editor(
-        df_avance,
-        hide_index=True,
-        width="stretch",
-        num_rows="dynamic",
-        column_config={
-            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
-            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
-            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
-        },
-    )
+df_avance = pd.DataFrame(
+    _normalizar_avance(datos.get("avance_rows", [])),
+    columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
+)
+avance_editado = st.data_editor(
+    df_avance,
+    hide_index=True,
+    width="stretch",
+    num_rows="dynamic",
+    column_config={
+        "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+        "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
+        "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
+        "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
+        "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
+    },
+)
 
     st.markdown("### RESUMEN FINANCIERO")
     df_financiero = pd.DataFrame(
