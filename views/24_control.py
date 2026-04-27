@@ -109,28 +109,54 @@ def _valor_contrato_desde_fuentes(acta_inicio, contrato_obra):
     ]
     for valor in candidatos:
         numero = _safe_float(valor, None)
-        if numero and numero > 0:
+        if numero is not None and numero > 0:
             return numero
     return 0.0
 
 
 def _fecha_inicio_desde_fuentes(acta_inicio):
-    return _parse_fecha(acta_inicio.get("fecha_presente_acta"))
+    return _parse_fecha(
+        _primero_no_vacio(
+            acta_inicio.get("fecha_inicio"),
+            acta_inicio.get("fecha_presente_acta"),
+        )
+    )
 
 
-def _duracion_inicial_texto(contrato_obra):
-    return _texto(contrato_obra.get("plazo_ejecucion"))
+def _duracion_inicial_texto(acta_inicio, contrato_obra):
+    return _primero_no_vacio(
+        acta_inicio.get("plazo_ejecucion"),
+        contrato_obra.get("plazo_ejecucion"),
+    )
 
 
 def _fecha_terminacion_inicial(acta_inicio, contrato_obra):
+    fecha_directa = _primero_no_vacio(
+        acta_inicio.get("fecha_terminacion"),
+        acta_inicio.get("fecha_terminacion_contrato"),
+    )
+    if fecha_directa:
+        return _parse_fecha(fecha_directa)
+
     fecha_inicio = _fecha_inicio_desde_fuentes(acta_inicio)
-    plazo_dias = int(contrato_obra.get("plazo_ejecucion_dias", 0) or 0)
+    plazo_dias = int(acta_inicio.get("plazo_ejecucion_dias", 0) or 0)
     if plazo_dias <= 0:
-        plazo_dias = _extraer_dias_plazo(contrato_obra.get("plazo_ejecucion", ""))
+        plazo_dias = int(contrato_obra.get("plazo_ejecucion_dias", 0) or 0)
+    if plazo_dias <= 0:
+        plazo_dias = _extraer_dias_plazo(
+            _primero_no_vacio(
+                acta_inicio.get("plazo_ejecucion"),
+                contrato_obra.get("plazo_ejecucion"),
+            )
+        )
     return fecha_inicio + timedelta(days=plazo_dias)
 
 
 def _valor_anticipo_desde_fuentes(plan_anticipo, acta_inicio, contrato_obra):
+    valor_directo = _safe_float(plan_anticipo.get("valor_anticipo"), None)
+    if valor_directo is not None and valor_directo > 0:
+        return round(valor_directo, 2)
+
     valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
     porcentaje = _safe_float(plan_anticipo.get("porcentaje_anticipo"), 0.0)
     if porcentaje <= 0:
@@ -153,7 +179,7 @@ def _fila_financiera_vacia():
         "FECHA": date.today(),
         "ANTICIPO": 0.0,
         "VALOR AMORTIZADO": 0.0,
-        "SALDO POR AMORTIZAR": 0.0,
+        "SALDO POR AMOTIZAR": 0.0,
         "VALOR FACTURADO": 0.0,
         "PENDIENTE POR FACTURAR": 0.0,
     }
@@ -195,16 +221,16 @@ def _fila_prorroga_vacia():
     }
 
 
-def _normalizar_avance(rows, valor_contrato):
+def _normalizar_avance(rows):
     filas = []
     for fila in rows or []:
         base = _fila_avance_vacia()
         if isinstance(fila, dict):
             base["FECHA"] = _parse_fecha(fila.get("FECHA"))
             base["% EJECUTADO"] = _safe_float(fila.get("% EJECUTADO"), 0.0)
+            base["$ EJECUTADO"] = _safe_float(fila.get("$ EJECUTADO"), 0.0)
             base["% PROGRAMADO"] = _safe_float(fila.get("% PROGRAMADO"), 0.0)
-        base["$ EJECUTADO"] = round(valor_contrato * base["% EJECUTADO"] / 100.0, 2)
-        base["$ PROGRAMADO"] = round(valor_contrato * base["% PROGRAMADO"] / 100.0, 2)
+            base["$ PROGRAMADO"] = _safe_float(fila.get("$ PROGRAMADO"), 0.0)
         filas.append(base)
 
     while len(filas) < 1:
@@ -223,7 +249,7 @@ def _normalizar_financiero(rows, valor_anticipo):
             base["VALOR FACTURADO"] = _safe_float(fila.get("VALOR FACTURADO"), 0.0)
             base["PENDIENTE POR FACTURAR"] = _safe_float(fila.get("PENDIENTE POR FACTURAR"), 0.0)
         base["ANTICIPO"] = round(valor_anticipo, 2)
-        base["SALDO POR AMORTIZAR"] = round(valor_anticipo - base["VALOR AMORTIZADO"], 2)
+        base["SALDO POR AMOTIZAR"] = round(valor_anticipo - base["VALOR AMORTIZADO"], 2)
         filas.append(base)
 
     while len(filas) < 1:
@@ -242,9 +268,11 @@ def _normalizar_suspensiones(rows, fecha_inicio_acta):
             base["FECHA DEL ACTA"] = _parse_fecha(fila.get("FECHA DEL ACTA"))
             base["DESDE"] = _parse_fecha(fila.get("DESDE"))
             base["HASTA"] = _parse_fecha(fila.get("HASTA"))
+
         dias = (base["HASTA"] - base["DESDE"]).days
         if dias < 0:
             dias = 0
+
         base["PERIODO DE SUSPENSIÓN"] = dias
         base["NUEVA FECHA DE FINALIZACIÓN"] = fecha_inicio_acta + timedelta(days=dias)
         filas.append(base)
@@ -257,7 +285,6 @@ def _normalizar_suspensiones(rows, fecha_inicio_acta):
 
 def _normalizar_adiciones(rows, valor_inicial_contrato):
     filas = []
-    acumulado = valor_inicial_contrato
     for fila in rows or []:
         base = _fila_adicion_vacia()
         if isinstance(fila, dict):
@@ -265,10 +292,10 @@ def _normalizar_adiciones(rows, valor_inicial_contrato):
             base["FECHA"] = _parse_fecha(fila.get("FECHA"))
             base["VALOR"] = _safe_float(fila.get("VALOR"), 0.0)
             base["SMMLV DEL AÑO DE LA ADICIÓN"] = _safe_float(fila.get("SMMLV DEL AÑO DE LA ADICIÓN"), 0.0)
+
         smmlv = base["SMMLV DEL AÑO DE LA ADICIÓN"]
         base["ADICIÓN EN SALARIOS MÍNIMOS"] = round(base["VALOR"] / smmlv, 4) if smmlv > 0 else 0.0
-        acumulado += base["VALOR"]
-        base["VALOR ACUMULADO DEL CONTRATO"] = round(acumulado, 2)
+        base["VALOR ACUMULADO DEL CONTRATO"] = round(valor_inicial_contrato + base["VALOR"], 2)
         filas.append(base)
 
     while len(filas) < 1:
@@ -311,7 +338,7 @@ def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
 
         st.session_state["control_obra_datos"] = {
             "salario_minimo_anio_contrato": _safe_float(cargado.get("salario_minimo_anio_contrato"), 0.0),
-            "avance_rows": _normalizar_avance(cargado.get("avance_rows", []), valor_contrato),
+            "avance_rows": _normalizar_avance(cargado.get("avance_rows", [])),
             "financiero_rows": _normalizar_financiero(cargado.get("financiero_rows", []), valor_anticipo),
             "suspensiones_rows": _normalizar_suspensiones(cargado.get("suspensiones_rows", []), fecha_inicio_acta),
             "adiciones_rows": _normalizar_adiciones(cargado.get("adiciones_rows", []), valor_contrato),
@@ -337,15 +364,9 @@ datos = st.session_state["control_obra_datos"]
 fecha_inicio_acta = _fecha_inicio_desde_fuentes(acta_inicio)
 valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
 valor_anticipo = _valor_anticipo_desde_fuentes(plan_anticipo, acta_inicio, contrato_obra)
-duracion_inicial = _duracion_inicial_texto(contrato_obra)
+duracion_inicial = _duracion_inicial_texto(acta_inicio, contrato_obra)
 fecha_inicial_terminacion = _fecha_terminacion_inicial(acta_inicio, contrato_obra)
-
-prorrogas_actuales = _normalizar_prorrogas(datos.get("prorrogas_rows", []))
-fecha_actual_terminacion = fecha_inicial_terminacion
-for fila in prorrogas_actuales:
-    fecha_row = fila.get("NUEVA FECHA DE TERMINACIÓN")
-    if isinstance(fecha_row, date):
-        fecha_actual_terminacion = fecha_row
+fecha_actual_terminacion = _fecha_terminacion_inicial(acta_inicio, contrato_obra)
 
 objeto_contrato = _primero_no_vacio(
     acta_inicio.get("objeto_contrato"),
@@ -393,7 +414,7 @@ with st.form("form_control_obra", clear_on_submit=False):
 
     st.markdown("### AVANCE DE OBRA")
     df_avance = pd.DataFrame(
-        _normalizar_avance(datos.get("avance_rows", []), valor_contrato),
+        _normalizar_avance(datos.get("avance_rows", [])),
         columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
     )
     avance_editado = st.data_editor(
@@ -404,16 +425,16 @@ with st.form("form_control_obra", clear_on_submit=False):
         column_config={
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f", disabled=True),
+            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
             "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f", disabled=True),
+            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
         },
     )
 
     st.markdown("### RESUMEN FINANCIERO")
     df_financiero = pd.DataFrame(
         _normalizar_financiero(datos.get("financiero_rows", []), valor_anticipo),
-        columns=["FECHA", "ANTICIPO", "VALOR AMORTIZADO", "SALDO POR AMORTIZAR", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
+        columns=["FECHA", "ANTICIPO", "VALOR AMORTIZADO", "SALDO POR AMOTIZAR", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
     )
     financiero_editado = st.data_editor(
         df_financiero,
@@ -424,7 +445,7 @@ with st.form("form_control_obra", clear_on_submit=False):
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "ANTICIPO": st.column_config.NumberColumn("ANTICIPO", format="$ %.2f", disabled=True),
             "VALOR AMORTIZADO": st.column_config.NumberColumn("VALOR AMORTIZADO", format="$ %.2f"),
-            "SALDO POR AMORTIZAR": st.column_config.NumberColumn("SALDO POR AMORTIZAR", format="$ %.2f", disabled=True),
+            "SALDO POR AMOTIZAR": st.column_config.NumberColumn("SALDO POR AMOTIZAR", format="$ %.2f", disabled=True),
             "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
             "PENDIENTE POR FACTURAR": st.column_config.NumberColumn("PENDIENTE POR FACTURAR", format="$ %.2f"),
         },
@@ -542,7 +563,7 @@ with st.form("form_control_obra", clear_on_submit=False):
 
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
-    datos["avance_rows"] = _normalizar_avance(avance_editado.to_dict("records"), valor_contrato)
+    datos["avance_rows"] = _normalizar_avance(avance_editado.to_dict("records"))
     datos["financiero_rows"] = _normalizar_financiero(financiero_editado.to_dict("records"), valor_anticipo)
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
