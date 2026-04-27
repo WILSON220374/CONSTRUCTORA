@@ -401,18 +401,17 @@ st.markdown(
 
 st.markdown('<div class="control-titulo">CONTROL</div>', unsafe_allow_html=True)
 
-with st.form("form_control_obra", clear_on_submit=False):
-    st.markdown("### DATOS GENERALES")
+st.markdown("### DATOS GENERALES")
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.text_input("CONTRATO DE OBRA No.", value=numero_contrato, disabled=True)
-    with c2:
-        st.text_input("CONTRATISTA", value=contratista, disabled=True)
+c1, c2 = st.columns(2)
+with c1:
+    st.text_input("CONTRATO DE OBRA No.", value=numero_contrato, disabled=True)
+with c2:
+    st.text_input("CONTRATISTA", value=contratista, disabled=True)
 
-    st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
+st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
 
-    st.markdown("### AVANCE DE OBRA")
+st.markdown("### AVANCE DE OBRA")
     df_avance = pd.DataFrame(
         _normalizar_avance(datos.get("avance_rows", [])),
         columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
@@ -559,7 +558,9 @@ with st.form("form_control_obra", clear_on_submit=False):
         },
     )
 
-    guardar_form = st.form_submit_button("💾 Guardar control", use_container_width=True)
+guardar_form = st.button("💾 Guardar control", use_container_width=True)
+
+if guardar_form:
 
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
