@@ -459,27 +459,51 @@ with st.expander("8. Cláusula penal", expanded=False):
 
 
 with st.expander("9. Garantías", expanded=False):
-    st.session_state["df_garantias_contrato"] = pd.DataFrame(datos["garantias"])
+    df_garantias = pd.DataFrame(datos["garantias"])
 
-    with st.form("form_garantias_contrato"):
-        df_editado = st.data_editor(
-            st.session_state["df_garantias_contrato"],
-            num_rows="dynamic",
-            use_container_width=True,
-            key="editor_garantias"
-        )
+    for col in ["amparo", "suficiencia", "desde", "hasta"]:
+        if col not in df_garantias.columns:
+            df_garantias[col] = ""
 
-        plazo_garantias_dias = st.text_input(
-            "Plazo en días hábiles para presentar garantías",
-            value=datos["plazo_garantias_dias"],
-            key="plazo_garantias_dias"
-        )
+    st.session_state["df_garantias_contrato"] = df_garantias[["amparo", "suficiencia", "desde", "hasta"]].copy()
 
-        if st.form_submit_button("Guardar sección 9"):
-            st.session_state["df_garantias_contrato"] = df_editado.copy()
-            datos["garantias"] = df_editado.fillna("").to_dict(orient="records")
-            datos["plazo_garantias_dias"] = plazo_garantias_dias
-            guardar_y_refrescar()
+with st.form("form_garantias_contrato"):
+    df_editado = st.data_editor(
+        st.session_state["df_garantias_contrato"],
+        num_rows="dynamic",
+        use_container_width=True,
+        key="editor_garantias",
+        column_config={
+            "amparo": st.column_config.TextColumn("amparo"),
+            "suficiencia": st.column_config.TextColumn("suficiencia"),
+            "desde": st.column_config.DateColumn("desde", format="DD/MM/YYYY"),
+            "hasta": st.column_config.DateColumn("hasta", format="DD/MM/YYYY"),
+        }
+    )
+
+    plazo_garantias_dias = st.text_input(
+        "Plazo en días hábiles para presentar garantías",
+        value=datos["plazo_garantias_dias"],
+        key="plazo_garantias_dias"
+    )
+
+    if st.form_submit_button("Guardar sección 9"):
+        registros = []
+        for fila in df_editado.to_dict(orient="records"):
+            fila_limpia = {}
+            for k, v in fila.items():
+                if pd.isna(v):
+                    fila_limpia[k] = ""
+                elif isinstance(v, pd.Timestamp):
+                    fila_limpia[k] = v.date()
+                else:
+                    fila_limpia[k] = v
+            registros.append(fila_limpia)
+
+        st.session_state["df_garantias_contrato"] = df_editado.copy()
+        datos["garantias"] = registros
+        datos["plazo_garantias_dias"] = plazo_garantias_dias
+        guardar_y_refrescar()
 
 with st.expander("10. Notificaciones", expanded=False):
     st.markdown("**Notificaciones del contratante**")
