@@ -466,9 +466,7 @@ with st.expander("9. Garantías", expanded=False):
             df_garantias[col] = ""
 
     for col in ["desde", "hasta"]:
-        df_garantias[col] = df_garantias[col].apply(
-            lambda x: _parse_fecha(x) if x not in [None, ""] else None
-        )
+        df_garantias[col] = pd.to_datetime(df_garantias[col], errors="coerce").dt.date
 
     st.session_state["df_garantias_contrato"] = df_garantias[["amparo", "suficiencia", "desde", "hasta"]].copy()
 
