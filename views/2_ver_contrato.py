@@ -148,9 +148,9 @@ def escapar_tabla(valor):
 def construir_tabla_garantias_markdown(garantias):
     if not garantias or not isinstance(garantias, list):
         return (
-            "| Amparo | Suficiencia | Vigencia |\n"
-            "|---|---|---|\n"
-            "| PENDIENTE | PENDIENTE | PENDIENTE |"
+            "| Amparo | Suficiencia | Desde | Hasta |\n"
+            "|---|---|---|---|\n"
+            "| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |"
         )
 
     filas = []
@@ -159,17 +159,17 @@ def construir_tabla_garantias_markdown(garantias):
             continue
         amparo = escapar_tabla(fila.get("amparo", ""))
         suficiencia = escapar_tabla(fila.get("suficiencia", ""))
-        vigencia = escapar_tabla(fila.get("vigencia", ""))
-        if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and vigencia == "PENDIENTE":
+        desde = escapar_tabla(fila.get("desde", ""))
+        hasta = escapar_tabla(fila.get("hasta", ""))
+        if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and desde == "PENDIENTE" and hasta == "PENDIENTE":
             continue
-        filas.append(f"| {amparo} | {suficiencia} | {vigencia} |")
+        filas.append(f"| {amparo} | {suficiencia} | {desde} | {hasta} |")
 
     if not filas:
-        filas.append("| PENDIENTE | PENDIENTE | PENDIENTE |")
+        filas.append("| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |")
 
-    encabezado = "| Amparo | Suficiencia | Vigencia |\n|---|---|---|"
+    encabezado = "| Amparo | Suficiencia | Desde | Hasta |\n|---|---|---|---|"
     return encabezado + "\n" + "\n".join(filas)
-
 
 def construir_tabla_garantias_doc(doc, garantias):
     tabla = doc.add_table(rows=1, cols=4)
