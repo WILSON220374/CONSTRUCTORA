@@ -137,8 +137,7 @@ def inicializar_contrato():
             d[k] = v
 
     if "garantias" not in d or not isinstance(d["garantias"], list) or len(d["garantias"]) == 0:
-        d["garantias"] = [{"amparo": "", "suficiencia": "", "vigencia": ""}]
-
+        d["garantias"] = [{"amparo": "", "suficiencia": "", "desde": "", "hasta": ""}]
 
 def guardar_y_refrescar():
     guardar_estado("contrato_obra", datos)
