@@ -465,6 +465,11 @@ with st.expander("9. Garantías", expanded=False):
         if col not in df_garantias.columns:
             df_garantias[col] = ""
 
+    for col in ["desde", "hasta"]:
+        df_garantias[col] = df_garantias[col].apply(
+            lambda x: _parse_fecha(x) if _texto(x) else None
+        )
+
     st.session_state["df_garantias_contrato"] = df_garantias[["amparo", "suficiencia", "desde", "hasta"]].copy()
 
 with st.form("form_garantias_contrato"):
