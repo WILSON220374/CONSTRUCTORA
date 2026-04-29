@@ -157,12 +157,22 @@ def construir_tabla_garantias_markdown(garantias):
     for fila in garantias:
         if not isinstance(fila, dict):
             continue
+
         amparo = escapar_tabla(fila.get("amparo", ""))
         suficiencia = escapar_tabla(fila.get("suficiencia", ""))
-        desde = escapar_tabla(fila.get("desde", ""))
-        hasta = escapar_tabla(fila.get("hasta", ""))
+
+        desde_valor = fila.get("desde", "")
+        hasta_valor = fila.get("hasta", "")
+
+        if not desde_valor and fila.get("vigencia", ""):
+            desde_valor = fila.get("vigencia", "")
+
+        desde = escapar_tabla(desde_valor)
+        hasta = escapar_tabla(hasta_valor)
+
         if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and desde == "PENDIENTE" and hasta == "PENDIENTE":
             continue
+
         filas.append(f"| {amparo} | {suficiencia} | {desde} | {hasta} |")
 
     if not filas:
