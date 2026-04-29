@@ -172,12 +172,13 @@ def construir_tabla_garantias_markdown(garantias):
 
 
 def construir_tabla_garantias_doc(doc, garantias):
-    tabla = doc.add_table(rows=1, cols=3)
+    tabla = doc.add_table(rows=1, cols=4)
     tabla.style = "Table Grid"
     encabezado = tabla.rows[0].cells
     encabezado[0].text = "Amparo"
     encabezado[1].text = "Suficiencia"
-    encabezado[2].text = "Vigencia"
+    encabezado[2].text = "Desde"
+    encabezado[3].text = "Hasta"
 
     filas_validas = []
     if garantias and isinstance(garantias, list):
@@ -186,19 +187,21 @@ def construir_tabla_garantias_doc(doc, garantias):
                 continue
             amparo = texto_si_vacio(fila.get("amparo", ""))
             suficiencia = texto_si_vacio(fila.get("suficiencia", ""))
-            vigencia = texto_si_vacio(fila.get("vigencia", ""))
-            if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and vigencia == "PENDIENTE":
+            desde = texto_si_vacio(fila.get("desde", ""))
+            hasta = texto_si_vacio(fila.get("hasta", ""))
+            if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and desde == "PENDIENTE" and hasta == "PENDIENTE":
                 continue
-            filas_validas.append((amparo, suficiencia, vigencia))
+            filas_validas.append((amparo, suficiencia, desde, hasta))
 
     if not filas_validas:
-        filas_validas.append(("PENDIENTE", "PENDIENTE", "PENDIENTE"))
+        filas_validas.append(("PENDIENTE", "PENDIENTE", "PENDIENTE", "PENDIENTE"))
 
-    for amparo, suficiencia, vigencia in filas_validas:
+    for amparo, suficiencia, desde, hasta in filas_validas:
         celdas = tabla.add_row().cells
         celdas[0].text = amparo
         celdas[1].text = suficiencia
-        celdas[2].text = vigencia
+        celdas[2].text = desde
+        celdas[3].text = hasta
 
 
 def construir_bloque_anexos(datos):
