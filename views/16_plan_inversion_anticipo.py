@@ -572,7 +572,7 @@ with st.container(border=True):
         datos["rows"] = rows_despues
         st.rerun()
 
-    repetidos = _duplicados_descripcion(datos["rows"])
+    repetidos = _duplicados_item(datos["rows"])
     if repetidos:
         st.error("No se puede repetir un ítem del presupuesto en más de una fila.")
 
