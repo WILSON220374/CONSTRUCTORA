@@ -88,7 +88,7 @@ def inicializar_contrato_interventoria():
 
     if "garantias_interventoria" not in d or not isinstance(d["garantias_interventoria"], list) or len(d["garantias_interventoria"]) == 0:
         d["garantias_interventoria"] = [
-            {"amparo": "", "vigencia": "", "valor_asegurado": ""}
+            {"amparo": "", "desde": "", "hasta": "", "valor_asegurado": ""}
         ]
 
 
