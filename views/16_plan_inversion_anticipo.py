@@ -279,14 +279,14 @@ def _recalcular_filas(datos, mapa_catalogo, valor_anticipo):
     filas_out = []
 
     for fila in filas_base:
-        descripcion = _texto(fila.get("DESCRIPCIÓN DEL ÍTEM"))
+        item_no = _texto(fila.get("ÍTEM No."))
         fila_nueva = _fila_vacia(columnas_meses)
 
-        fila_nueva["DESCRIPCIÓN DEL ÍTEM"] = descripcion
+        fila_nueva["ÍTEM No."] = item_no
 
-        if descripcion and descripcion in mapa_catalogo:
-            fila_nueva["ÍTEM No."] = _texto(mapa_catalogo[descripcion].get("item_no"))
-            fila_nueva["VALOR"] = _safe_float(mapa_catalogo[descripcion].get("valor_referencia"), 0.0)
+        if item_no and item_no in mapa_catalogo:
+            fila_nueva["DESCRIPCIÓN DEL ÍTEM"] = _texto(mapa_catalogo[item_no].get("descripcion"))
+            fila_nueva["VALOR"] = _safe_float(mapa_catalogo[item_no].get("valor_referencia"), 0.0)
 
         suma_meses = 0.0
         for col in columnas_meses:
@@ -314,19 +314,19 @@ def _sumas_totales(df, columnas_meses):
     return total_programado, total_porcentaje
 
 
-def _duplicados_descripcion(rows):
+def _duplicados_item(rows):
     vistos = set()
     repetidos = set()
 
     for fila in rows:
-        descripcion = _texto(fila.get("DESCRIPCIÓN DEL ÍTEM"))
-        if not descripcion:
+        item_no = _texto(fila.get("ÍTEM No."))
+        if not item_no:
             continue
-        if descripcion in vistos:
-            repetidos.add(descripcion)
-        vistos.add(descripcion)
+        if item_no in vistos:
+            repetidos.add(item_no)
+        vistos.add(item_no)
 
-    return repetidos
+    return sorted(repetidos)
 
 
 # ==========================================================
