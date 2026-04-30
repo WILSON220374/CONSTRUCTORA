@@ -524,23 +524,24 @@ with st.container(border=True):
 with st.container(border=True):
     st.subheader("Detalle del plan de inversión del anticipo")
 
-        df_editor = _dataframe_para_editor(datos, columnas_meses)
+    df_editor = _dataframe_para_editor(datos, columnas_meses)
 
     column_config = {
-        "ÍTEM No.": st.column_config.SelectboxColumn(
-            "Ítem No.",
-            options=[x["item_no"] for x in catalogo_presupuesto],
-            required=False,
-            width="small",
-        ),
-        "DESCRIPCIÓN DEL ÍTEM": st.column_config.TextColumn(
+        "ÍTEM No.": st.column_config.TextColumn("Ítem No.", disabled=True),
+        "DESCRIPCIÓN DEL ÍTEM": st.column_config.SelectboxColumn(
             "Descripción del ítem",
-            disabled=True,
+            options=[x["descripcion"] for x in catalogo_presupuesto],
+            required=False,
             width="large",
         ),
         "VALOR PROGRAMA APROBADO": st.column_config.NumberColumn("Valor programa aprobado", format="$ %.2f", disabled=True),
         "%": st.column_config.NumberColumn("%", format="%.4f", disabled=True),
     }
+
+    for col in columnas_meses:
+        column_config[col] = st.column_config.NumberColumn(col, min_value=0.0, step=0.01, format="$ %.2f")
+
+    columnas_editor = ["ÍTEM No.", "DESCRIPCIÓN DEL ÍTEM"] + columnas_meses + ["VALOR PROGRAMA APROBADO", "%"]
 
     for col in columnas_meses:
         column_config[col] = st.column_config.NumberColumn(col, min_value=0.0, step=0.01, format="$ %.2f")
@@ -557,7 +558,7 @@ with st.container(border=True):
         key="plan_anticipo_editor",
         column_order=columnas_editor,
         column_config=column_config,
-        disabled=["DESCRIPCIÓN DEL ÍTEM", "VALOR PROGRAMA APROBADO", "%"],
+        disabled=["ÍTEM No.", "VALOR PROGRAMA APROBADO", "%"],
     )
 
     rows_antes = df_editado.to_dict(orient="records")
