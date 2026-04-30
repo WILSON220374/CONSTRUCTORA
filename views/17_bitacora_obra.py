@@ -544,7 +544,7 @@ st.text_input(
 
 st.markdown("### ACTIVIDADES A DESARROLLAR")
 
-_descripciones_catalogo = [x["descripcion"] for x in catalogo]
+_items_catalogo = [x["item_no"] for x in catalogo]
 _recalcular_actividades(incidencia, mapa_catalogo)
 
 df_actividades = pd.DataFrame(
@@ -558,11 +558,14 @@ df_editado = st.data_editor(
     hide_index=True,
     width="stretch",
     column_config={
-        "ÍTEM No.": st.column_config.TextColumn("ÍTEM No.", disabled=True),
-        "DESCRIPCIÓN DEL ÍTEM": st.column_config.SelectboxColumn(
-            "DESCRIPCIÓN DEL ÍTEM",
-            options=_descripciones_catalogo,
+        "ÍTEM No.": st.column_config.SelectboxColumn(
+            "ÍTEM No.",
+            options=_items_catalogo,
             required=False,
+        ),
+        "DESCRIPCIÓN DEL ÍTEM": st.column_config.TextColumn(
+            "DESCRIPCIÓN DEL ÍTEM",
+            disabled=True,
         ),
     },
     key=f"bitacora_actividades_{folio_activo}",
