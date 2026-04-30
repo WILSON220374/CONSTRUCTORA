@@ -150,9 +150,9 @@ def fecha_en_letras(valor):
 def construir_tabla_garantias_markdown(garantias):
     if not garantias or not isinstance(garantias, list):
         return (
-            "| Amparo | Vigencia | Valor asegurado |\n"
-            "|---|---|---|\n"
-            "| PENDIENTE | PENDIENTE | PENDIENTE |"
+            "| Amparo | Desde | Hasta | Valor asegurado |\n"
+            "|---|---|---|---|\n"
+            "| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |"
         )
 
     filas = []
@@ -160,16 +160,17 @@ def construir_tabla_garantias_markdown(garantias):
         if not isinstance(fila, dict):
             continue
         amparo = escapar_tabla(fila.get("amparo", ""))
-        vigencia = escapar_tabla(fila.get("vigencia", ""))
+        desde = escapar_tabla(fila.get("desde", ""))
+        hasta = escapar_tabla(fila.get("hasta", ""))
         valor_asegurado = escapar_tabla(fila.get("valor_asegurado", ""))
-        if amparo == "PENDIENTE" and vigencia == "PENDIENTE" and valor_asegurado == "PENDIENTE":
+        if amparo == "PENDIENTE" and desde == "PENDIENTE" and hasta == "PENDIENTE" and valor_asegurado == "PENDIENTE":
             continue
-        filas.append(f"| {amparo} | {vigencia} | {valor_asegurado} |")
+        filas.append(f"| {amparo} | {desde} | {hasta} | {valor_asegurado} |")
 
     if not filas:
-        filas.append("| PENDIENTE | PENDIENTE | PENDIENTE |")
+        filas.append("| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |")
 
-    encabezado = "| Amparo | Vigencia | Valor asegurado |\n|---|---|---|"
+    encabezado = "| Amparo | Desde | Hasta | Valor asegurado |\n|---|---|---|---|"
     return encabezado + "\n" + "\n".join(filas)
 
 
