@@ -404,162 +404,173 @@ st.markdown(
 
 st.markdown('<div class="control-titulo">CONTROL</div>', unsafe_allow_html=True)
 
-st.markdown("### DATOS GENERALES")
-
-c1, c2 = st.columns(2)
-with c1:
-    st.text_input("CONTRATO DE OBRA No.", value=numero_contrato, disabled=True)
-with c2:
-    st.text_input("CONTRATISTA", value=contratista, disabled=True)
-
-st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
-
-st.markdown("### AVANCE DE OBRA")
-df_avance = pd.DataFrame(
-    _normalizar_avance(datos.get("avance_rows", [])),
-    columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
-)
-avance_editado = st.data_editor(
-    df_avance,
-    hide_index=True,
-    width="stretch",
-    num_rows="dynamic",
-    column_config={
-        "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
-        "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-        "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
-        "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-        "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
-    },
+tab_fisico, tab_financiero, tab_modificaciones = st.tabs(
+    [
+        "Seguimiento físico",
+        "Seguimiento financiero",
+        "Modificaciones del contrato",
+    ]
 )
 
-st.markdown("### RESUMEN FINANCIERO")
-df_financiero = pd.DataFrame(
-    _normalizar_financiero(datos.get("financiero_rows", []), valor_anticipo),
-    columns=["FECHA", "ANTICIPO", "VALOR AMORTIZADO", "SALDO POR AMOTIZAR", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
-)
-financiero_editado = st.data_editor(
-    df_financiero,
-    hide_index=True,
-    width="stretch",
-    num_rows="dynamic",
-    column_config={
-        "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
-        "ANTICIPO": st.column_config.NumberColumn("ANTICIPO", format="$ %.2f", disabled=True),
-        "VALOR AMORTIZADO": st.column_config.NumberColumn("VALOR AMORTIZADO", format="$ %.2f"),
-        "SALDO POR AMOTIZAR": st.column_config.NumberColumn("SALDO POR AMOTIZAR", format="$ %.2f", disabled=True),
-        "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
-        "PENDIENTE POR FACTURAR": st.column_config.NumberColumn("PENDIENTE POR FACTURAR", format="$ %.2f"),
-    },
-)
+with tab_fisico:
+    st.markdown("### DATOS GENERALES")
 
-st.markdown("### SUSPENSIONES")
-c3, c4 = st.columns(2)
-with c3:
-    st.date_input("FECHA DE INICIO SEGÚN ACTA DE INICIO", value=fecha_inicio_acta, format="DD/MM/YYYY", disabled=True)
-with c4:
-    st.date_input("FECHA INICIAL DE TERMINACIÓN", value=fecha_inicial_terminacion, format="DD/MM/YYYY", disabled=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.text_input("CONTRATO DE OBRA No.", value=numero_contrato, disabled=True)
+    with c2:
+        st.text_input("CONTRATISTA", value=contratista, disabled=True)
 
-df_suspensiones = pd.DataFrame(
-    _normalizar_suspensiones(datos.get("suspensiones_rows", []), fecha_inicio_acta),
-    columns=[
-        "ACTA DE SUSPENSIÓN No.",
-        "ACTA DE AMPLIACIÓN SUSPENSIÓN No.",
-        "FECHA DEL ACTA",
-        "DESDE",
-        "HASTA",
-        "PERIODO DE SUSPENSIÓN",
-        "NUEVA FECHA DE FINALIZACIÓN",
-    ],
-)
-suspensiones_editado = st.data_editor(
-    df_suspensiones,
-    hide_index=True,
-    width="stretch",
-    num_rows="dynamic",
-    column_config={
-        "ACTA DE SUSPENSIÓN No.": st.column_config.TextColumn("ACTA DE SUSPENSIÓN No."),
-        "ACTA DE AMPLIACIÓN SUSPENSIÓN No.": st.column_config.TextColumn("ACTA DE AMPLIACIÓN SUSPENSIÓN No."),
-        "FECHA DEL ACTA": st.column_config.DateColumn("FECHA DEL ACTA", format="DD/MM/YYYY"),
-        "DESDE": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
-        "HASTA": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
-        "PERIODO DE SUSPENSIÓN": st.column_config.NumberColumn("PERIODO DE SUSPENSIÓN", disabled=True),
-        "NUEVA FECHA DE FINALIZACIÓN": st.column_config.DateColumn("NUEVA FECHA DE FINALIZACIÓN", format="DD/MM/YYYY", disabled=True),
-    },
-)
+    st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
 
-st.markdown("### ADICIONES")
-salario_minimo_anio_contrato = st.number_input(
-    "Salario mínimo del año del contrato",
-    min_value=0.0,
-    value=_safe_float(datos.get("salario_minimo_anio_contrato"), 0.0),
-    step=1000.0,
-    format="%.2f",
-)
+    st.markdown("### AVANCE DE OBRA")
+    df_avance = pd.DataFrame(
+        _normalizar_avance(datos.get("avance_rows", [])),
+        columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
+    )
+    avance_editado = st.data_editor(
+        df_avance,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        column_config={
+            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
+            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
+            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
+            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
+        },
+    )
 
-c5, c6, c7 = st.columns(3)
-with c5:
-    st.number_input("VALOR INICIAL DEL CONTRATO", min_value=0.0, value=valor_contrato, step=1000.0, format="%.2f", disabled=True)
-with c6:
-    valor_contrato_smmlv = round(valor_contrato / salario_minimo_anio_contrato, 4) if salario_minimo_anio_contrato > 0 else 0.0
-    st.number_input("Valor del contrato en salarios mínimos", min_value=0.0, value=valor_contrato_smmlv, step=0.0001, format="%.4f", disabled=True)
-with c7:
-    maxima_adicion_smmlv = round(valor_contrato_smmlv * 0.5, 4)
-    st.number_input("Máxima adición en salarios mínimos", min_value=0.0, value=maxima_adicion_smmlv, step=0.0001, format="%.4f", disabled=True)
+with tab_financiero:
+    st.markdown("### RESUMEN FINANCIERO")
+    df_financiero = pd.DataFrame(
+        _normalizar_financiero(datos.get("financiero_rows", []), valor_anticipo),
+        columns=["FECHA", "ANTICIPO", "VALOR AMORTIZADO", "SALDO POR AMOTIZAR", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
+    )
+    financiero_editado = st.data_editor(
+        df_financiero,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        column_config={
+            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+            "ANTICIPO": st.column_config.NumberColumn("ANTICIPO", format="$ %.2f", disabled=True),
+            "VALOR AMORTIZADO": st.column_config.NumberColumn("VALOR AMORTIZADO", format="$ %.2f"),
+            "SALDO POR AMOTIZAR": st.column_config.NumberColumn("SALDO POR AMOTIZAR", format="$ %.2f", disabled=True),
+            "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
+            "PENDIENTE POR FACTURAR": st.column_config.NumberColumn("PENDIENTE POR FACTURAR", format="$ %.2f"),
+        },
+    )
 
-df_adiciones = pd.DataFrame(
-    _normalizar_adiciones(datos.get("adiciones_rows", []), valor_contrato),
-    columns=[
-        "ADICIONAL No.",
-        "FECHA",
-        "VALOR",
-        "SMMLV DEL AÑO DE LA ADICIÓN",
-        "ADICIÓN EN SALARIOS MÍNIMOS",
-        "VALOR ACUMULADO DEL CONTRATO",
-    ],
-)
-adiciones_editado = st.data_editor(
-    df_adiciones,
-    hide_index=True,
-    width="stretch",
-    num_rows="dynamic",
-    column_config={
-        "ADICIONAL No.": st.column_config.TextColumn("ADICIONAL No."),
-        "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
-        "VALOR": st.column_config.NumberColumn("VALOR", format="$ %.2f"),
-        "SMMLV DEL AÑO DE LA ADICIÓN": st.column_config.NumberColumn("SMMLV DEL AÑO DE LA ADICIÓN", format="$ %.2f"),
-        "ADICIÓN EN SALARIOS MÍNIMOS": st.column_config.NumberColumn("ADICIÓN EN SALARIOS MÍNIMOS", format="%.4f", disabled=True),
-        "VALOR ACUMULADO DEL CONTRATO": st.column_config.NumberColumn("VALOR ACUMULADO DEL CONTRATO", format="$ %.2f", disabled=True),
-    },
-)
+with tab_modificaciones:
+    st.markdown("### SUSPENSIONES")
+    c3, c4 = st.columns(2)
+    with c3:
+        st.date_input("FECHA DE INICIO SEGÚN ACTA DE INICIO", value=fecha_inicio_acta, format="DD/MM/YYYY", disabled=True)
+    with c4:
+        st.date_input("FECHA INICIAL DE TERMINACIÓN", value=fecha_inicial_terminacion, format="DD/MM/YYYY", disabled=True)
 
-st.markdown("### PRÓRROGAS")
-c8, c9, c10 = st.columns(3)
-with c8:
-    st.text_input("Duración inicial del contrato", value=duracion_inicial, disabled=True)
-with c9:
-    st.date_input("Fecha inicial de terminación", value=fecha_inicial_terminacion, format="DD/MM/YYYY", disabled=True)
-with c10:
-    st.date_input("Fecha actual de terminación", value=fecha_actual_terminacion, format="DD/MM/YYYY", disabled=True)
+    df_suspensiones = pd.DataFrame(
+        _normalizar_suspensiones(datos.get("suspensiones_rows", []), fecha_inicio_acta),
+        columns=[
+            "ACTA DE SUSPENSIÓN No.",
+            "ACTA DE AMPLIACIÓN SUSPENSIÓN No.",
+            "FECHA DEL ACTA",
+            "DESDE",
+            "HASTA",
+            "PERIODO DE SUSPENSIÓN",
+            "NUEVA FECHA DE FINALIZACIÓN",
+        ],
+    )
+    suspensiones_editado = st.data_editor(
+        df_suspensiones,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        column_config={
+            "ACTA DE SUSPENSIÓN No.": st.column_config.TextColumn("ACTA DE SUSPENSIÓN No."),
+            "ACTA DE AMPLIACIÓN SUSPENSIÓN No.": st.column_config.TextColumn("ACTA DE AMPLIACIÓN SUSPENSIÓN No."),
+            "FECHA DEL ACTA": st.column_config.DateColumn("FECHA DEL ACTA", format="DD/MM/YYYY"),
+            "DESDE": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
+            "HASTA": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
+            "PERIODO DE SUSPENSIÓN": st.column_config.NumberColumn("PERIODO DE SUSPENSIÓN", disabled=True),
+            "NUEVA FECHA DE FINALIZACIÓN": st.column_config.DateColumn("NUEVA FECHA DE FINALIZACIÓN", format="DD/MM/YYYY", disabled=True),
+        },
+    )
 
-df_prorrogas = pd.DataFrame(
-    _normalizar_prorrogas(datos.get("prorrogas_rows", [])),
-    columns=["PRÓRROGA No.", "FECHA", "DESDE", "HASTA", "NUEVA DURACIÓN", "NUEVA FECHA DE TERMINACIÓN"],
-)
-prorrogas_editado = st.data_editor(
-    df_prorrogas,
-    hide_index=True,
-    width="stretch",
-    num_rows="dynamic",
-    column_config={
-        "PRÓRROGA No.": st.column_config.TextColumn("PRÓRROGA No."),
-        "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
-        "DESDE": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
-        "HASTA": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
-        "NUEVA DURACIÓN": st.column_config.TextColumn("NUEVA DURACIÓN"),
-        "NUEVA FECHA DE TERMINACIÓN": st.column_config.DateColumn("NUEVA FECHA DE TERMINACIÓN", format="DD/MM/YYYY"),
-    },
-)
+    st.markdown("### ADICIONES")
+    salario_minimo_anio_contrato = st.number_input(
+        "Salario mínimo del año del contrato",
+        min_value=0.0,
+        value=_safe_float(datos.get("salario_minimo_anio_contrato"), 0.0),
+        step=1000.0,
+        format="%.2f",
+    )
+
+    c5, c6, c7 = st.columns(3)
+    with c5:
+        st.number_input("VALOR INICIAL DEL CONTRATO", min_value=0.0, value=valor_contrato, step=1000.0, format="%.2f", disabled=True)
+    with c6:
+        valor_contrato_smmlv = round(valor_contrato / salario_minimo_anio_contrato, 4) if salario_minimo_anio_contrato > 0 else 0.0
+        st.number_input("Valor del contrato en salarios mínimos", min_value=0.0, value=valor_contrato_smmlv, step=0.0001, format="%.4f", disabled=True)
+    with c7:
+        maxima_adicion_smmlv = round(valor_contrato_smmlv * 0.5, 4)
+        st.number_input("Máxima adición en salarios mínimos", min_value=0.0, value=maxima_adicion_smmlv, step=0.0001, format="%.4f", disabled=True)
+
+    df_adiciones = pd.DataFrame(
+        _normalizar_adiciones(datos.get("adiciones_rows", []), valor_contrato),
+        columns=[
+            "ADICIONAL No.",
+            "FECHA",
+            "VALOR",
+            "SMMLV DEL AÑO DE LA ADICIÓN",
+            "ADICIÓN EN SALARIOS MÍNIMOS",
+            "VALOR ACUMULADO DEL CONTRATO",
+        ],
+    )
+    adiciones_editado = st.data_editor(
+        df_adiciones,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        column_config={
+            "ADICIONAL No.": st.column_config.TextColumn("ADICIONAL No."),
+            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+            "VALOR": st.column_config.NumberColumn("VALOR", format="$ %.2f"),
+            "SMMLV DEL AÑO DE LA ADICIÓN": st.column_config.NumberColumn("SMMLV DEL AÑO DE LA ADICIÓN", format="$ %.2f"),
+            "ADICIÓN EN SALARIOS MÍNIMOS": st.column_config.NumberColumn("ADICIÓN EN SALARIOS MÍNIMOS", format="%.4f", disabled=True),
+            "VALOR ACUMULADO DEL CONTRATO": st.column_config.NumberColumn("VALOR ACUMULADO DEL CONTRATO", format="$ %.2f", disabled=True),
+        },
+    )
+
+    st.markdown("### PRÓRROGAS")
+    c8, c9, c10 = st.columns(3)
+    with c8:
+        st.text_input("Duración inicial del contrato", value=duracion_inicial, disabled=True)
+    with c9:
+        st.date_input("Fecha inicial de terminación", value=fecha_inicial_terminacion, format="DD/MM/YYYY", disabled=True)
+    with c10:
+        st.date_input("Fecha actual de terminación", value=fecha_actual_terminacion, format="DD/MM/YYYY", disabled=True)
+
+    df_prorrogas = pd.DataFrame(
+        _normalizar_prorrogas(datos.get("prorrogas_rows", [])),
+        columns=["PRÓRROGA No.", "FECHA", "DESDE", "HASTA", "NUEVA DURACIÓN", "NUEVA FECHA DE TERMINACIÓN"],
+    )
+    prorrogas_editado = st.data_editor(
+        df_prorrogas,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        column_config={
+            "PRÓRROGA No.": st.column_config.TextColumn("PRÓRROGA No."),
+            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+            "DESDE": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
+            "HASTA": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
+            "NUEVA DURACIÓN": st.column_config.TextColumn("NUEVA DURACIÓN"),
+            "NUEVA FECHA DE TERMINACIÓN": st.column_config.DateColumn("NUEVA FECHA DE TERMINACIÓN", format="DD/MM/YYYY"),
+        },
+    )
 
 guardar_form = st.button("💾 Guardar control")
 
