@@ -61,6 +61,8 @@ def inicializar_contrato_interventoria():
         "clausula_penal_porcentaje_valor": "",
 
         "dias_presentacion_garantia": "",
+        "dias_presentacion_garantia_interventoria": "",
+        "asegurado_beneficiario_interventoria": "",
 
         "termino_liquidacion": "",
 
