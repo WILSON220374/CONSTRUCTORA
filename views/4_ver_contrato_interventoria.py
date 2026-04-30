@@ -457,7 +457,7 @@ def generar_word(datos):
             doc.add_heading("GARANTÍA DE CUMPLIMIENTO", level=3)
         elif "### DEL AMPARO DE CALIDAD DEL SERVICIO EN LA GARANTÍA ÚNICA DE CUMPLIMIENTO" in bloque:
             doc.add_heading("DEL AMPARO DE CALIDAD DEL SERVICIO EN LA GARANTÍA ÚNICA DE CUMPLIMIENTO", level=3)
-        elif "| Amparo | Vigencia | Valor asegurado |" in bloque:
+        elif "| Amparo | Desde | Hasta | Valor asegurado |" in bloque:
             construir_tabla_garantias_doc(doc, datos.get("garantias_interventoria", []))
         else:
             doc.add_paragraph(bloque.strip())
