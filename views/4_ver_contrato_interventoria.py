@@ -173,14 +173,14 @@ def construir_tabla_garantias_markdown(garantias):
     encabezado = "| Amparo | Desde | Hasta | Valor asegurado |\n|---|---|---|---|"
     return encabezado + "\n" + "\n".join(filas)
 
-
 def construir_tabla_garantias_doc(doc, garantias):
-    tabla = doc.add_table(rows=1, cols=3)
+    tabla = doc.add_table(rows=1, cols=4)
     tabla.style = "Table Grid"
     encabezado = tabla.rows[0].cells
     encabezado[0].text = "Amparo"
-    encabezado[1].text = "Vigencia"
-    encabezado[2].text = "Valor asegurado"
+    encabezado[1].text = "Desde"
+    encabezado[2].text = "Hasta"
+    encabezado[3].text = "Valor asegurado"
 
     filas_validas = []
     if garantias and isinstance(garantias, list):
@@ -188,20 +188,22 @@ def construir_tabla_garantias_doc(doc, garantias):
             if not isinstance(fila, dict):
                 continue
             amparo = texto_si_vacio(fila.get("amparo", ""))
-            vigencia = texto_si_vacio(fila.get("vigencia", ""))
+            desde = texto_si_vacio(fila.get("desde", ""))
+            hasta = texto_si_vacio(fila.get("hasta", ""))
             valor_asegurado = texto_si_vacio(fila.get("valor_asegurado", ""))
-            if amparo == "PENDIENTE" and vigencia == "PENDIENTE" and valor_asegurado == "PENDIENTE":
+            if amparo == "PENDIENTE" and desde == "PENDIENTE" and hasta == "PENDIENTE" and valor_asegurado == "PENDIENTE":
                 continue
-            filas_validas.append((amparo, vigencia, valor_asegurado))
+            filas_validas.append((amparo, desde, hasta, valor_asegurado))
 
     if not filas_validas:
-        filas_validas.append(("PENDIENTE", "PENDIENTE", "PENDIENTE"))
+        filas_validas.append(("PENDIENTE", "PENDIENTE", "PENDIENTE", "PENDIENTE"))
 
-    for amparo, vigencia, valor_asegurado in filas_validas:
+    for amparo, desde, hasta, valor_asegurado in filas_validas:
         celdas = tabla.add_row().cells
         celdas[0].text = amparo
-        celdas[1].text = vigencia
-        celdas[2].text = valor_asegurado
+        celdas[1].text = desde
+        celdas[2].text = hasta
+        celdas[3].text = valor_asegurado
 
 
 def construir_bloque_documentos():
