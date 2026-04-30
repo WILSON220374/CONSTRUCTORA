@@ -299,35 +299,64 @@ with st.expander("7. Multas", expanded=False):
         guardar_y_refrescar()
 
 
-with st.expander("8. Garantías", expanded=False):
-    datos["dias_presentacion_garantia"] = st.text_input(
-        "Días para presentar la garantía",
-        value=datos["dias_presentacion_garantia"],
-        key="int_dias_presentacion_garantia"
+with st.expander("8. Garantías", expanded=True):
+    st.markdown("### Días para presentar la garantía")
+    dias_garantia = st.text_input(
+        "",
+        value=datos["dias_presentacion_garantia_interventoria"],
+        key="dias_presentacion_garantia_interventoria"
     )
 
-    st.text_input(
-        "Asegurado / beneficiario",
-        value=datos["nombre_entidad"],
-        key="int_asegurado_beneficiario_visual",
-        disabled=True
+    st.markdown("### Asegurado / beneficiario")
+    beneficiario = st.text_input(
+        "",
+        value=datos["asegurado_beneficiario_interventoria"],
+        key="asegurado_beneficiario_interventoria"
     )
 
-    st.session_state["df_garantias_interventoria"] = pd.DataFrame(datos["garantias_interventoria"])
+    df_garantias = pd.DataFrame(datos["garantias_interventoria"])
+    if df_garantias.empty:
+        df_garantias = pd.DataFrame([{"amparo": "", "desde": "", "hasta": "", "valor_asegurado": ""}])
 
-    df_editado = st.data_editor(
-        st.session_state["df_garantias_interventoria"],
-        num_rows="dynamic",
-        use_container_width=True,
-        key="editor_garantias_interventoria"
-    )
+    for col in ["amparo", "desde", "hasta", "valor_asegurado"]:
+        if col not in df_garantias.columns:
+            df_garantias[col] = ""
 
-    datos["garantias_interventoria"] = df_editado.fillna("").to_dict(orient="records")
+    df_garantias["desde"] = pd.to_datetime(df_garantias["desde"], errors="coerce").dt.date
+    df_garantias["hasta"] = pd.to_datetime(df_garantias["hasta"], errors="coerce").dt.date
+    df_garantias = df_garantias[["amparo", "desde", "hasta", "valor_asegurado"]].copy()
 
-    if st.button("Guardar sección 8", key="guardar_int_8"):
-        st.session_state["df_garantias_interventoria"] = df_editado.copy()
-        datos["garantias_interventoria"] = df_editado.fillna("").to_dict(orient="records")
-        guardar_y_refrescar()
+    with st.form("form_garantias_interventoria"):
+        df_garantias_edit = st.data_editor(
+            df_garantias,
+            num_rows="dynamic",
+            use_container_width=True,
+            key="editor_garantias_interventoria",
+            column_config={
+                "amparo": st.column_config.TextColumn("amparo"),
+                "desde": st.column_config.DateColumn("desde", format="DD/MM/YYYY"),
+                "hasta": st.column_config.DateColumn("hasta", format="DD/MM/YYYY"),
+                "valor_asegurado": st.column_config.TextColumn("valor_asegurado"),
+            }
+        )
+
+        if st.form_submit_button("Guardar sección 8"):
+            registros = []
+            for fila in df_garantias_edit.to_dict(orient="records"):
+                fila_limpia = {}
+                for k, v in fila.items():
+                    if pd.isna(v):
+                        fila_limpia[k] = ""
+                    elif isinstance(v, pd.Timestamp):
+                        fila_limpia[k] = v.date()
+                    else:
+                        fila_limpia[k] = v
+                registros.append(fila_limpia)
+
+            datos["dias_presentacion_garantia_interventoria"] = dias_garantia
+            datos["asegurado_beneficiario_interventoria"] = beneficiario
+            datos["garantias_interventoria"] = registros
+            guardar_y_refrescar()
 
 
 with st.expander("9. Liquidación", expanded=False):
