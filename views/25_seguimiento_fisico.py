@@ -674,6 +674,8 @@ with st.container(border=True):
             yaxis_tickformat=",",
         )
 
+        st.dataframe(df_historico, hide_index=True, width="stretch")
+
 col_guardar, col_limpiar = st.columns([1, 1])
 
 with col_guardar:
