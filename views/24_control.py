@@ -429,6 +429,7 @@ def _guardar():
 acta_inicio = _leer_acta_inicio()
 contrato_obra = _leer_contrato_obra()
 plan_anticipo = _leer_plan_anticipo()
+flujo_fondos = _leer_flujo_fondos()
 
 _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo)
 
@@ -494,15 +495,29 @@ with tab_fisico:
     st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
 
     st.markdown("### AVANCE GENERAL DE OBRA")
+
+    avance_rows = _normalizar_avance(datos.get("avance_rows", []))
+
+    for fila in avance_rows:
+        pct_programado, valor_programado = _programado_desde_flujo(
+            flujo_fondos,
+            fila.get("FECHA"),
+            fecha_inicio_acta,
+        )
+        fila["% PROGRAMADO"] = pct_programado
+        fila["$ PROGRAMADO"] = valor_programado
+
     df_avance = pd.DataFrame(
-        _normalizar_avance(datos.get("avance_rows", [])),
+        avance_rows,
         columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
     )
+
     avance_editado = st.data_editor(
         df_avance,
         hide_index=True,
         width="stretch",
         num_rows="dynamic",
+        disabled=["% PROGRAMADO", "$ PROGRAMADO"],
         column_config={
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
@@ -646,7 +661,19 @@ guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
-    datos["avance_rows"] = _normalizar_avance(avance_editado.to_dict("records"))
+
+    avance_guardar = _normalizar_avance(avance_editado.to_dict("records"))
+
+    for fila in avance_guardar:
+        pct_programado, valor_programado = _programado_desde_flujo(
+            flujo_fondos,
+            fila.get("FECHA"),
+            fecha_inicio_acta,
+        )
+        fila["% PROGRAMADO"] = pct_programado
+        fila["$ PROGRAMADO"] = valor_programado
+
+    datos["avance_rows"] = avance_guardar
     datos["financiero_rows"] = _normalizar_financiero(financiero_editado.to_dict("records"), valor_anticipo)
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
