@@ -758,6 +758,7 @@ with tab_modificaciones:
         hide_index=True,
         width="stretch",
         num_rows="dynamic",
+        key="control_suspensiones_editor",
         column_config={
             "ACTA DE SUSPENSIÓN No.": st.column_config.TextColumn("ACTA DE SUSPENSIÓN No."),
             "ACTA DE AMPLIACIÓN SUSPENSIÓN No.": st.column_config.TextColumn("ACTA DE AMPLIACIÓN SUSPENSIÓN No."),
@@ -773,8 +774,13 @@ with tab_modificaciones:
         suspensiones_editado.to_dict("records"),
         fecha_inicial_terminacion,
     )
-    datos["suspensiones_rows"] = suspensiones_recalculadas
 
+    if suspensiones_recalculadas != df_suspensiones.to_dict("records"):
+        datos["suspensiones_rows"] = suspensiones_recalculadas
+        st.rerun()
+
+    datos["suspensiones_rows"] = suspensiones_recalculadas
+    
     st.markdown("### ADICIONES")
     salario_minimo_anio_contrato = st.number_input(
         "Salario mínimo del año del contrato",
