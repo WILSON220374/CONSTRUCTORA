@@ -676,8 +676,8 @@ with tab_financiero:
     st.markdown("### PAGOS")
 
     df_pagos = pd.DataFrame(
-    _normalizar_pagos(datos.get("pagos_rows", []), valor_contrato),
-    columns=["FECHA", "VALOR INICIAL", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
+        _normalizar_pagos(datos.get("pagos_rows", []), valor_contrato),
+        columns=["FECHA", "VALOR INICIAL", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
     )
 
     pagos_editado = st.data_editor(
@@ -686,12 +686,20 @@ with tab_financiero:
         width="stretch",
         num_rows="dynamic",
         disabled=["VALOR INICIAL", "PENDIENTE POR FACTURAR"],
+        key="control_pagos_editor",
         column_config={
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+            "VALOR INICIAL": st.column_config.NumberColumn("VALOR INICIAL", format="$ %.2f"),
             "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
             "PENDIENTE POR FACTURAR": st.column_config.NumberColumn("PENDIENTE POR FACTURAR", format="$ %.2f"),
         },
     )
+
+    pagos_recalculados = _normalizar_pagos(pagos_editado.to_dict("records"), valor_contrato)
+
+    if pagos_recalculados != datos.get("pagos_rows", []):
+        datos["pagos_rows"] = pagos_recalculados
+        st.rerun()
 
     st.markdown("### ANTICIPO")
 
