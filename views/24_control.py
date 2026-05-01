@@ -851,12 +851,14 @@ if guardar_form:
         pct_programado, valor_programado = _programado_actividad_desde_flujo(
             flujo_fondos,
             item,
-            fila.get("FECHA"),
+            fecha_corte_fisico,
             fecha_inicio_acta,
         )
+        fila["FECHA"] = fecha_corte_fisico
         fila["% PROGRAMADO"] = pct_programado
         fila["$ PROGRAMADO"] = valor_programado
 
+    
     datos["avance_actividad_rows"] = avance_actividad_guardar
     datos["financiero_rows"] = _normalizar_financiero(financiero_editado.to_dict("records"), valor_anticipo)
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
