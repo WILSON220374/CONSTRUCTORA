@@ -3,6 +3,7 @@ import re
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from supabase_state import cargar_estado
@@ -634,14 +635,38 @@ with st.container(border=True):
 
         fechas_corte = sorted(df_grafica["FECHA DE CORTE"].unique())
 
+                fechas_programado = sorted(df_programado["FECHA DE CORTE"].unique())
+        fechas_ejecutado = sorted(puntos_ejecutado["FECHA DE CORTE"].unique())
+
+        fig_avance.add_trace(
+            go.Scatter(
+                x=fechas_ejecutado,
+                y=[None] * len(fechas_ejecutado),
+                mode="markers",
+                marker=dict(opacity=0),
+                showlegend=False,
+                xaxis="x2",
+                hoverinfo="skip",
+            )
+        )
+
         fig_avance.update_layout(
-            xaxis_title="Fecha de corte",
+            xaxis_title="Fecha de programación",
             yaxis_title="Valor",
             legend_title="Tipo de avance",
             xaxis=dict(
                 tickmode="array",
-                tickvals=fechas_corte,
-                ticktext=[fecha.strftime("%d-%m-%y") for fecha in fechas_corte],
+                tickvals=fechas_programado,
+                ticktext=[fecha.strftime("%d-%m-%y") for fecha in fechas_programado],
+                tickangle=0,
+            ),
+            xaxis2=dict(
+                title="Fechas de corte ejecutado",
+                overlaying="x",
+                side="top",
+                tickmode="array",
+                tickvals=fechas_ejecutado,
+                ticktext=[fecha.strftime("%d-%m-%y") for fecha in fechas_ejecutado],
                 tickangle=0,
             ),
             yaxis_tickprefix="$ ",
