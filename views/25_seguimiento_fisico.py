@@ -657,6 +657,45 @@ with st.container(border=True):
         fecha_min = min(fechas_todas)
         fecha_max = max(fechas_todas)
 
+        puntos_programado_corte = []
+
+        for fecha in fechas_ejecutado:
+            pct_programado, valor_programado = _programado_desde_flujo(
+                flujo_fondos,
+                fecha,
+                fecha_inicio_acta,
+            )
+            puntos_programado_corte.append(
+                {
+                    "FECHA DE CORTE": fecha,
+                    "VALOR": valor_programado,
+                }
+            )
+
+        df_programado_corte = pd.DataFrame(puntos_programado_corte)
+
+        if not df_programado_corte.empty:
+            fig_avance.add_trace(
+                go.Scatter(
+                    x=df_programado_corte["FECHA DE CORTE"],
+                    y=df_programado_corte["VALOR"],
+                    mode="markers",
+                    marker=dict(color="blue", size=9),
+                    name="$ PROGRAMADO EN CORTE",
+                    showlegend=False,
+                    hovertemplate="Fecha: %{x|%d/%m/%Y}<br>Programado: $ %{y:,.2f}<extra></extra>",
+                )
+            )
+
+        for fecha in fechas_ejecutado:
+            fig_avance.add_vline(
+                x=fecha,
+                line_width=1,
+                line_dash="dot",
+                line_color="gray",
+                opacity=0.45,
+            )
+
         fig_avance.add_trace(
             go.Scatter(
                 x=fechas_ejecutado,
@@ -695,6 +734,7 @@ with st.container(border=True):
         )
 
         st.plotly_chart(fig_avance, width="stretch")
+        
     else:
         st.info("Todavía no hay seguimientos físicos guardados.")
         
