@@ -601,6 +601,12 @@ with tab_fisico:
 
     st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
 
+    fecha_corte_fisico = st.date_input(
+        "FECHA DE CORTE DEL SEGUIMIENTO FÍSICO",
+        value=_parse_fecha(datos.get("fecha_corte_fisico")),
+        key="control_fecha_corte_fisico",
+    )
+
     st.markdown("### AVANCE GENERAL DE OBRA")
 
     avance_rows = _normalizar_avance(datos.get("avance_rows", []))
