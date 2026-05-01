@@ -614,15 +614,16 @@ with tab_fisico:
     for fila in avance_rows:
         pct_programado, valor_programado = _programado_desde_flujo(
             flujo_fondos,
-            fila.get("FECHA"),
+            fecha_corte_fisico,
             fecha_inicio_acta,
         )
+        fila["FECHA"] = fecha_corte_fisico
         fila["% PROGRAMADO"] = pct_programado
         fila["$ PROGRAMADO"] = valor_programado
 
     df_avance = pd.DataFrame(
         avance_rows,
-        columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
+        columns=["% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
     )
 
     avance_editado = st.data_editor(
@@ -632,7 +633,6 @@ with tab_fisico:
         num_rows="dynamic",
         disabled=["% PROGRAMADO", "$ PROGRAMADO"],
         column_config={
-            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
             "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
             "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
