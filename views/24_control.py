@@ -592,6 +592,31 @@ with c2:
 
 st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
 
+c3, c4, c5 = st.columns(3)
+with c3:
+    st.number_input(
+        "VALOR DEL CONTRATO",
+        min_value=0.0,
+        value=valor_contrato,
+        step=1000.0,
+        format="%.2f",
+        disabled=True,
+    )
+with c4:
+    st.text_input(
+        "PLAZO DE EJECUCIÓN",
+        value=duracion_inicial,
+        disabled=True,
+    )
+with c5:
+    st.number_input(
+        "VALOR DEL ANTICIPO",
+        min_value=0.0,
+        value=valor_anticipo,
+        step=1000.0,
+        format="%.2f",
+        disabled=True,
+    )
 tab_financiero, tab_modificaciones = st.tabs(
     [
         "Seguimiento financiero",
