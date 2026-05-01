@@ -483,9 +483,9 @@ with st.container(border=True):
     st.text_area("OBJETO DEL CONTRATO", value=objeto_contrato, disabled=True, height=100)
 
 with st.container(border=True):
-    st.markdown("### CREAR NUEVO CORTE FÍSICO")
+    st.markdown("### CREAR O CONSULTAR CORTE FÍSICO")
 
-    col_fecha, col_nuevo = st.columns([1, 0.7])
+    col_fecha, col_consulta, col_cargar = st.columns([1, 1, 0.7])
 
     with col_fecha:
         fecha_corte = st.date_input(
@@ -494,26 +494,9 @@ with st.container(border=True):
             key="seguimiento_fisico_fecha_corte_input",
         )
 
-    with col_nuevo:
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        if st.button("➕ Crear corte", key="seguimiento_fisico_crear_corte"):
-            st.session_state["seguimiento_fisico_corte_activo"] = _recalcular_corte(
-                _corte_vacio(fecha_corte),
-                flujo_fondos,
-                fecha_inicio_acta,
-                mapa_items,
-            )
-            st.session_state["seguimiento_fisico_fecha_activa"] = _parse_fecha(fecha_corte).isoformat()
-            st.rerun()
-
-with st.container(border=True):
-    st.markdown("### CONSULTAR O ELIMINAR CORTE GUARDADO")
-
-    col_consulta, col_cargar, col_eliminar = st.columns([1, 0.7, 0.7])
-
     with col_consulta:
         fecha_consulta = st.selectbox(
-            "SEGUIMIENTO GUARDADO",
+            "Consultar seguimiento guardado",
             options=[""] + fechas_guardadas,
             format_func=lambda x: "" if not x else _parse_fecha(x).strftime("%d/%m/%Y"),
             key="seguimiento_fisico_fecha_consulta",
@@ -521,21 +504,10 @@ with st.container(border=True):
 
     with col_cargar:
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        if st.button("📂 Cargar", key="seguimiento_fisico_cargar"):
-            if fecha_consulta:
-                _cargar_corte_en_sesion(fecha_consulta, flujo_fondos, fecha_inicio_acta, mapa_items)
-                st.rerun()
-
-    with col_eliminar:
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        if st.button("🗑️ Eliminar", key="seguimiento_fisico_eliminar_corte"):
-            if fecha_consulta and fecha_consulta in seguimientos:
-                seguimientos.pop(fecha_consulta, None)
-                datos["seguimientos_fisicos"] = seguimientos
-                guardar_estado("seguimiento_fisico", datos)
-                st.session_state.pop("seguimiento_fisico_corte_activo", None)
-                st.session_state.pop("seguimiento_fisico_fecha_activa", None)
-                st.rerun()
+        if st.button("Cargar", key="seguimiento_fisico_cargar"):
+            fecha_objetivo = fecha_consulta if fecha_consulta else fecha_corte
+            _cargar_corte_en_sesion(fecha_objetivo, flujo_fondos, fecha_inicio_acta, mapa_items)
+            st.rerun()
 
 if "seguimiento_fisico_corte_activo" not in st.session_state:
     fecha_inicial = datos.get("ultima_fecha_corte") if _texto(datos.get("ultima_fecha_corte")) else fecha_corte
