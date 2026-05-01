@@ -623,7 +623,7 @@ with st.container(border=True):
         df_avance_actividad,
         hide_index=True,
         width="stretch",
-        num_rows="fixed",
+        num_rows="dynamic",
         disabled=["ITEM", "DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
         key="seguimiento_fisico_avance_actividad_editor",
         column_config={
@@ -632,7 +632,7 @@ with st.container(border=True):
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
             "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
             "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
+            "$ PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="$ %.2f"),
         },
     )
 
