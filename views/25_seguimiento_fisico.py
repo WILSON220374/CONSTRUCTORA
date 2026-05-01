@@ -605,7 +605,7 @@ with st.container(border=True):
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
             "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
             "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="$ %.2f"),
+            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
         },
     )
 
@@ -674,7 +674,7 @@ with st.container(border=True):
             yaxis_tickformat=",",
         )
 
-        st.dataframe(df_historico, hide_index=True, width="stretch")
+        st.plotly_chart(fig_avance, width="stretch")
 
 col_guardar, col_limpiar = st.columns([1, 1])
 
