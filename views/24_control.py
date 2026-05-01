@@ -655,24 +655,46 @@ with tab_fisico:
 
     opciones_items = [""] + sorted(mapa_items.keys(), key=_key_codigo_natural)
 
-    avance_actividad_rows = _normalizar_avance_actividad(datos.get("avance_actividad_rows", []))
+    col_item_nuevo, col_boton_item = st.columns([2, 1])
 
-    estado_editor_actividad = st.session_state.get("control_avance_actividad_editor", {})
+    with col_item_nuevo:
+        item_nuevo_avance = st.selectbox(
+            "Agregar actividad al seguimiento",
+            options=opciones_items,
+            key="control_item_nuevo_avance",
+        )
 
-    if isinstance(estado_editor_actividad, dict):
-        for indice, cambios in estado_editor_actividad.get("edited_rows", {}).items():
-            try:
-                indice = int(indice)
-                if 0 <= indice < len(avance_actividad_rows) and isinstance(cambios, dict):
-                    avance_actividad_rows[indice].update(cambios)
-            except Exception:
-                pass
-
-        for fila_nueva in estado_editor_actividad.get("added_rows", []):
-            if isinstance(fila_nueva, dict):
+    with col_boton_item:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        if st.button("➕ Agregar actividad", key="control_agregar_actividad"):
+            if item_nuevo_avance:
                 nueva = _fila_avance_actividad_vacia()
-                nueva.update(fila_nueva)
-                avance_actividad_rows.append(nueva)
+                nueva["ITEM"] = item_nuevo_avance
+                nueva["DESCRIPCIÓN"] = mapa_items.get(item_nuevo_avance, "")
+                nueva["FECHA"] = fecha_corte_fisico
+
+                pct_programado, valor_programado = _programado_actividad_desde_flujo(
+                    flujo_fondos,
+                    item_nuevo_avance,
+                    fecha_corte_fisico,
+                    fecha_inicio_acta,
+                )
+                nueva["% PROGRAMADO"] = pct_programado
+                nueva["$ PROGRAMADO"] = valor_programado
+
+                filas_actuales = [
+                    fila for fila in _normalizar_avance_actividad(datos.get("avance_actividad_rows", []))
+                    if _texto(fila.get("ITEM"))
+                ]
+
+                datos["avance_actividad_rows"] = filas_actuales + [nueva]
+                _guardar()
+                st.rerun()
+
+    avance_actividad_rows = [
+        fila for fila in _normalizar_avance_actividad(datos.get("avance_actividad_rows", []))
+        if _texto(fila.get("ITEM"))
+    ]
 
     for fila in avance_actividad_rows:
         item = _texto(fila.get("ITEM"))
@@ -704,44 +726,11 @@ with tab_fisico:
             "ITEM": st.column_config.TextColumn("ITEM"),
             "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
+            "$ EJECUTADO": st.column_config.NumberColumn("$ %.2f"),
             "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
+            "$ PROGRAMADO": st.column_config.NumberColumn("$ %.2f"),
         },
     )
-
-    col_item_nuevo, col_boton_item = st.columns([2, 1])
-
-    with col_item_nuevo:
-        item_nuevo_avance = st.selectbox(
-            "Agregar actividad al seguimiento",
-            options=opciones_items,
-            key="control_item_nuevo_avance",
-        )
-
-    with col_boton_item:
-        if st.button("➕ Agregar actividad", key="control_agregar_actividad"):
-            if item_nuevo_avance:
-                nueva = _fila_avance_actividad_vacia()
-                nueva["ITEM"] = item_nuevo_avance
-                nueva["DESCRIPCIÓN"] = mapa_items.get(item_nuevo_avance, "")
-                nueva["FECHA"] = fecha_corte_fisico
-
-                pct_programado, valor_programado = _programado_actividad_desde_flujo(
-                    flujo_fondos,
-                    item_nuevo_avance,
-                    fecha_corte_fisico,
-                    fecha_inicio_acta,
-                )
-                nueva["% PROGRAMADO"] = pct_programado
-                nueva["$ PROGRAMADO"] = valor_programado
-
-                datos["avance_actividad_rows"] = _normalizar_avance_actividad(
-                    datos.get("avance_actividad_rows", [])
-                ) + [nueva]
-
-                _guardar()
-                st.rerun()
     
 with tab_financiero:
     st.markdown("### RESUMEN FINANCIERO")
