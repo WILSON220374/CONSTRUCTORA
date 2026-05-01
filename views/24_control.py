@@ -726,9 +726,9 @@ with tab_fisico:
             "ITEM": st.column_config.TextColumn("ITEM"),
             "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-            "$ EJECUTADO": st.column_config.NumberColumn("$ %.2f"),
+            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
             "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ %.2f"),
+            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
         },
     )
     
