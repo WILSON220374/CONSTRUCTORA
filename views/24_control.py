@@ -762,15 +762,11 @@ with tab_modificaciones:
     )
 
     suspensiones_recalculadas = _normalizar_suspensiones(
-    suspensiones_editado.to_dict("records"),
-    fecha_inicial_terminacion,
-)
-
-if suspensiones_recalculadas != datos.get("suspensiones_rows", []):
+        suspensiones_editado.to_dict("records"),
+        fecha_inicial_terminacion,
+    )
     datos["suspensiones_rows"] = suspensiones_recalculadas
-    st.rerun()
 
-    
     st.markdown("### ADICIONES")
     salario_minimo_anio_contrato = st.number_input(
         "Salario mínimo del año del contrato",
