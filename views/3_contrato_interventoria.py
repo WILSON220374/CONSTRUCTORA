@@ -423,7 +423,7 @@ st.divider()
 col_a, col_b = st.columns([1, 1])
 with col_a:
     if st.button("💾 Guardar formulario completo", type="primary", key="guardar_formulario_completo_interventoria"):
-        ddatos["garantias_interventoria"] = st.session_state.get("df_garantias_interventoria", [])
+        datos["garantias_interventoria"] = st.session_state.get("df_garantias_interventoria", [])
         guardar_estado("contrato_interventoria", datos)
         st.success("Formulario completo guardado.")
 with col_b:
