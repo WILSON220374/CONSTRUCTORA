@@ -642,6 +642,26 @@ with st.container(border=True):
         },
     )
 
+    if st.button("💾 Guardar avance por actividad", key="seguimiento_fisico_guardar_avance_actividad"):
+        corte_activo["avance_actividad"] = [
+            fila for fila in _normalizar_avance_actividad(
+                avance_actividad_editado.to_dict("records")
+            )
+            if _texto(fila.get("ITEM"))
+        ]
+
+        corte_activo = _recalcular_corte(
+            corte_activo,
+            flujo_fondos,
+            fecha_inicio_acta,
+            mapa_items,
+        )
+
+        st.session_state["seguimiento_fisico_corte_activo"] = corte_activo
+        _guardar_corte_activo()
+        st.success("Avance por actividad guardado.")
+        st.rerun()
+    
     ejecutado_general = _safe_float(
         _normalizar_avance_general(avance_general_editado.to_dict("records"))[0].get("$ EJECUTADO"),
         0.0,
