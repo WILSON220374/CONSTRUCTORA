@@ -697,11 +697,11 @@ with tab_fisico:
         df_avance_actividad,
         hide_index=True,
         width="stretch",
-        num_rows="dynamic",
-        disabled=["DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
+        num_rows="fixed",
+        disabled=["ITEM", "DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
         key="control_avance_actividad_editor",
         column_config={
-            "ITEM": st.column_config.SelectboxColumn("ITEM", options=opciones_items),
+            "ITEM": st.column_config.TextColumn("ITEM"),
             "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
             "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
@@ -709,6 +709,39 @@ with tab_fisico:
             "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
         },
     )
+
+    col_item_nuevo, col_boton_item = st.columns([2, 1])
+
+    with col_item_nuevo:
+        item_nuevo_avance = st.selectbox(
+            "Agregar actividad al seguimiento",
+            options=opciones_items,
+            key="control_item_nuevo_avance",
+        )
+
+    with col_boton_item:
+        if st.button("➕ Agregar actividad", key="control_agregar_actividad"):
+            if item_nuevo_avance:
+                nueva = _fila_avance_actividad_vacia()
+                nueva["ITEM"] = item_nuevo_avance
+                nueva["DESCRIPCIÓN"] = mapa_items.get(item_nuevo_avance, "")
+                nueva["FECHA"] = fecha_corte_fisico
+
+                pct_programado, valor_programado = _programado_actividad_desde_flujo(
+                    flujo_fondos,
+                    item_nuevo_avance,
+                    fecha_corte_fisico,
+                    fecha_inicio_acta,
+                )
+                nueva["% PROGRAMADO"] = pct_programado
+                nueva["$ PROGRAMADO"] = valor_programado
+
+                datos["avance_actividad_rows"] = _normalizar_avance_actividad(
+                    datos.get("avance_actividad_rows", [])
+                ) + [nueva]
+
+                _guardar()
+                st.rerun()
     
 with tab_financiero:
     st.markdown("### RESUMEN FINANCIERO")
