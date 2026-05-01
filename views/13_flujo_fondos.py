@@ -371,16 +371,18 @@ def _cargar_directos() -> pd.DataFrame:
     aiu_pct = _get_aiu_pct_global()
     directos_guardados = presupuesto_obra_datos.get("flujo_fondos_directos", []) or []
     items_presupuesto = presupuesto_obra_datos.get("items", {}) or {}
+
     grupos_presupuesto = (
-    presupuesto_obra_datos.get("__tablas__", {}).get("grupos_presupuesto_obra", [])
-    or presupuesto_obra_datos.get("grupos_presupuesto_obra", [])
-    or []
-)
+        (presupuesto_obra_datos.get("__tablas__", {}) or {}).get("grupos_presupuesto_obra", [])
+        or presupuesto_obra_datos.get("grupos_presupuesto_obra", [])
+        or []
+    )
 
     cantidades_por_item = {}
     cantidades_por_node = {}
     unidades_por_item = {}
     unidades_por_node = {}
+    unidades_por_descripcion = {}
 
     for grupo in grupos_presupuesto:
         if not isinstance(grupo, dict):
@@ -390,15 +392,22 @@ def _cargar_directos() -> pd.DataFrame:
             if not isinstance(fila, dict):
                 continue
 
-            item_key = _safe_str(fila.get("ITEM", ""))
+            item_fila = _safe_str(fila.get("ITEM", ""))
             item_gober = _safe_str(fila.get("ITEM GOBER", ""))
-            unidad = _safe_str(fila.get("UNIDAD", ""))
-            cantidad = _safe_float(fila.get("CANT", 0.0), 0.0)
+            descripcion_fila = _safe_str(fila.get("DESCRIPCIÓN", fila.get("DESCRIPCION", "")))
+            unidad_fila = _safe_str(fila.get("UNIDAD", ""))
+            cantidad_fila = _safe_float(fila.get("CANT", 0.0), 0.0)
 
-            for clave_item in [item_key, item_gober]:
-                if clave_item:
-                    cantidades_por_item[clave_item] = cantidad
-                    unidades_por_item[clave_item] = unidad
+            if item_fila:
+                cantidades_por_item[item_fila] = cantidad_fila
+                unidades_por_item[item_fila] = unidad_fila
+
+            if item_gober:
+                cantidades_por_item[item_gober] = cantidad_fila
+                unidades_por_item[item_gober] = unidad_fila
+
+            if descripcion_fila:
+                unidades_por_descripcion[descripcion_fila] = unidad_fila
 
     for node_key, it in items_presupuesto.items():
         if not isinstance(it, dict):
@@ -418,6 +427,7 @@ def _cargar_directos() -> pd.DataFrame:
         if item_key:
             cantidades_por_item.setdefault(item_key, cantidad)
             unidades_por_item.setdefault(item_key, unidad)
+
         if node_key:
             cantidades_por_node[node_key] = cantidad
             unidades_por_node[node_key] = unidad
@@ -445,6 +455,8 @@ def _cargar_directos() -> pd.DataFrame:
             unidad = unidades_por_item[item]
         elif node_id in unidades_por_node:
             unidad = unidades_por_node[node_id]
+        elif descripcion in unidades_por_descripcion:
+            unidad = unidades_por_descripcion[descripcion]
         else:
             unidad = _safe_str(
                 rec.get("UNIDAD", rec.get("unidad", rec.get("Unidad", rec.get("UND", rec.get("und", "")))))
