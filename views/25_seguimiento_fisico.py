@@ -791,10 +791,35 @@ with st.container(border=True):
         if not df_programado.empty and ev > 0:
             df_programado_ordenado = df_programado.sort_values("FECHA DE CORTE").copy()
 
+            puntos_programacion = []
             for _, fila_prog in df_programado_ordenado.iterrows():
-                if _safe_float(fila_prog.get("VALOR"), 0.0) >= ev:
-                    fecha_programacion_ganada = _parse_fecha(fila_prog.get("FECHA DE CORTE"))
+                puntos_programacion.append(
+                    {
+                        "fecha": _parse_fecha(fila_prog.get("FECHA DE CORTE")),
+                        "valor": _safe_float(fila_prog.get("VALOR"), 0.0),
+                    }
+                )
+
+            for i in range(1, len(puntos_programacion)):
+                punto_anterior = puntos_programacion[i - 1]
+                punto_actual = puntos_programacion[i]
+
+                valor_anterior = punto_anterior["valor"]
+                valor_actual = punto_actual["valor"]
+
+                if valor_anterior <= ev <= valor_actual and valor_actual > valor_anterior:
+                    proporcion = (ev - valor_anterior) / (valor_actual - valor_anterior)
+                    dias_tramo = (punto_actual["fecha"] - punto_anterior["fecha"]).days
+                    fecha_programacion_ganada = punto_anterior["fecha"] + timedelta(
+                        days=round(dias_tramo * proporcion)
+                    )
                     break
+
+            if fecha_programacion_ganada is None:
+                if ev <= puntos_programacion[0]["valor"]:
+                    fecha_programacion_ganada = puntos_programacion[0]["fecha"]
+                else:
+                    fecha_programacion_ganada = puntos_programacion[-1]["fecha"]
 
             if fecha_programacion_ganada is None:
                 fecha_programacion_ganada = _parse_fecha(df_programado_ordenado.iloc[-1]["FECHA DE CORTE"])
