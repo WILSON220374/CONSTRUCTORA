@@ -777,6 +777,7 @@ with tab_modificaciones:
 
     if suspensiones_recalculadas != df_suspensiones.to_dict("records"):
         datos["suspensiones_rows"] = suspensiones_recalculadas
+        _guardar()
         st.rerun()
 
     datos["suspensiones_rows"] = suspensiones_recalculadas
