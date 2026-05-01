@@ -2,6 +2,7 @@ from datetime import date, datetime
 import re
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 from supabase_state import cargar_estado
