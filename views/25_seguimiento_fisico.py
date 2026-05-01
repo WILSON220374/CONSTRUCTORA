@@ -650,7 +650,9 @@ with st.container(border=True):
         st.plotly_chart(fig_avance, width="stretch")
     else:
         st.info("Todavía no hay seguimientos físicos guardados.")
-
+        
+        col_guardar, col_limpiar = st.columns([1, 1])
+        
 with col_guardar:
     if st.button("💾 Guardar seguimiento físico", type="primary", key="seguimiento_fisico_guardar"):
         corte_activo["avance_general"] = _normalizar_avance_general(avance_general_editado.to_dict("records"))
