@@ -340,7 +340,7 @@ def _generar_word(generales, fila, suspensiones):
 
     _p(doc, "")
     _p(doc, "RELACIÓN SUSPENSIONES Y AMPLIACIONES DE LA SUSPENSIÓN", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-      _tabla_relacion(doc, _filas_relacion_suspensiones(suspensiones, fila.get("FECHA DEL ACTA")))
+    _tabla_relacion(doc, _filas_relacion_suspensiones(suspensiones, fila.get("FECHA DEL ACTA")))
 
     _p(doc, "")
     _p(doc, "NUEVAS CONDICIONES DEL CONTRATO", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
