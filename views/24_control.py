@@ -423,7 +423,7 @@ with tab_fisico:
 
     st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
 
-    st.markdown("### AVANCE DE OBRA")
+    st.markdown("### AVANCE GENERAL DE OBRA")
     df_avance = pd.DataFrame(
         _normalizar_avance(datos.get("avance_rows", [])),
         columns=["FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
