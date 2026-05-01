@@ -353,7 +353,11 @@ def _cargar_directos() -> pd.DataFrame:
     aiu_pct = _get_aiu_pct_global()
     directos_guardados = presupuesto_obra_datos.get("flujo_fondos_directos", []) or []
     items_presupuesto = presupuesto_obra_datos.get("items", {}) or {}
-    grupos_presupuesto = presupuesto_obra_datos.get("grupos_presupuesto_obra", []) or []
+    grupos_presupuesto = (
+    presupuesto_obra_datos.get("__tablas__", {}).get("grupos_presupuesto_obra", [])
+    or presupuesto_obra_datos.get("grupos_presupuesto_obra", [])
+    or []
+)
 
     cantidades_por_item = {}
     cantidades_por_node = {}
