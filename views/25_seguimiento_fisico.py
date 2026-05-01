@@ -774,6 +774,70 @@ with st.container(border=True):
                 "VALOR": st.column_config.NumberColumn("VALOR", format="$ %.2f"),
             },
         )
+
+        spi = ev / pv if pv > 0 else 0.0
+        cpi = ev / ac if ac > 0 else 0.0
+        eac = valor_contrato / cpi if cpi > 0 else 0.0
+
+        fecha_programacion_ganada = None
+
+        if not df_programado.empty and ev > 0:
+            df_programado_ordenado = df_programado.sort_values("FECHA DE CORTE").copy()
+
+            for _, fila_prog in df_programado_ordenado.iterrows():
+                if _safe_float(fila_prog.get("VALOR"), 0.0) >= ev:
+                    fecha_programacion_ganada = _parse_fecha(fila_prog.get("FECHA DE CORTE"))
+                    break
+
+            if fecha_programacion_ganada is None:
+                fecha_programacion_ganada = _parse_fecha(df_programado_ordenado.iloc[-1]["FECHA DE CORTE"])
+
+        if fecha_programacion_ganada:
+            retraso_dias = (fecha_corte_activa - fecha_programacion_ganada).days
+        else:
+            retraso_dias = 0
+
+        df_indices_valor_ganado = pd.DataFrame(
+            [
+                {
+                    "ÍNDICE": "SPI",
+                    "DESCRIPCIÓN": "ÍNDICE DE DESEMPEÑO DEL CRONOGRAMA",
+                    "VALOR": spi,
+                    "CÁLCULO": "EV / PV",
+                },
+                {
+                    "ÍNDICE": "CPI",
+                    "DESCRIPCIÓN": "ÍNDICE DE DESEMPEÑO DEL COSTO",
+                    "VALOR": cpi,
+                    "CÁLCULO": "EV / AC",
+                },
+                {
+                    "ÍNDICE": "EAC",
+                    "DESCRIPCIÓN": "ESTIMACIÓN DEL COSTO AL TERMINAR",
+                    "VALOR": eac,
+                    "CÁLCULO": "Valor total del contrato / CPI",
+                },
+                {
+                    "ÍNDICE": "PROGRAMACIÓN GANADA",
+                    "DESCRIPCIÓN": "FECHA EN QUE SE DEBÍA LOGRAR EL AVANCE ACTUAL",
+                    "VALOR": fecha_programacion_ganada.strftime("%d/%m/%Y") if fecha_programacion_ganada else "",
+                    "CÁLCULO": "Fecha donde el valor programado acumulado alcanza el EV actual",
+                },
+                {
+                    "ÍNDICE": "RETRASO",
+                    "DESCRIPCIÓN": "DIFERENCIA EN DÍAS CALENDARIO",
+                    "VALOR": retraso_dias,
+                    "CÁLCULO": "Fecha de corte actual - fecha de programación ganada",
+                },
+            ]
+        )
+
+        st.markdown("### ÍNDICES DE VALOR GANADO")
+        st.dataframe(
+            df_indices_valor_ganado,
+            hide_index=True,
+            width="stretch",
+        )
         
     else:
         st.info("Todavía no hay seguimientos físicos guardados.")
