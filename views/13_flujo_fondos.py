@@ -356,6 +356,8 @@ def _cargar_directos() -> pd.DataFrame:
 
     cantidades_por_item = {}
     cantidades_por_node = {}
+    unidades_por_item = {}
+    unidades_por_node = {}
 
     for node_key, it in items_presupuesto.items():
         if not isinstance(it, dict):
@@ -374,8 +376,10 @@ def _cargar_directos() -> pd.DataFrame:
 
         if item_key:
             cantidades_por_item[item_key] = cantidad
+            unidades_por_item[item_key] = unidad
         if node_key:
             cantidades_por_node[node_key] = cantidad
+            unidades_por_node[node_key] = unidad
 
     rows: List[dict] = []
     for rec in directos_guardados:
@@ -395,6 +399,16 @@ def _cargar_directos() -> pd.DataFrame:
                 0.0,
             )
 
+        unidad = ""
+        if item in unidades_por_item:
+            unidad = unidades_por_item[item]
+        elif node_id in unidades_por_node:
+            unidad = unidades_por_node[node_id]
+        else:
+            unidad = _safe_str(
+                rec.get("UNIDAD", rec.get("unidad", rec.get("Unidad", rec.get("UND", rec.get("und", "")))))
+            )
+        
         if valor_base <= 0 or not descripcion:
             continue
 
