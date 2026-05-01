@@ -333,6 +333,29 @@ def _generar_word(generales, fila, suspensiones):
     _p(doc, titulo, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
     _p(doc, f"ACTA DE {tipo} No. {numero}", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=9)
 
+    _p(doc, "")
+    _p(doc, "RESPONSABILIDAD", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
+    _p(
+        doc,
+        "1. Mediante la suscripción de la presente acta de suspensión o ampliación de la suspensión, "
+        "el Contratista y el Interventor asumen plena responsabilidad por la veracidad de la información "
+        "en ella contenida, especialmente respecto a:"
+    )
+    _p(doc, "- Condiciones que justifiquen plenamente la necesidad de suspender o ampliar la suspensión del plazo contractual.")
+    _p(doc, "- Período solicitado de la suspensión o ampliación de la suspensión.")
+    _p(
+        doc,
+        "2. El Contratista de obra suspende las labores a partir de la fecha indicada, comprometiéndose "
+        "a reanudar la ejecución del contrato en la fecha acordada, bajo la responsabilidad exclusiva del mismo."
+    )
+    _p(
+        doc,
+        "3. El Interventor del contrato como representante del CONTRATANTE debe hacer el análisis de las causas "
+        "que conllevan a la suspensión del contrato de obra y será solidariamente responsable con el Contratista "
+        "de obra, lo cual refrenda con su firma."
+    )
+
+    _p(doc, "")
     _p(doc, "CONDICIONES DEL CONTRATO DE OBRA", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
     _tabla_simple(
         doc,
@@ -459,6 +482,24 @@ if not suspensiones:
 opciones = {_etiqueta_suspension(fila, idx): idx for idx, fila in enumerate(suspensiones)}
 seleccion = st.selectbox("Seleccione el acta de suspensión o ampliación", options=list(opciones.keys()))
 fila = suspensiones[opciones[seleccion]]
+
+st.markdown("### RESPONSABILIDAD")
+st.write(
+    "1. Mediante la suscripción de la presente acta de suspensión o ampliación de la suspensión, "
+    "el Contratista y el Interventor asumen plena responsabilidad por la veracidad de la información "
+    "en ella contenida, especialmente respecto a:"
+)
+st.write("- Condiciones que justifiquen plenamente la necesidad de suspender o ampliar la suspensión del plazo contractual.")
+st.write("- Período solicitado de la suspensión o ampliación de la suspensión.")
+st.write(
+    "2. El Contratista de obra suspende las labores a partir de la fecha indicada, comprometiéndose "
+    "a reanudar la ejecución del contrato en la fecha acordada, bajo la responsabilidad exclusiva del mismo."
+)
+st.write(
+    "3. El Interventor del contrato como representante del CONTRATANTE debe hacer el análisis de las causas "
+    "que conllevan a la suspensión del contrato de obra y será solidariamente responsable con el Contratista "
+    "de obra, lo cual refrenda con su firma."
+)
 
 st.markdown("### CONDICIONES DEL CONTRATO DE OBRA")
 col1, col2 = st.columns(2)
