@@ -313,17 +313,40 @@ def _normalizar_avance_actividad(rows):
     return filas
 
 
-def _mapa_items_desde_flujo(flujo_fondos):
+def _mapa_programa_obra_desde_flujo(flujo_fondos):
     programa = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
     mapa = {}
 
     if isinstance(programa, list):
         for fila in programa:
-            if isinstance(fila, dict):
-                item = _texto(fila.get("ITEM"))
-                descripcion = _primero_no_vacio(fila.get("DESCRIPCIÓN"), fila.get("DESCRIPCION"), fila.get("DESCRIPCIÓN DEL ÍTEM"), fila.get("DESCRIPCION DEL ITEM"))
-                if item:
-                    mapa[item] = descripcion
+            if not isinstance(fila, dict):
+                continue
+
+            item = _texto(fila.get("ITEM"))
+            if not item:
+                continue
+
+            mapa[item] = {
+                "DESCRIPCIÓN": _primero_no_vacio(
+                    fila.get("DESCRIPCIÓN"),
+                    fila.get("DESCRIPCION"),
+                    fila.get("DESCRIPCIÓN DEL ÍTEM"),
+                    fila.get("DESCRIPCION DEL ITEM"),
+                ),
+                "UNIDAD": _primero_no_vacio(
+                    fila.get("UNIDAD"),
+                    fila.get("unidad"),
+                    fila.get("UND"),
+                    fila.get("und"),
+                ),
+                "CANTIDAD": _safe_float(
+                    fila.get(
+                        "CANTIDAD TOTAL",
+                        fila.get("CANTIDAD", fila.get("CANT", fila.get("cantidad", 0.0))),
+                    ),
+                    0.0,
+                ),
+            }
 
     return mapa
 
@@ -443,6 +466,7 @@ flujo_fondos = _leer_flujo_fondos()
 fecha_inicio_acta = _fecha_inicio_desde_fuentes(acta_inicio)
 valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
 mapa_items = _mapa_items_desde_flujo(flujo_fondos)
+mapa_programa_obra = _mapa_programa_obra_desde_flujo(flujo_fondos)
 opciones_items = [""] + sorted(mapa_items.keys(), key=_key_codigo_natural)
 
 datos = st.session_state["seguimiento_fisico_datos"]
@@ -690,6 +714,75 @@ with st.container(border=True):
             f"$ ejecutado general: $ {ejecutado_general:,.2f} | "
             f"Suma actividades: $ {ejecutado_actividades:,.2f}"
         )
+
+with st.container(border=True):
+    st.markdown("### AVANCE FÍSICO POR ACTIVIDAD")
+
+    filas_avance_fisico = []
+
+    for fila in _normalizar_avance_actividad(avance_actividad_editado.to_dict("records")):
+        item = _texto(fila.get("ITEM"))
+        if not item:
+            continue
+
+        datos_programa = mapa_programa_obra.get(item, {})
+
+        descripcion = _primero_no_vacio(
+            datos_programa.get("DESCRIPCIÓN"),
+            fila.get("DESCRIPCIÓN"),
+        )
+        unidad = _texto(datos_programa.get("UNIDAD"))
+        cantidad_total = _safe_float(datos_programa.get("CANTIDAD"), 0.0)
+
+        porcentaje_ejecutado = _safe_float(fila.get("% EJECUTADO"), 0.0)
+        porcentaje_programado = _safe_float(fila.get("% PROGRAMADO"), 0.0)
+
+        cantidad_ejecutada = cantidad_total * (porcentaje_ejecutado / 100.0)
+        cantidad_programada = cantidad_total * (porcentaje_programado / 100.0)
+        balance = cantidad_ejecutada - cantidad_programada
+
+        filas_avance_fisico.append(
+            {
+                "ITEM": item,
+                "DESCRIPCIÓN": descripcion,
+                "UNIDAD": unidad,
+                "CANTIDAD": round(cantidad_total, 4),
+                "% EJECUTADO": round(porcentaje_ejecutado, 4),
+                "EJECUTADO": round(cantidad_ejecutada, 4),
+                "% PROGRAMADO": round(porcentaje_programado, 4),
+                "PROYECTADO": round(cantidad_programada, 4),
+                "BALANCE": round(balance, 4),
+            }
+        )
+
+    df_avance_fisico = pd.DataFrame(
+        filas_avance_fisico,
+        columns=[
+            "ITEM",
+            "DESCRIPCIÓN",
+            "UNIDAD",
+            "CANTIDAD",
+            "% EJECUTADO",
+            "EJECUTADO",
+            "% PROGRAMADO",
+            "PROYECTADO",
+            "BALANCE",
+        ],
+    )
+
+    st.dataframe(
+        df_avance_fisico,
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "CANTIDAD": st.column_config.NumberColumn("CANTIDAD", format="%.4f"),
+            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
+            "EJECUTADO": st.column_config.NumberColumn("EJECUTADO", format="%.4f"),
+            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
+            "PROYECTADO": st.column_config.NumberColumn("PROYECTADO", format="%.4f"),
+            "BALANCE": st.column_config.NumberColumn("BALANCE", format="%.4f"),
+        },
+    )
 
 with st.container(border=True):
     st.markdown("### EVOLUCIÓN")
