@@ -321,7 +321,7 @@ def _mapa_items_desde_flujo(flujo_fondos):
         for fila in programa:
             if isinstance(fila, dict):
                 item = _texto(fila.get("ITEM"))
-                descripcion = _texto(fila.get("DESCRIPCIÓN"))
+                descripcion = _primero_no_vacio(fila.get("DESCRIPCIÓN"), fila.get("DESCRIPCION"), fila.get("DESCRIPCIÓN DEL ÍTEM"), fila.get("DESCRIPCION DEL ITEM"))
                 if item:
                     mapa[item] = descripcion
 
