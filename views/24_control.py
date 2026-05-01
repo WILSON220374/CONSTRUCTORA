@@ -165,6 +165,74 @@ def _valor_anticipo_desde_fuentes(plan_anticipo, acta_inicio, contrato_obra):
         return 0.0
     return round(valor_contrato * porcentaje / 100.0, 2)
 
+def _programado_desde_flujo(flujo_fondos, fecha_corte, fecha_inicio):
+    tablas = flujo_fondos.get("__tablas__", {})
+    resumen = tablas.get("df_resumen", [])
+
+    if not isinstance(resumen, list) or not resumen:
+        return 0.0, 0.0
+
+    fila_acumulado = {}
+    fila_pct = {}
+
+    for fila in resumen:
+        if not isinstance(fila, dict):
+            continue
+
+        concepto = _texto(fila.get("CONCEPTO")).upper()
+
+        if concepto == "ACUMULADO":
+            fila_acumulado = fila
+
+        if concepto == "% ACUMULADO":
+            fila_pct = fila
+
+    if not fila_acumulado or not fila_pct:
+        return 0.0, 0.0
+
+    periodos = []
+    for columna in fila_acumulado.keys():
+        nombre = _texto(columna)
+        if nombre.startswith("Periodo "):
+            try:
+                numero = int(nombre.replace("Periodo ", "").strip())
+                periodos.append((numero, nombre))
+            except Exception:
+                continue
+
+    if not periodos:
+        return 0.0, 0.0
+
+    periodos = sorted(periodos, key=lambda x: x[0])
+
+    fecha_corte = _parse_fecha(fecha_corte)
+    fecha_inicio = _parse_fecha(fecha_inicio)
+
+    dias_transcurridos = (fecha_corte - fecha_inicio).days + 1
+
+    if dias_transcurridos <= 0:
+        return 0.0, 0.0
+
+    periodo_actual = int((dias_transcurridos - 1) // 30) + 1
+    dia_periodo = ((dias_transcurridos - 1) % 30) + 1
+    factor_periodo = dia_periodo / 30.0
+
+    periodo_actual = min(periodo_actual, periodos[-1][0])
+
+    nombre_actual = f"Periodo {periodo_actual}"
+    nombre_anterior = f"Periodo {periodo_actual - 1}"
+
+    valor_anterior = _safe_float(fila_acumulado.get(nombre_anterior), 0.0) if periodo_actual > 1 else 0.0
+    pct_anterior = _safe_float(fila_pct.get(nombre_anterior), 0.0) if periodo_actual > 1 else 0.0
+
+    valor_actual = _safe_float(fila_acumulado.get(nombre_actual), valor_anterior)
+    pct_actual = _safe_float(fila_pct.get(nombre_actual), pct_anterior)
+
+    valor_programado = valor_anterior + ((valor_actual - valor_anterior) * factor_periodo)
+    pct_programado = pct_anterior + ((pct_actual - pct_anterior) * factor_periodo)
+
+    return round(pct_programado, 4), round(valor_programado, 2)
+
 
 def _fila_avance_vacia():
     return {
