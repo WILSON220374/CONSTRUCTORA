@@ -314,39 +314,38 @@ def _normalizar_avance_actividad(rows):
 
 
 def _mapa_programa_obra_desde_flujo(flujo_fondos):
-    programa = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
+    programa = _tabla_programa_obra_desde_flujo(flujo_fondos)
     mapa = {}
 
-    if isinstance(programa, list):
-        for fila in programa:
-            if not isinstance(fila, dict):
-                continue
+    for fila in programa:
+        if not isinstance(fila, dict):
+            continue
 
-            item = _texto(fila.get("ITEM"))
-            if not item:
-                continue
+        item = _texto(fila.get("ITEM"))
+        if not item:
+            continue
 
-            mapa[item] = {
-                "DESCRIPCIÓN": _primero_no_vacio(
-                    fila.get("DESCRIPCIÓN"),
-                    fila.get("DESCRIPCION"),
-                    fila.get("DESCRIPCIÓN DEL ÍTEM"),
-                    fila.get("DESCRIPCION DEL ITEM"),
+        mapa[item] = {
+            "DESCRIPCIÓN": _primero_no_vacio(
+                fila.get("DESCRIPCIÓN"),
+                fila.get("DESCRIPCION"),
+                fila.get("DESCRIPCIÓN DEL ÍTEM"),
+                fila.get("DESCRIPCION DEL ITEM"),
+            ),
+            "UNIDAD": _primero_no_vacio(
+                fila.get("UNIDAD"),
+                fila.get("unidad"),
+                fila.get("UND"),
+                fila.get("und"),
+            ),
+            "CANTIDAD": _safe_float(
+                fila.get(
+                    "CANTIDAD TOTAL",
+                    fila.get("CANTIDAD", fila.get("CANT", fila.get("cantidad", 0.0))),
                 ),
-                "UNIDAD": _primero_no_vacio(
-                    fila.get("UNIDAD"),
-                    fila.get("unidad"),
-                    fila.get("UND"),
-                    fila.get("und"),
-                ),
-                "CANTIDAD": _safe_float(
-                    fila.get(
-                        "CANTIDAD TOTAL",
-                        fila.get("CANTIDAD", fila.get("CANT", fila.get("cantidad", 0.0))),
-                    ),
-                    0.0,
-                ),
-            }
+                0.0,
+            ),
+        }
 
     return mapa
 
@@ -491,43 +490,6 @@ def _mapa_items_desde_flujo(flujo_fondos):
 
         if item:
             mapa[item] = descripcion
-
-    return mapa
-
-def _mapa_programa_obra_desde_flujo(flujo_fondos):
-    programa = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
-    mapa = {}
-
-    if isinstance(programa, list):
-        for fila in programa:
-            if not isinstance(fila, dict):
-                continue
-
-            item = _texto(fila.get("ITEM"))
-            if not item:
-                continue
-
-            mapa[item] = {
-                "DESCRIPCIÓN": _primero_no_vacio(
-                    fila.get("DESCRIPCIÓN"),
-                    fila.get("DESCRIPCION"),
-                    fila.get("DESCRIPCIÓN DEL ÍTEM"),
-                    fila.get("DESCRIPCION DEL ITEM"),
-                ),
-                "UNIDAD": _primero_no_vacio(
-                    fila.get("UNIDAD"),
-                    fila.get("unidad"),
-                    fila.get("UND"),
-                    fila.get("und"),
-                ),
-                "CANTIDAD": _safe_float(
-                    fila.get(
-                        "CANTIDAD TOTAL",
-                        fila.get("CANTIDAD", fila.get("CANT", fila.get("cantidad", 0.0))),
-                    ),
-                    0.0,
-                ),
-            }
 
     return mapa
 
