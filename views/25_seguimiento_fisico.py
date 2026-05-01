@@ -686,7 +686,7 @@ col_guardar, col_limpiar = st.columns([1, 1])
 with col_guardar:
     if st.button("💾 Guardar seguimiento físico", type="primary", key="seguimiento_fisico_guardar"):
         corte_activo["avance_general"] = _normalizar_avance_general(avance_general_editado.to_dict("records"))
-        corte_activo["avance_actividad"] = _normalizar_avance_actividad(avance_actividad_editado.to_dict("records"))
+        corte_activo["avance_actividad"] = _normalizar_avance_actividad(corte_activo.get("avance_actividad", []))
         corte_activo = _recalcular_corte(corte_activo, flujo_fondos, fecha_inicio_acta, mapa_items)
         st.session_state["seguimiento_fisico_corte_activo"] = corte_activo
         _guardar_corte_activo()
