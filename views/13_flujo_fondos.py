@@ -367,6 +367,10 @@ def _cargar_directos() -> pd.DataFrame:
             it.get("cant", it.get("CANT", it.get("CANT.", it.get("CANTIDAD", it.get("cantidad", 0.0))))),
             0.0,
         )
+        
+        unidad = _safe_str(
+            it.get("unidad", it.get("UNIDAD", it.get("Unidad", it.get("UND", it.get("und", "")))))
+        )
 
         if item_key:
             cantidades_por_item[item_key] = cantidad
@@ -401,6 +405,7 @@ def _cargar_directos() -> pd.DataFrame:
                 "ITEM": item,
                 "TIPO": "DIRECTO",
                 "DESCRIPCIÓN": descripcion,
+                "UNIDAD": unidad,
                 "CANTIDAD TOTAL": round(cantidad_total, 4),
                 "VALOR BASE": round(valor_base, 2),
                 "AIU %": round(aiu_pct, 2),
@@ -461,7 +466,7 @@ def _cargar_base_actividades() -> pd.DataFrame:
     indirectos = _cargar_indirectos(max_periodo)
     frames = [df for df in [directos, indirectos] if not df.empty]
     if not frames:
-        return pd.DataFrame(columns=["ROW_ID", "NODE_ID", "ITEM", "TIPO", "DESCRIPCIÓN", "CANTIDAD TOTAL", "VALOR BASE", "AIU %", "VALOR CON AIU"])
+        return pd.DataFrame(columns=["ROW_ID", "NODE_ID", "ITEM", "TIPO", "DESCRIPCIÓN", "UNIDAD", "CANTIDAD TOTAL", "VALOR BASE", "AIU %", "VALOR CON AIU"])
 
     base = pd.concat(frames, ignore_index=True).reset_index(drop=True)
     base["_orden_item"] = base["ITEM"].apply(_key_codigo_natural)
@@ -799,7 +804,7 @@ if not row_sel_df.empty and aplicar_programacion:
     else:
         payload_pct = editor_df_edit.iloc[0].to_dict() if not editor_df_edit.empty else {}
         df_pct_aplicado = _aplicar_editor_a_tabla(df_pct_base, str(row_id_sel), payload_pct, periodos, mapa_activos)
-        df_obra_aplicado = df_pct_aplicado[["ITEM", "TIPO", "DESCRIPCIÓN"]].copy()
+        df_obra_aplicado = df_pct_aplicado[["ITEM", "TIPO", "DESCRIPCIÓN", "UNIDAD"]].copy()
 
         cantidades_base_aplicado = {}
         for _, row_base in base_df.iterrows():
@@ -833,6 +838,7 @@ column_order_pct = [
     "ITEM",
     "TIPO",
     "DESCRIPCIÓN",
+    "UNIDAD",
     "VALOR BASE",
     "AIU %",
     "VALOR CON AIU",
@@ -842,6 +848,7 @@ column_config_pct = {
     "ITEM": st.column_config.TextColumn("ITEM", disabled=True),
     "TIPO": st.column_config.TextColumn("TIPO", disabled=True),
     "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN", disabled=True),
+    "UNIDAD": st.column_config.TextColumn("UNIDAD", disabled=True),
     "VALOR BASE": st.column_config.NumberColumn("VALOR BASE", format="$ %.2f", disabled=True),
     "AIU %": st.column_config.NumberColumn("AIU %", format="%.2f", disabled=True),
     "VALOR CON AIU": st.column_config.NumberColumn("VALOR CON AIU", format="$ %.2f", disabled=True),
@@ -877,7 +884,7 @@ if not invalidas.empty:
 
 st.subheader("Programa de obra")
 
-df_obra = df_pct[["ITEM", "TIPO", "DESCRIPCIÓN"]].copy()
+df_obra = df_pct[["ITEM", "TIPO", "DESCRIPCIÓN", "UNIDAD"]].copy()
 
 cantidades_base = {}
 for _, row in base_df.iterrows():
@@ -890,7 +897,7 @@ for periodo in periodos:
         df_obra["CANTIDAD TOTAL"] * df_pct[f"{periodo} %"].apply(lambda x: _safe_float(x, 0.0) / 100.0)
     ).round(4)
 
-column_order_obra = ["ITEM", "TIPO", "DESCRIPCIÓN", "CANTIDAD TOTAL"] + periodos
+column_order_obra = ["ITEM", "TIPO", "DESCRIPCIÓN", "UNIDAD", "CANTIDAD TOTAL"] + periodos
 column_config_obra = {
     "ITEM": st.column_config.TextColumn("ITEM", disabled=True),
     "TIPO": st.column_config.TextColumn("TIPO", disabled=True),
