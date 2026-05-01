@@ -694,7 +694,7 @@ with col_guardar:
         st.rerun()
 
 with col_limpiar:
-    if st.button("🧹 Nuevo corte vacío", key="seguimiento_fisico_nuevo_corte"):
+    if st.button("➕ Crear nuevo corte", key="seguimiento_fisico_nuevo_vacio"):
         st.session_state["seguimiento_fisico_corte_activo"] = _recalcular_corte(
             _corte_vacio(fecha_corte),
             flujo_fondos,
