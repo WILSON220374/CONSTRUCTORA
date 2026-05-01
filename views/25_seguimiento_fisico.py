@@ -626,17 +626,19 @@ with st.container(border=True):
             y="VALOR",
             color="TIPO DE AVANCE",
             markers=True,
-            title="Evolución financiera del avance físico: programado vs ejecutado",
+            title="Valor ganado",
             color_discrete_map={
                 "$ EJECUTADO": "orange",
                 "$ PROGRAMADO": "blue",
             },
         )
 
-        fechas_corte = sorted(df_grafica["FECHA DE CORTE"].unique())
-
         fechas_programado = sorted(df_programado["FECHA DE CORTE"].unique())
         fechas_ejecutado = sorted(puntos_ejecutado["FECHA DE CORTE"].unique())
+        fechas_todas = sorted(df_grafica["FECHA DE CORTE"].unique())
+
+        fecha_min = min(fechas_todas)
+        fecha_max = max(fechas_todas)
 
         fig_avance.add_trace(
             go.Scatter(
@@ -659,15 +661,17 @@ with st.container(border=True):
                 tickvals=fechas_programado,
                 ticktext=[fecha.strftime("%d-%m-%y") for fecha in fechas_programado],
                 tickangle=0,
+                range=[fecha_min, fecha_max],
             ),
             xaxis2=dict(
-                title="Fechas de corte ejecutado",
                 overlaying="x",
                 side="top",
                 tickmode="array",
                 tickvals=fechas_ejecutado,
                 ticktext=[fecha.strftime("%d-%m-%y") for fecha in fechas_ejecutado],
                 tickangle=0,
+                range=[fecha_min, fecha_max],
+                showgrid=False,
             ),
             yaxis_tickprefix="$ ",
             yaxis_tickformat=",",
