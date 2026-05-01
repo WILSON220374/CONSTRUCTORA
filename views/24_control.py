@@ -826,7 +826,7 @@ guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
-    datdatos["pagos_rows"] = _normalizar_pagos(pagos_editado.to_dict("records"), valor_contrato)
+    datos["pagos_rows"] = _normalizar_pagos(pagos_editado.to_dict("records"), valor_contrato)
     datos["anticipo_rows"] = _normalizar_anticipo(anticipo_editado.to_dict("records"), valor_anticipo)
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
