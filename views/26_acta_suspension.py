@@ -427,15 +427,26 @@ def _generar_word(generales, fila, suspensiones):
     _p(doc, "NOTAS:", bold=True)
     _p(
         doc,
-        "1. Los motivos que dan origen a la presente suspensión y que imposibilitan de manera temporal el desarrollo del contrato no son imputables a las partes contratantes.",
+        "1. Los motivos que dan origen a la presente suspensión y que imposibilitan de manera temporal "
+        "el desarrollo del contrato no son imputables a las partes contratantes."
     )
     _p(
         doc,
-        "2. Dentro de los tres (3) días hábiles siguientes a la fecha de reanudación, el CONTRATISTA se obliga a presentar para su aprobación los certificados de modificación de la garantía única y el seguro constituidos, en los cuales se tenga en cuenta la nueva fecha de vencimiento del plazo contractual. El incumplimiento de esta obligación acarrea el inicio de las acciones administrativas y judiciales a que haya lugar.",
+        "2. Dentro de los tres (3) días hábiles siguientes a la fecha de reanudación, el CONTRATISTA "
+        "se obliga a presentar para su aprobación los certificados de modificación de la garantía única "
+        "y el seguro constituidos, en los cuales se tenga en cuenta la nueva fecha de vencimiento del plazo "
+        "contractual. El incumplimiento de esta obligación acarrea el inicio de las acciones administrativas "
+        "y judiciales a que haya lugar."
     )
     _p(
         doc,
-        "CON LA SUSCRIPCIÓN DE LA PRESENTE ACTA EL CONTRATISTA DE MANERA LIBRE Y ESPONTÁNEA RENUNCIA EXPRESAMENTE A RECLAMAR JUDICIAL O EXTRAJUDICIALMENTE MAYORES COSTOS GENERADOS POR LUCRO CESANTE Y/O DAÑO EMERGENTE; DESEQUILIBRIO ECONÓMICO POR: INTERRUPCIÓN DE SECUENCIA CONSTRUCTIVA, POR STAND BY DE EQUIPOS Y MAQUINARIAS, POR DISPONIBILIDAD DE PERSONAL, EQUIPOS Y MAQUINARIA, POR MAYOR CANTIDAD DE DESPLAZAMIENTOS Y/O TRANSPORTE DE MAQUINARIA, EQUIPO O PERSONAL Y POR MAYOR PERMANENCIA Y DISPOSICIÓN DE LA INFRAESTRUCTURA PROPIA DE LA EMPRESA, TODA VEZ QUE EL CONTRATISTA ES ENTERAMENTE LIBRE PARA DISPONER DE LOS RECURSOS MENCIONADOS.",
+        "3. El contrato debe reanudarse en la fecha indicada en la presente acta sin que sea necesaria "
+        "la elaboración y suscripción de un acta de reanudación."
+    )
+    _p(
+        doc,
+        "4. En el evento en que las causales de suspensión cesen con anterioridad a la fecha de reanudación "
+        "indicada en la presente Acta, se debe diligenciar el Acta de Reanudación del Contrato de Obra."
     )
 
     _p(doc, "")
@@ -549,12 +560,38 @@ st.markdown("### CAUSAS QUE DAN ORIGEN A LA SUSPENSIÓN")
 st.info("Este apartado conserva el texto del formato Excel. No se digita información en esta hoja.")
 st.write("(Describir de manera clara y completa las causales que dan origen a la suspensión justificadas por el Contratista y aprobadas por la interventoría, teniendo en cuenta que las mismas no sean imputables a las partes contratantes).")
 
-st.markdown("### RESPONSABILIDAD Y NOTAS")
-st.write("1. Los motivos que dan origen a la presente suspensión y que imposibilitan de manera temporal el desarrollo del contrato no son imputables a las partes contratantes.")
-st.write("2. El Contratista de obra suspende las labores a partir de la fecha indicada, comprometiéndose a reanudar la ejecución del contrato en la fecha acordada, bajo la responsabilidad exclusiva del mismo.")
-st.write("3. El contrato debe reanudarse en la fecha indicada en la presente acta sin que sea necesaria la elaboración y suscripción de un acta de reanudación.")
-st.write("4. Dentro de los tres (3) días hábiles siguientes a la fecha de reanudación, el CONTRATISTA se obliga a presentar para su aprobación los certificados de modificación de la garantía única y el seguro constituidos, en los cuales se tenga en cuenta la nueva fecha de vencimiento del plazo contractual.")
+st.markdown("### NOTAS:")
+st.write(
+    "1. Los motivos que dan origen a la presente suspensión y que imposibilitan de manera temporal "
+    "el desarrollo del contrato no son imputables a las partes contratantes."
+)
+st.write(
+    "2. Dentro de los tres (3) días hábiles siguientes a la fecha de reanudación, el CONTRATISTA "
+    "se obliga a presentar para su aprobación los certificados de modificación de la garantía única "
+    "y el seguro constituidos, en los cuales se tenga en cuenta la nueva fecha de vencimiento del plazo "
+    "contractual. El incumplimiento de esta obligación acarrea el inicio de las acciones administrativas "
+    "y judiciales a que haya lugar."
+)
+st.write(
+    "3. El contrato debe reanudarse en la fecha indicada en la presente acta sin que sea necesaria "
+    "la elaboración y suscripción de un acta de reanudación."
+)
+st.write(
+    "4. En el evento en que las causales de suspensión cesen con anterioridad a la fecha de reanudación "
+    "indicada en la presente Acta, se debe diligenciar el Acta de Reanudación del Contrato de Obra."
+)
 
+st.markdown("### FIRMAS")
+df_firmas = pd.DataFrame(
+    [
+        {
+            "CONTRATISTA": generales.get("contratista", ""),
+            "INTERVENTOR": generales.get("interventor", ""),
+            "CONTRATANTE": generales.get("contratante", ""),
+        }
+    ]
+)
+st.dataframe(df_firmas, hide_index=True, width="stretch")
 word = _generar_word(generales, fila, suspensiones)
 st.download_button(
     "📄 Descargar Word",
