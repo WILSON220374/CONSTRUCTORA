@@ -353,11 +353,30 @@ def _cargar_directos() -> pd.DataFrame:
     aiu_pct = _get_aiu_pct_global()
     directos_guardados = presupuesto_obra_datos.get("flujo_fondos_directos", []) or []
     items_presupuesto = presupuesto_obra_datos.get("items", {}) or {}
+    grupos_presupuesto = presupuesto_obra_datos.get("grupos_presupuesto_obra", []) or []
 
     cantidades_por_item = {}
     cantidades_por_node = {}
     unidades_por_item = {}
     unidades_por_node = {}
+
+    for grupo in grupos_presupuesto:
+        if not isinstance(grupo, dict):
+            continue
+
+        for fila in grupo.get("rows", []) or []:
+            if not isinstance(fila, dict):
+                continue
+
+            item_key = _safe_str(fila.get("ITEM", ""))
+            item_gober = _safe_str(fila.get("ITEM GOBER", ""))
+            unidad = _safe_str(fila.get("UNIDAD", ""))
+            cantidad = _safe_float(fila.get("CANT", 0.0), 0.0)
+
+            for clave_item in [item_key, item_gober]:
+                if clave_item:
+                    cantidades_por_item[clave_item] = cantidad
+                    unidades_por_item[clave_item] = unidad
 
     for node_key, it in items_presupuesto.items():
         if not isinstance(it, dict):
@@ -369,14 +388,14 @@ def _cargar_directos() -> pd.DataFrame:
             it.get("cant", it.get("CANT", it.get("CANT.", it.get("CANTIDAD", it.get("cantidad", 0.0))))),
             0.0,
         )
-        
+
         unidad = _safe_str(
             it.get("unidad", it.get("UNIDAD", it.get("Unidad", it.get("UND", it.get("und", "")))))
         )
 
         if item_key:
-            cantidades_por_item[item_key] = cantidad
-            unidades_por_item[item_key] = unidad
+            cantidades_por_item.setdefault(item_key, cantidad)
+            unidades_por_item.setdefault(item_key, unidad)
         if node_key:
             cantidades_por_node[node_key] = cantidad
             unidades_por_node[node_key] = unidad
@@ -408,7 +427,7 @@ def _cargar_directos() -> pd.DataFrame:
             unidad = _safe_str(
                 rec.get("UNIDAD", rec.get("unidad", rec.get("Unidad", rec.get("UND", rec.get("und", "")))))
             )
-        
+
         if valor_base <= 0 or not descripcion:
             continue
 
