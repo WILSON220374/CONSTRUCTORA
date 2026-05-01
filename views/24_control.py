@@ -87,8 +87,8 @@ def _leer_contrato_obra():
     return _leer_estado_directo("contrato_obra")
 
 
-def _leer_plan_anticipo():
-    return _leer_estado_directo("plan_inversion_anticipo")
+def _leer_flujo_fondos():
+    return _leer_estado_directo("flujo_fondos")
 
 
 def _primero_no_vacio(*valores):
