@@ -555,7 +555,7 @@ def _armar_tabla_porcentajes(base_df: pd.DataFrame, periodos: List[str], mapa_ac
 
 
 def _tabla_visual_habilitacion(df_pct: pd.DataFrame, periodos: List[str], mapa_activos: Dict[str, Set[int]]):
-    visual = df_pct[["ITEM", "TIPO", "DESCRIPCIÓN"] + [f"{p} %" for p in periodos]].copy()
+    visual = df_pct[["ITEM", "TIPO", "DESCRIPCIÓN", "UNIDAD"] + [f"{p} %" for p in periodos]].copy()
     visual = visual.rename(columns={f"{p} %": p for p in periodos})
 
     def _style_row(row):
@@ -563,7 +563,7 @@ def _tabla_visual_habilitacion(df_pct: pd.DataFrame, periodos: List[str], mapa_a
         activos = mapa_activos.get(row_id, set())
         estilos = []
         for col in visual.columns:
-            if col in ("ITEM", "TIPO", "DESCRIPCIÓN"):
+            if col in ("ITEM", "TIPO", "DESCRIPCIÓN", "UNIDAD"):
                 estilos.append("")
             else:
                 idx = periodos.index(col) + 1
@@ -902,6 +902,7 @@ column_config_obra = {
     "ITEM": st.column_config.TextColumn("ITEM", disabled=True),
     "TIPO": st.column_config.TextColumn("TIPO", disabled=True),
     "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN", disabled=True),
+    "UNIDAD": st.column_config.TextColumn("UNIDAD", disabled=True),
     "CANTIDAD TOTAL": st.column_config.NumberColumn("CANTIDAD TOTAL", format="%.4f", disabled=True),
 }
 for periodo in periodos:
