@@ -305,6 +305,7 @@ else:
         st.Page("views/19_acta_reunion.py", title="22. Acta de reunión", icon="📑"),
         st.Page("views/20_comite_obra.py", title="23. Comité de obra", icon="🧾"),
         st.Page("views/24_control.py", title="24. Control", icon="📊"),
+        st.Page("views/25_seguimiento_fisico.py", title="25. Seguimiento físico", icon="📉"),
     ]
 
     pg = st.navigation(pages)
