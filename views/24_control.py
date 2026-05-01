@@ -416,24 +416,67 @@ def _normalizar_avance_actividad(rows):
     return filas
 
 
-def _normalizar_financiero(rows, valor_anticipo):
+def _normalizar_pagos(rows, valor_contrato):
     filas = []
+    saldo = round(valor_contrato, 2)
+
     for fila in rows or []:
-        base = _fila_financiera_vacia()
+        base = {
+            "FECHA": date.today(),
+            "VALOR FACTURADO": 0.0,
+            "PENDIENTE POR FACTURAR": saldo,
+        }
+
         if isinstance(fila, dict):
             base["FECHA"] = _parse_fecha(fila.get("FECHA"))
-            base["VALOR AMORTIZADO"] = _safe_float(fila.get("VALOR AMORTIZADO"), 0.0)
             base["VALOR FACTURADO"] = _safe_float(fila.get("VALOR FACTURADO"), 0.0)
-            base["PENDIENTE POR FACTURAR"] = _safe_float(fila.get("PENDIENTE POR FACTURAR"), 0.0)
-        base["ANTICIPO"] = round(valor_anticipo, 2)
-        base["SALDO POR AMOTIZAR"] = round(valor_anticipo - base["VALOR AMORTIZADO"], 2)
+
+        saldo = round(saldo - base["VALOR FACTURADO"], 2)
+        base["PENDIENTE POR FACTURAR"] = saldo
         filas.append(base)
 
     if not filas:
-        fila = _fila_financiera_vacia()
-        fila["ANTICIPO"] = round(valor_anticipo, 2)
-        fila["SALDO POR AMOTIZAR"] = round(valor_anticipo, 2)
-        filas.append(fila)
+        filas.append(
+            {
+                "FECHA": date.today(),
+                "VALOR FACTURADO": 0.0,
+                "PENDIENTE POR FACTURAR": round(valor_contrato, 2),
+            }
+        )
+
+    return filas
+
+
+def _normalizar_anticipo(rows, valor_anticipo):
+    filas = []
+    saldo = round(valor_anticipo, 2)
+
+    for fila in rows or []:
+        base = {
+            "FECHA": date.today(),
+            "VALOR INICIAL": saldo,
+            "VALOR AMORTIZADO": 0.0,
+            "SALDO": saldo,
+        }
+
+        if isinstance(fila, dict):
+            base["FECHA"] = _parse_fecha(fila.get("FECHA"))
+            base["VALOR AMORTIZADO"] = _safe_float(fila.get("VALOR AMORTIZADO"), 0.0)
+
+        base["VALOR INICIAL"] = saldo
+        saldo = round(saldo - base["VALOR AMORTIZADO"], 2)
+        base["SALDO"] = saldo
+        filas.append(base)
+
+    if not filas:
+        filas.append(
+            {
+                "FECHA": date.today(),
+                "VALOR INICIAL": round(valor_anticipo, 2),
+                "VALOR AMORTIZADO": 0.0,
+                "SALDO": round(valor_anticipo, 2),
+            }
+        )
 
     return filas
 
@@ -519,7 +562,8 @@ def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
         st.session_state["control_obra_datos"] = {
             "salario_minimo_anio_contrato": _safe_float(cargado.get("salario_minimo_anio_contrato"), 0.0),
             "avance_rows": _normalizar_avance(cargado.get("avance_rows", [])),
-            "financiero_rows": _normalizar_financiero(cargado.get("financiero_rows", []), valor_anticipo),
+            "pagos_rows": _normalizar_pagos(cargado.get("pagos_rows", []), valor_contrato),
+            "anticipo_rows": _normalizar_anticipo(cargado.get("anticipo_rows", []), valor_anticipo),
             "suspensiones_rows": _normalizar_suspensiones(cargado.get("suspensiones_rows", []), fecha_inicio_acta),
             "adiciones_rows": _normalizar_adiciones(cargado.get("adiciones_rows", []), valor_contrato),
             "prorrogas_rows": _normalizar_prorrogas(cargado.get("prorrogas_rows", [])),
@@ -625,26 +669,46 @@ tab_financiero, tab_modificaciones = st.tabs(
 )
 
 with tab_financiero:
-    st.markdown("### RESUMEN FINANCIERO")
-    df_financiero = pd.DataFrame(
-        _normalizar_financiero(datos.get("financiero_rows", []), valor_anticipo),
-        columns=["FECHA", "ANTICIPO", "VALOR AMORTIZADO", "SALDO POR AMOTIZAR", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
+    st.markdown("### PAGOS")
+
+    df_pagos = pd.DataFrame(
+        _normalizar_pagos(datos.get("pagos_rows", []), valor_contrato),
+        columns=["FECHA", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
     )
-    financiero_editado = st.data_editor(
-        df_financiero,
+
+    pagos_editado = st.data_editor(
+        df_pagos,
         hide_index=True,
         width="stretch",
         num_rows="dynamic",
+        disabled=["PENDIENTE POR FACTURAR"],
         column_config={
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
-            "ANTICIPO": st.column_config.NumberColumn("ANTICIPO", format="$ %.2f", disabled=True),
-            "VALOR AMORTIZADO": st.column_config.NumberColumn("VALOR AMORTIZADO", format="$ %.2f"),
-            "SALDO POR AMOTIZAR": st.column_config.NumberColumn("SALDO POR AMOTIZAR", format="$ %.2f", disabled=True),
             "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
             "PENDIENTE POR FACTURAR": st.column_config.NumberColumn("PENDIENTE POR FACTURAR", format="$ %.2f"),
         },
     )
 
+    st.markdown("### ANTICIPO")
+
+    df_anticipo = pd.DataFrame(
+        _normalizar_anticipo(datos.get("anticipo_rows", []), valor_anticipo),
+        columns=["FECHA", "VALOR INICIAL", "VALOR AMORTIZADO", "SALDO"],
+    )
+
+    anticipo_editado = st.data_editor(
+        df_anticipo,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        disabled=["VALOR INICIAL", "SALDO"],
+        column_config={
+            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+            "VALOR INICIAL": st.column_config.NumberColumn("VALOR INICIAL", format="$ %.2f"),
+            "VALOR AMORTIZADO": st.column_config.NumberColumn("VALOR AMORTIZADO", format="$ %.2f"),
+            "SALDO": st.column_config.NumberColumn("SALDO", format="$ %.2f"),
+        },
+    )
 with tab_modificaciones:
     st.markdown("### SUSPENSIONES")
     c3, c4 = st.columns(2)
@@ -758,7 +822,8 @@ guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
-    datos["financiero_rows"] = _normalizar_financiero(financiero_editado.to_dict("records"), valor_anticipo)
+    datdatos["pagos_rows"] = _normalizar_pagos(pagos_editado.to_dict("records"), valor_contrato)
+    datos["anticipo_rows"] = _normalizar_anticipo(anticipo_editado.to_dict("records"), valor_anticipo)
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
     datos["prorrogas_rows"] = _normalizar_prorrogas(prorrogas_editado.to_dict("records"))
