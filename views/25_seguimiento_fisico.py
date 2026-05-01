@@ -544,72 +544,6 @@ with st.container(border=True):
     )
 
 with st.container(border=True):
-    st.markdown("### AVANCE POR ACTIVIDAD")
-
-    col_item, col_agregar = st.columns([2, 1])
-    with col_item:
-        item_nuevo = st.selectbox(
-            "Agregar actividad al seguimiento",
-            options=opciones_items,
-            key="seguimiento_fisico_item_nuevo",
-        )
-
-    with col_agregar:
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        if st.button("➕ Agregar actividad", key="seguimiento_fisico_agregar_actividad"):
-            if item_nuevo:
-                filas_actuales = _normalizar_avance_actividad(corte_activo.get("avance_actividad", []))
-                items_actuales = {_texto(fila.get("ITEM")) for fila in filas_actuales}
-
-                if item_nuevo not in items_actuales:
-                    nueva = _fila_avance_actividad_vacia()
-                    nueva["ITEM"] = item_nuevo
-                    nueva["DESCRIPCIÓN"] = mapa_items.get(item_nuevo, "")
-
-                    pct_programado, valor_programado = _programado_actividad_desde_flujo(
-                        flujo_fondos,
-                        item_nuevo,
-                        fecha_corte_activa,
-                        fecha_inicio_acta,
-                    )
-                    nueva["% PROGRAMADO"] = pct_programado
-                    nueva["$ PROGRAMADO"] = valor_programado
-                    filas_actuales.append(nueva)
-
-                corte_activo["avance_actividad"] = filas_actuales
-                st.session_state["seguimiento_fisico_corte_activo"] = _recalcular_corte(
-                    corte_activo,
-                    flujo_fondos,
-                    fecha_inicio_acta,
-                    mapa_items,
-                )
-                st.rerun()
-
-    filas_avance_actividad = _normalizar_avance_actividad(corte_activo.get("avance_actividad", []))
-
-    df_avance_actividad = pd.DataFrame(
-        filas_avance_actividad,
-        columns=["ITEM", "DESCRIPCIÓN", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
-    )
-
-    avance_actividad_editado = st.data_editor(
-        df_avance_actividad,
-        hide_index=True,
-        width="stretch",
-        num_rows="dynamic",
-        disabled=["ITEM", "DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
-        key="seguimiento_fisico_avance_actividad_editor",
-        column_config={
-            "ITEM": st.column_config.TextColumn("ITEM"),
-            "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
-            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
-            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
-        },
-    )
-
-with st.container(border=True):
     st.markdown("### TRAZABILIDAD HISTÓRICA")
 
     filas_historico = []
@@ -633,7 +567,10 @@ with st.container(border=True):
             }
         )
 
-       if filas_historico:
+    if filas_historico:
+        df_historico = pd.DataFrame(filas_historico).sort_values("FECHA DE CORTE")
+        st.dataframe(df_historico, hide_index=True, width="stretch")
+
         puntos_ejecutado = df_historico[["FECHA DE CORTE", "$ EJECUTADO"]].copy()
         puntos_ejecutado["FECHA DE CORTE"] = pd.to_datetime(puntos_ejecutado["FECHA DE CORTE"]).dt.date
         puntos_ejecutado = puntos_ejecutado.rename(columns={"$ EJECUTADO": "VALOR"})
@@ -711,8 +648,8 @@ with st.container(border=True):
         )
 
         st.plotly_chart(fig_avance, width="stretch")
-
-col_guardar, col_limpiar = st.columns([1, 1])
+    else:
+        st.info("Todavía no hay seguimientos físicos guardados.")
 
 with col_guardar:
     if st.button("💾 Guardar seguimiento físico", type="primary", key="seguimiento_fisico_guardar"):
