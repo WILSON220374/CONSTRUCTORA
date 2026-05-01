@@ -641,7 +641,7 @@ with st.container(border=True):
             xaxis=dict(
                 tickmode="array",
                 tickvals=fechas_corte,
-                ticktext=[fecha.strftime("%b %d, %Y") for fecha in fechas_corte],
+                ticktext=[fecha.strftime("%d-%m-%y") for fecha in fechas_corte],
             ),
             yaxis_tickprefix="$ ",
             yaxis_tickformat=",",
