@@ -1,4 +1,11 @@
 from datetime import date, datetime
+from io import BytesIO
+
+import pandas as pd
+import streamlit as st
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 import pandas as pd
 import streamlit as st
@@ -267,6 +274,168 @@ def _crear_nueva_acta(acta_inicio, contrato_obra, contrato_interventoria):
     return int(nueva["acta_no"])
 
 
+def _agregar_parrafo(doc, texto="", bold=False, align=None):
+    p = doc.add_paragraph()
+    run = p.add_run(_texto(texto))
+    run.bold = bold
+    run.font.size = Pt(10)
+
+    if align is not None:
+        p.alignment = align
+
+    return p
+
+
+def _agregar_tabla(doc, columnas, filas):
+    tabla = doc.add_table(rows=1, cols=len(columnas))
+    tabla.style = "Table Grid"
+
+    for i, columna in enumerate(columnas):
+        celda = tabla.rows[0].cells[i]
+        celda.text = columna
+
+        for p in celda.paragraphs:
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in p.runs:
+                run.bold = True
+                run.font.size = Pt(9)
+
+    for fila in filas:
+        cells = tabla.add_row().cells
+        for i, columna in enumerate(columnas):
+            valor = fila.get(columna, "")
+            if isinstance(valor, (date, datetime)):
+                valor = _parse_fecha(valor).strftime("%d/%m/%Y")
+
+            cells[i].text = _texto(valor)
+
+            for p in cells[i].paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in p.runs:
+                    run.font.size = Pt(9)
+
+    return tabla
+
+
+def _generar_word_todos_comites(actas):
+    doc = Document()
+
+    for idx, acta in enumerate(actas):
+        if idx > 0:
+            doc.add_page_break()
+
+        acta_no = int(acta.get("acta_no") or 0)
+
+        _agregar_parrafo(
+            doc,
+            "ACTA DE COMITÉ DE OBRA",
+            bold=True,
+            align=WD_ALIGN_PARAGRAPH.CENTER,
+        )
+        _agregar_parrafo(
+            doc,
+            "(Este formato aplica únicamente para Comité de Obra)",
+            align=WD_ALIGN_PARAGRAPH.CENTER,
+        )
+
+        _agregar_parrafo(doc, "")
+        _agregar_tabla(
+            doc,
+            ["CAMPO", "INFORMACIÓN"],
+            [
+                {"CAMPO": "ACTA DE COMITÉ DE OBRA No.", "INFORMACIÓN": acta_no},
+                {"CAMPO": "FECHA", "INFORMACIÓN": _parse_fecha(acta.get("fecha")).strftime("%d/%m/%Y")},
+                {"CAMPO": "CONTRATO DE OBRA No.", "INFORMACIÓN": acta.get("contrato_obra_no", "")},
+                {"CAMPO": "CONTRATISTA", "INFORMACIÓN": acta.get("contratista", "")},
+                {"CAMPO": "OBJETO DEL CONTRATO DE OBRA", "INFORMACIÓN": acta.get("objeto_contrato_obra", "")},
+                {"CAMPO": "INTERVENTOR", "INFORMACIÓN": acta.get("interventor", "")},
+            ],
+        )
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(doc, "COMPROMISOS DEL ACTA ANTERIOR", bold=True)
+        acta_anterior = None
+        for posible in actas:
+            if int(posible.get("acta_no") or 0) == acta_no - 1:
+                acta_anterior = posible
+                break
+
+        compromisos_anteriores = _normalizar_compromisos(
+            acta_anterior.get("compromisos", []) if acta_anterior else []
+        )
+        _agregar_tabla(
+            doc,
+            ["COMPROMISOS PACTADOS", "FECHA DE CUMPLIMIENTO", "RESPONSABLES"],
+            compromisos_anteriores,
+        )
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(doc, "LECTURA ACTA ANTERIOR Y VERIFICACIÓN DE CUMPLIMIENTO DE COMPROMISOS", bold=True)
+        _agregar_parrafo(doc, acta.get("lectura_acta_anterior", ""))
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(doc, "TEMAS A DESARROLLAR EN EL PRESENTE COMITÉ DE OBRA", bold=True)
+        _agregar_parrafo(doc, acta.get("temas_comite", ""))
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(doc, "DESARROLLO DEL COMITÉ DE OBRA", bold=True)
+        _agregar_parrafo(doc, acta.get("desarrollo_comite", ""))
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(doc, "COMPROMISOS PACTADOS", bold=True)
+        _agregar_tabla(
+            doc,
+            ["COMPROMISOS PACTADOS", "FECHA DE CUMPLIMIENTO", "RESPONSABLES"],
+            _normalizar_compromisos(acta.get("compromisos", [])),
+        )
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(
+            doc,
+            f"FECHA PRÓXIMO COMITÉ DE OBRA: {_parse_fecha(acta.get('fecha_proximo_comite')).strftime('%d/%m/%Y')}",
+            bold=True,
+        )
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(doc, "NOTAS", bold=True)
+        _agregar_parrafo(
+            doc,
+            "1. Corresponde a la Interventoría ejercer el control y vigilancia de la obra, "
+            "en consecuencia es el Interventor quien dirige los Comités de Obra."
+        )
+        _agregar_parrafo(
+            doc,
+            "2. Las decisiones tomadas en el presente Comité de Obra, no pueden modificar ni modifican "
+            "por sí solas el Contrato de Obra ni el contrato de Interventoría suscritos. En el evento "
+            "de requerirse una modificación contractual debe surtirse de manera previa el trámite interno correspondiente."
+        )
+        _agregar_parrafo(
+            doc,
+            "3. Se firma la presente Acta de Comité de Obra bajo la responsabilidad expresa de quienes en él intervienen, "
+            "de conformidad con las obligaciones y funciones desempeñadas por cada uno de los mismos."
+        )
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(
+            doc,
+            "LA PRESENTE ACTA DE COMITÉ DE OBRA ES LEÍDA EN SU INTEGRIDAD ANTES DE LA SUSCRIPCIÓN POR LOS PARTICIPANTES:",
+            bold=True,
+        )
+
+        _agregar_parrafo(doc, "")
+        _agregar_parrafo(doc, "PARTICIPANTES", bold=True)
+        _agregar_tabla(
+            doc,
+            ["NOMBRE DEL PARTICIPANTE", "CARGO", "EMPRESA / ENTIDAD", "FIRMA"],
+            _normalizar_participantes(acta.get("participantes", [])),
+        )
+
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
 acta_inicio = _leer_acta_inicio()
 contrato_obra = _leer_contrato_obra()
 contrato_interventoria = _leer_contrato_interventoria()
@@ -357,6 +526,16 @@ df_consulta = pd.DataFrame(
     ]
 )
 st.dataframe(df_consulta, width="stretch", hide_index=True)
+
+word_todos_comites = _generar_word_todos_comites(actas)
+
+st.download_button(
+    "📄 Descargar todos los comités en Word",
+    data=word_todos_comites,
+    file_name="actas_comite_obra.docx",
+    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    use_container_width=True,
+)
 
 compromisos_iniciales = pd.DataFrame(
     _normalizar_compromisos(acta.get("compromisos", [])),
