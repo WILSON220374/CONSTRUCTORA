@@ -865,7 +865,7 @@ column_config_pct = {
     "ITEM": st.column_config.TextColumn("ITEM", disabled=True),
     "TIPO": st.column_config.TextColumn("TIPO", disabled=True),
     "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN", disabled=True),
-    "UNIDAD": st.column_config.TextColumn("UNIDAD", disabled=True),
+    "UNIDAD": st.column_config.TextColumn("UNIDAD"),
     "VALOR BASE": st.column_config.NumberColumn("VALOR BASE", format="$ %.2f", disabled=True),
     "AIU %": st.column_config.NumberColumn("AIU %", format="%.2f", disabled=True),
     "VALOR CON AIU": st.column_config.NumberColumn("VALOR CON AIU", format="$ %.2f", disabled=True),
@@ -919,7 +919,7 @@ column_config_obra = {
     "ITEM": st.column_config.TextColumn("ITEM", disabled=True),
     "TIPO": st.column_config.TextColumn("TIPO", disabled=True),
     "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN", disabled=True),
-    "UNIDAD": st.column_config.TextColumn("UNIDAD", disabled=True),
+    "UNIDAD": st.column_config.TextColumn("UNIDAD"),
     "CANTIDAD TOTAL": st.column_config.NumberColumn("CANTIDAD TOTAL", format="%.4f", disabled=True),
 }
 for periodo in periodos:
