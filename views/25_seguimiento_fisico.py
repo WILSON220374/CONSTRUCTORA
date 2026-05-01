@@ -635,7 +635,7 @@ with st.container(border=True):
 
         fechas_corte = sorted(df_grafica["FECHA DE CORTE"].unique())
 
-                fechas_programado = sorted(df_programado["FECHA DE CORTE"].unique())
+        fechas_programado = sorted(df_programado["FECHA DE CORTE"].unique())
         fechas_ejecutado = sorted(puntos_ejecutado["FECHA DE CORTE"].unique())
 
         fig_avance.add_trace(
