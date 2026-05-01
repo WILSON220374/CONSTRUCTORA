@@ -579,8 +579,43 @@ with st.container(border=True):
                 )
                 st.rerun()
 
+    filas_avance_actividad = _normalizar_avance_actividad(corte_activo.get("avance_actividad", []))
+
+    if filas_avance_actividad:
+        opciones_eliminar = [
+            f"{_texto(fila.get('ITEM'))} - {_texto(fila.get('DESCRIPCIÓN'))}"
+            for fila in filas_avance_actividad
+            if _texto(fila.get("ITEM"))
+        ]
+
+        col_eliminar, col_boton_eliminar = st.columns([2, 1])
+
+        with col_eliminar:
+            actividad_eliminar = st.selectbox(
+                "Eliminar actividad del seguimiento",
+                options=[""] + opciones_eliminar,
+                key="seguimiento_fisico_actividad_eliminar",
+            )
+
+        with col_boton_eliminar:
+            st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("🗑️ Eliminar actividad", key="seguimiento_fisico_eliminar_actividad"):
+                if actividad_eliminar:
+                    item_eliminar = actividad_eliminar.split(" - ")[0].strip()
+                    corte_activo["avance_actividad"] = [
+                        fila for fila in filas_avance_actividad
+                        if _texto(fila.get("ITEM")) != item_eliminar
+                    ]
+                    st.session_state["seguimiento_fisico_corte_activo"] = _recalcular_corte(
+                        corte_activo,
+                        flujo_fondos,
+                        fecha_inicio_acta,
+                        mapa_items,
+                    )
+                    st.rerun()
+
     df_avance_actividad = pd.DataFrame(
-        corte_activo.get("avance_actividad", []),
+        filas_avance_actividad,
         columns=["ITEM", "DESCRIPCIÓN", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
     )
 
