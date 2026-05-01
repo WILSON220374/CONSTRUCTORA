@@ -464,7 +464,7 @@ contrato_obra = _leer_contrato_obra()
 flujo_fondos = _leer_flujo_fondos()
 
 def _mapa_items_desde_flujo(flujo_fondos):
-    programa = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
+    programa = flujo_fondos.get("__tablas__", {}).get("df_programa_obra", [])
     mapa = {}
 
     if isinstance(programa, list):
