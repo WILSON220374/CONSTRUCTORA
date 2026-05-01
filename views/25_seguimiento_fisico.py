@@ -651,7 +651,7 @@ with st.container(border=True):
     else:
         st.info("Todavía no hay seguimientos físicos guardados.")
         
-        col_guardar, col_limpiar = st.columns([1, 1])
+col_guardar, col_limpiar = st.columns([1, 1])
         
 with col_guardar:
     if st.button("💾 Guardar seguimiento físico", type="primary", key="seguimiento_fisico_guardar"):
