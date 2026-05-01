@@ -463,6 +463,63 @@ acta_inicio = _leer_acta_inicio()
 contrato_obra = _leer_contrato_obra()
 flujo_fondos = _leer_flujo_fondos()
 
+def _mapa_items_desde_flujo(flujo_fondos):
+    programa = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
+    mapa = {}
+
+    if isinstance(programa, list):
+        for fila in programa:
+            if isinstance(fila, dict):
+                item = _texto(fila.get("ITEM"))
+                descripcion = _primero_no_vacio(
+                    fila.get("DESCRIPCIÓN"),
+                    fila.get("DESCRIPCION"),
+                    fila.get("DESCRIPCIÓN DEL ÍTEM"),
+                    fila.get("DESCRIPCION DEL ITEM"),
+                )
+                if item:
+                    mapa[item] = descripcion
+
+    return mapa
+
+
+def _mapa_programa_obra_desde_flujo(flujo_fondos):
+    programa = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
+    mapa = {}
+
+    if isinstance(programa, list):
+        for fila in programa:
+            if not isinstance(fila, dict):
+                continue
+
+            item = _texto(fila.get("ITEM"))
+            if not item:
+                continue
+
+            mapa[item] = {
+                "DESCRIPCIÓN": _primero_no_vacio(
+                    fila.get("DESCRIPCIÓN"),
+                    fila.get("DESCRIPCION"),
+                    fila.get("DESCRIPCIÓN DEL ÍTEM"),
+                    fila.get("DESCRIPCION DEL ITEM"),
+                ),
+                "UNIDAD": _primero_no_vacio(
+                    fila.get("UNIDAD"),
+                    fila.get("unidad"),
+                    fila.get("UND"),
+                    fila.get("und"),
+                ),
+                "CANTIDAD": _safe_float(
+                    fila.get(
+                        "CANTIDAD TOTAL",
+                        fila.get("CANTIDAD", fila.get("CANT", fila.get("cantidad", 0.0))),
+                    ),
+                    0.0,
+                ),
+            }
+
+    return mapa
+
 fecha_inicio_acta = _fecha_inicio_desde_fuentes(acta_inicio)
 valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
 mapa_items = _mapa_items_desde_flujo(flujo_fondos)
