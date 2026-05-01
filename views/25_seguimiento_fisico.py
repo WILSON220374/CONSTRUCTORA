@@ -633,22 +633,54 @@ with st.container(border=True):
             }
         )
 
-    if filas_historico:
-        df_historico = pd.DataFrame(filas_historico).sort_values("FECHA DE CORTE")
-        st.dataframe(df_historico, hide_index=True, width="stretch")
-    else:
-        st.info("Todavía no hay seguimientos físicos guardados.")
+       if filas_historico:
+        puntos_ejecutado = df_historico[["FECHA DE CORTE", "$ EJECUTADO"]].copy()
+        puntos_ejecutado["FECHA DE CORTE"] = pd.to_datetime(puntos_ejecutado["FECHA DE CORTE"]).dt.date
+        puntos_ejecutado = puntos_ejecutado.rename(columns={"$ EJECUTADO": "VALOR"})
+        puntos_ejecutado["TIPO DE AVANCE"] = "$ EJECUTADO"
 
-    if filas_historico:
-        df_grafica = df_historico[["FECHA DE CORTE", "$ EJECUTADO", "$ PROGRAMADO"]].copy()
-        df_grafica["FECHA DE CORTE"] = pd.to_datetime(df_grafica["FECHA DE CORTE"]).dt.date
+        tablas_flujo = flujo_fondos.get("__tablas__", {})
+        resumen_flujo = tablas_flujo.get("df_resumen", [])
 
-        df_grafica = df_grafica.melt(
-            id_vars="FECHA DE CORTE",
-            value_vars=["$ EJECUTADO", "$ PROGRAMADO"],
-            var_name="TIPO DE AVANCE",
-            value_name="VALOR",
+        fila_acumulado = {}
+        if isinstance(resumen_flujo, list):
+            for fila in resumen_flujo:
+                if isinstance(fila, dict) and _texto(fila.get("CONCEPTO")).upper() == "ACUMULADO":
+                    fila_acumulado = fila
+                    break
+
+        puntos_programado = []
+
+        fecha_inicio_programacion = _parse_fecha(fecha_inicio_acta)
+        puntos_programado.append(
+            {
+                "FECHA DE CORTE": fecha_inicio_programacion,
+                "VALOR": 0.0,
+                "TIPO DE AVANCE": "$ PROGRAMADO",
+            }
         )
+
+        periodos_programacion = []
+        for columna in fila_acumulado.keys():
+            nombre = _texto(columna)
+            if nombre.startswith("Periodo "):
+                try:
+                    numero_periodo = int(nombre.replace("Periodo ", "").strip())
+                    periodos_programacion.append((numero_periodo, nombre))
+                except Exception:
+                    pass
+
+        for numero_periodo, columna in sorted(periodos_programacion, key=lambda x: x[0]):
+            puntos_programado.append(
+                {
+                    "FECHA DE CORTE": fecha_inicio_programacion + timedelta(days=(numero_periodo * 30) - 1),
+                    "VALOR": _safe_float(fila_acumulado.get(columna), 0.0),
+                    "TIPO DE AVANCE": "$ PROGRAMADO",
+                }
+            )
+
+        df_programado = pd.DataFrame(puntos_programado)
+        df_grafica = pd.concat([puntos_ejecutado, df_programado], ignore_index=True)
 
         fig_avance = px.line(
             df_grafica,
@@ -657,6 +689,10 @@ with st.container(border=True):
             color="TIPO DE AVANCE",
             markers=True,
             title="Evolución financiera del avance físico: programado vs ejecutado",
+            color_discrete_map={
+                "$ EJECUTADO": "orange",
+                "$ PROGRAMADO": "blue",
+            },
         )
 
         fechas_corte = sorted(df_grafica["FECHA DE CORTE"].unique())
