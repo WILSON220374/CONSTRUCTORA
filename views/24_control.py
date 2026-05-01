@@ -233,9 +233,85 @@ def _programado_desde_flujo(flujo_fondos, fecha_corte, fecha_inicio):
 
     return round(pct_programado, 4), round(valor_programado, 2)
 
+def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_inicio):
+    tablas = flujo_fondos.get("__tablas__", {})
+    programa = tablas.get("df_programa_valores", [])
+
+    if not isinstance(programa, list) or not programa:
+        return 0.0, 0.0
+
+    item = _texto(item)
+    fila_item = {}
+
+    for fila in programa:
+        if not isinstance(fila, dict):
+            continue
+
+        if _texto(fila.get("ITEM")) == item:
+            fila_item = fila
+            break
+
+    if not fila_item:
+        return 0.0, 0.0
+
+    valor_total_item = _safe_float(fila_item.get("VALOR CON AIU"), 0.0)
+
+    periodos = []
+    for columna in fila_item.keys():
+        nombre = _texto(columna)
+        if nombre.startswith("Periodo ") and nombre.endswith(" $"):
+            try:
+                numero = int(nombre.replace("Periodo ", "").replace(" $", "").strip())
+                periodos.append((numero, nombre))
+            except Exception:
+                continue
+
+    if not periodos or valor_total_item <= 0:
+        return 0.0, 0.0
+
+    periodos = sorted(periodos, key=lambda x: x[0])
+
+    fecha_corte = _parse_fecha(fecha_corte)
+    fecha_inicio = _parse_fecha(fecha_inicio)
+
+    dias_transcurridos = (fecha_corte - fecha_inicio).days + 1
+
+    if dias_transcurridos <= 0:
+        return 0.0, 0.0
+
+    periodo_actual = int((dias_transcurridos - 1) // 30) + 1
+    dia_periodo = ((dias_transcurridos - 1) % 30) + 1
+    factor_periodo = dia_periodo / 30.0
+
+    periodo_actual = min(periodo_actual, periodos[-1][0])
+
+    valor_anterior = 0.0
+    for numero, columna in periodos:
+        if numero < periodo_actual:
+            valor_anterior += _safe_float(fila_item.get(columna), 0.0)
+
+    columna_actual = f"Periodo {periodo_actual} $"
+    valor_mes_actual = _safe_float(fila_item.get(columna_actual), 0.0)
+
+    valor_programado = valor_anterior + (valor_mes_actual * factor_periodo)
+    pct_programado = (valor_programado / valor_total_item) * 100.0
+
+    return round(pct_programado, 4), round(valor_programado, 2)
+
 
 def _fila_avance_vacia():
     return {
+        "FECHA": date.today(),
+        "% EJECUTADO": 0.0,
+        "$ EJECUTADO": 0.0,
+        "% PROGRAMADO": 0.0,
+        "$ PROGRAMADO": 0.0,
+    }
+
+def _fila_avance_actividad_vacia():
+    return {
+        "ITEM": "",
+        "DESCRIPCIÓN": "",
         "FECHA": date.today(),
         "% EJECUTADO": 0.0,
         "$ EJECUTADO": 0.0,
@@ -305,6 +381,25 @@ def _normalizar_avance(rows):
 
     if not filas:
         filas.append(_fila_avance_vacia())
+
+    return filas
+
+def _normalizar_avance_actividad(rows):
+    filas = []
+    for fila in rows or []:
+        base = _fila_avance_actividad_vacia()
+        if isinstance(fila, dict):
+            base["ITEM"] = _texto(fila.get("ITEM"))
+            base["DESCRIPCIÓN"] = _texto(fila.get("DESCRIPCIÓN"))
+            base["FECHA"] = _parse_fecha(fila.get("FECHA"))
+            base["% EJECUTADO"] = _safe_float(fila.get("% EJECUTADO"), 0.0)
+            base["$ EJECUTADO"] = _safe_float(fila.get("$ EJECUTADO"), 0.0)
+            base["% PROGRAMADO"] = _safe_float(fila.get("% PROGRAMADO"), 0.0)
+            base["$ PROGRAMADO"] = _safe_float(fila.get("$ PROGRAMADO"), 0.0)
+        filas.append(base)
+
+    if not filas:
+        filas.append(_fila_avance_actividad_vacia())
 
     return filas
 
@@ -527,6 +622,58 @@ with tab_fisico:
         },
     )
 
+    st.markdown("### AVANCE POR ACTIVIDAD")
+
+    programa_valores = flujo_fondos.get("__tablas__", {}).get("df_programa_valores", [])
+    mapa_items = {}
+
+    if isinstance(programa_valores, list):
+        for fila in programa_valores:
+            if isinstance(fila, dict):
+                item = _texto(fila.get("ITEM"))
+                descripcion = _texto(fila.get("DESCRIPCIÓN"))
+                if item:
+                    mapa_items[item] = descripcion
+
+    opciones_items = [""] + sorted(mapa_items.keys(), key=_key_codigo_natural)
+
+    avance_actividad_rows = _normalizar_avance_actividad(datos.get("avance_actividad_rows", []))
+
+    for fila in avance_actividad_rows:
+        item = _texto(fila.get("ITEM"))
+        fila["DESCRIPCIÓN"] = mapa_items.get(item, _texto(fila.get("DESCRIPCIÓN")))
+
+        pct_programado, valor_programado = _programado_actividad_desde_flujo(
+            flujo_fondos,
+            item,
+            fila.get("FECHA"),
+            fecha_inicio_acta,
+        )
+        fila["% PROGRAMADO"] = pct_programado
+        fila["$ PROGRAMADO"] = valor_programado
+
+    df_avance_actividad = pd.DataFrame(
+        avance_actividad_rows,
+        columns=["ITEM", "DESCRIPCIÓN", "FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
+    )
+
+    avance_actividad_editado = st.data_editor(
+        df_avance_actividad,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        disabled=["DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
+        column_config={
+            "ITEM": st.column_config.SelectboxColumn("ITEM", options=opciones_items),
+            "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
+            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
+            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
+            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
+            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
+            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
+        },
+    )
+
 with tab_financiero:
     st.markdown("### RESUMEN FINANCIERO")
     df_financiero = pd.DataFrame(
@@ -673,7 +820,24 @@ if guardar_form:
         fila["% PROGRAMADO"] = pct_programado
         fila["$ PROGRAMADO"] = valor_programado
 
-    datos["avance_rows"] = avance_guardar
+        datos["avance_rows"] = avance_guardar
+
+    avance_actividad_guardar = _normalizar_avance_actividad(avance_actividad_editado.to_dict("records"))
+
+    for fila in avance_actividad_guardar:
+        item = _texto(fila.get("ITEM"))
+        fila["DESCRIPCIÓN"] = mapa_items.get(item, _texto(fila.get("DESCRIPCIÓN")))
+
+        pct_programado, valor_programado = _programado_actividad_desde_flujo(
+            flujo_fondos,
+            item,
+            fila.get("FECHA"),
+            fecha_inicio_acta,
+        )
+        fila["% PROGRAMADO"] = pct_programado
+        fila["$ PROGRAMADO"] = valor_programado
+
+    datos["avance_actividad_rows"] = avance_actividad_guardar
     datos["financiero_rows"] = _normalizar_financiero(financiero_editado.to_dict("records"), valor_anticipo)
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
