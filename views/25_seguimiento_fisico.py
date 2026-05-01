@@ -562,6 +562,87 @@ with st.container(border=True):
     )
 
 with st.container(border=True):
+    st.markdown("### AVANCE POR ACTIVIDAD")
+
+    col_item_nuevo, col_boton_item = st.columns([2, 1])
+
+    with col_item_nuevo:
+        item_nuevo_avance = st.selectbox(
+            "Agregar actividad al seguimiento",
+            options=opciones_items,
+            key="seguimiento_fisico_item_nuevo_avance",
+        )
+
+    with col_boton_item:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        if st.button("➕ Agregar actividad", key="seguimiento_fisico_agregar_actividad"):
+            if item_nuevo_avance:
+                nueva = _fila_avance_actividad_vacia()
+                nueva["ITEM"] = item_nuevo_avance
+                nueva["DESCRIPCIÓN"] = mapa_items.get(item_nuevo_avance, "")
+                nueva["FECHA"] = fecha_corte_activa
+
+                pct_programado, valor_programado = _programado_actividad_desde_flujo(
+                    flujo_fondos,
+                    item_nuevo_avance,
+                    fecha_corte_activa,
+                    fecha_inicio_acta,
+                )
+                nueva["% PROGRAMADO"] = pct_programado
+                nueva["$ PROGRAMADO"] = valor_programado
+
+                filas_actuales = [
+                    fila for fila in _normalizar_avance_actividad(corte_activo.get("avance_actividad", []))
+                    if _texto(fila.get("ITEM"))
+                ]
+
+                corte_activo["avance_actividad"] = filas_actuales + [nueva]
+                corte_activo = _recalcular_corte(corte_activo, flujo_fondos, fecha_inicio_acta, mapa_items)
+                st.session_state["seguimiento_fisico_corte_activo"] = corte_activo
+                st.rerun()
+
+    avance_actividad_rows = [
+        fila for fila in _normalizar_avance_actividad(corte_activo.get("avance_actividad", []))
+        if _texto(fila.get("ITEM"))
+    ]
+
+    for fila in avance_actividad_rows:
+        item = _texto(fila.get("ITEM"))
+        fila["DESCRIPCIÓN"] = mapa_items.get(item, _texto(fila.get("DESCRIPCIÓN")))
+
+        pct_programado, valor_programado = _programado_actividad_desde_flujo(
+            flujo_fondos,
+            item,
+            fecha_corte_activa,
+            fecha_inicio_acta,
+        )
+        fila["FECHA"] = fecha_corte_activa
+        fila["% PROGRAMADO"] = pct_programado
+        fila["$ PROGRAMADO"] = valor_programado
+
+    df_avance_actividad = pd.DataFrame(
+        avance_actividad_rows,
+        columns=["ITEM", "DESCRIPCIÓN", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
+    )
+
+    avance_actividad_editado = st.data_editor(
+        df_avance_actividad,
+        hide_index=True,
+        width="stretch",
+        num_rows="dynamic",
+        disabled=["ITEM", "DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
+        key="seguimiento_fisico_avance_actividad_editor",
+        column_config={
+            "ITEM": st.column_config.TextColumn("ITEM"),
+            "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
+            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
+            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
+            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
+            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
+        },
+    )
+
+with st.container(border=True):
     st.markdown("### EVOLUCIÓN")
 
     filas_historico = []
@@ -879,7 +960,7 @@ col_guardar = st.columns([1])[0]
 with col_guardar:
     if st.button("💾 Guardar seguimiento físico", type="primary", key="seguimiento_fisico_guardar"):
         corte_activo["avance_general"] = _normalizar_avance_general(avance_general_editado.to_dict("records"))
-        corte_activo["avance_actividad"] = _normalizar_avance_actividad(corte_activo.get("avance_actividad", []))
+        corte_activo["avance_actividad"] = _normalizar_avance_actividad(avance_actividad_editado.to_dict("records"))
         corte_activo = _recalcular_corte(corte_activo, flujo_fondos, fecha_inicio_acta, mapa_items)
         st.session_state["seguimiento_fisico_corte_activo"] = corte_activo
         _guardar_corte_activo()
