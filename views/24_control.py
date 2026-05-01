@@ -698,7 +698,8 @@ with tab_financiero:
     )
 
     pagos_recalculados = _normalizar_pagos(pagos_editado.to_dict("records"), valor_contrato)
-    datos["pagos_rows"] = pagos_recalculados
+    if pagos_recalculados != datos.get("pagos_rows", []):
+        datos["pagos_rows"] = pagos_recalculados
 
     st.markdown("### ANTICIPO")
 
@@ -723,7 +724,14 @@ with tab_financiero:
     )
 
     anticipo_recalculado = _normalizar_anticipo(anticipo_editado.to_dict("records"), valor_anticipo)
-    datos["anticipo_rows"] = anticipo_recalculado
+    if anticipo_recalculado != datos.get("anticipo_rows", []):
+        datos["anticipo_rows"] = anticipo_recalculado
+
+    if (
+        pagos_recalculados != df_pagos.to_dict("records")
+        or anticipo_recalculado != df_anticipo.to_dict("records")
+    ):
+        st.rerun()
         
 with tab_modificaciones:
     st.markdown("### SUSPENSIONES")
