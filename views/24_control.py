@@ -679,3 +679,4 @@ if guardar_form:
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
     datos["prorrogas_rows"] = _normalizar_prorrogas(prorrogas_editado.to_dict("records"))
     _guardar()
+    st.rerun()
