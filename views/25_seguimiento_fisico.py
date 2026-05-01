@@ -453,14 +453,19 @@ numero_contrato = _primero_no_vacio(
     contrato_obra.get("numero_contrato"),
 )
 contratista = _primero_no_vacio(
+    acta_inicio.get("nombre_firma_contratista"),
     acta_inicio.get("contratista"),
     acta_inicio.get("nombre_contratista"),
+    contrato_obra.get("nombre_contratista"),
     contrato_obra.get("contratista"),
 )
+
 objeto_contrato = _primero_no_vacio(
     acta_inicio.get("objeto_contrato"),
     acta_inicio.get("objeto"),
+    contrato_obra.get("objeto_general"),
     contrato_obra.get("objeto_contrato"),
+    contrato_obra.get("objeto"),
 )
 
 with st.container(border=True):
