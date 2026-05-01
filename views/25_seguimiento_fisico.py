@@ -483,6 +483,19 @@ with st.container(border=True):
     st.text_area("OBJETO DEL CONTRATO", value=objeto_contrato, disabled=True, height=100)
 
 with st.container(border=True):
+    st.markdown("### CREAR NUEVO CORTE")
+
+    if st.button("➕ Crear nuevo corte", key="seguimiento_fisico_nuevo_vacio", type="primary"):
+        st.session_state["seguimiento_fisico_corte_activo"] = _recalcular_corte(
+            _corte_vacio(fecha_corte),
+            flujo_fondos,
+            fecha_inicio_acta,
+            mapa_items,
+        )
+        st.session_state["seguimiento_fisico_fecha_activa"] = _parse_fecha(fecha_corte).isoformat()
+        st.rerun()
+
+with st.container(border=True):
     st.markdown("### CREAR O CONSULTAR CORTE FÍSICO")
 
     col_fecha, col_consulta, col_cargar = st.columns([1, 1, 0.7])
@@ -681,7 +694,7 @@ with st.container(border=True):
     else:
         st.info("Todavía no hay seguimientos físicos guardados.")
         
-col_guardar, col_limpiar = st.columns([1, 1])
+col_guardar = st.columns([1])[0]
         
 with col_guardar:
     if st.button("💾 Guardar seguimiento físico", type="primary", key="seguimiento_fisico_guardar"):
@@ -691,15 +704,4 @@ with col_guardar:
         st.session_state["seguimiento_fisico_corte_activo"] = corte_activo
         _guardar_corte_activo()
         st.success("Seguimiento físico guardado.")
-        st.rerun()
-
-with col_limpiar:
-    if st.button("➕ Crear nuevo corte", key="seguimiento_fisico_nuevo_vacio"):
-        st.session_state["seguimiento_fisico_corte_activo"] = _recalcular_corte(
-            _corte_vacio(fecha_corte),
-            flujo_fondos,
-            fecha_inicio_acta,
-            mapa_items,
-        )
-        st.session_state["seguimiento_fisico_fecha_activa"] = _parse_fecha(fecha_corte).isoformat()
         st.rerun()
