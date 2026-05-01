@@ -555,6 +555,9 @@ def _armar_tabla_porcentajes(base_df: pd.DataFrame, periodos: List[str], mapa_ac
 
 
 def _tabla_visual_habilitacion(df_pct: pd.DataFrame, periodos: List[str], mapa_activos: Dict[str, Set[int]]):
+    if "UNIDAD" not in df_pct.columns:
+        df_pct["UNIDAD"] = ""
+
     visual = df_pct[["ITEM", "TIPO", "DESCRIPCIÓN", "UNIDAD"] + [f"{p} %" for p in periodos]].copy()
     visual = visual.rename(columns={f"{p} %": p for p in periodos})
 
