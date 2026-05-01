@@ -487,6 +487,13 @@ with st.container(border=True):
 
     col_fecha_nuevo, col_boton_nuevo = st.columns([1, 0.7])
 
+    with col_fecha_nuevo:
+        fecha_corte = st.date_input(
+            "FECHA DE CORTE",
+            value=_parse_fecha(datos.get("ultima_fecha_corte")) if _texto(datos.get("ultima_fecha_corte")) else date.today(),
+            key="seguimiento_fisico_fecha_corte_input",
+        )
+
     with col_boton_nuevo:
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         if st.button("➕ Crear nuevo corte", key="seguimiento_fisico_nuevo_vacio", type="primary"):
