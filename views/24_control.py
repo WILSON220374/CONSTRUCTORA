@@ -657,6 +657,23 @@ with tab_fisico:
 
     avance_actividad_rows = _normalizar_avance_actividad(datos.get("avance_actividad_rows", []))
 
+    estado_editor_actividad = st.session_state.get("control_avance_actividad_editor", {})
+
+    if isinstance(estado_editor_actividad, dict):
+        for indice, cambios in estado_editor_actividad.get("edited_rows", {}).items():
+            try:
+                indice = int(indice)
+                if 0 <= indice < len(avance_actividad_rows) and isinstance(cambios, dict):
+                    avance_actividad_rows[indice].update(cambios)
+            except Exception:
+                pass
+
+        for fila_nueva in estado_editor_actividad.get("added_rows", []):
+            if isinstance(fila_nueva, dict):
+                nueva = _fila_avance_actividad_vacia()
+                nueva.update(fila_nueva)
+                avance_actividad_rows.append(nueva)
+
     for fila in avance_actividad_rows:
         item = _texto(fila.get("ITEM"))
         fila["DESCRIPCIÓN"] = mapa_items.get(item, _texto(fila.get("DESCRIPCIÓN")))
