@@ -421,17 +421,20 @@ def _normalizar_pagos(rows, valor_contrato):
     saldo = round(valor_contrato, 2)
 
     for fila in rows or []:
+        valor_inicial = saldo
+
         base = {
             "FECHA": date.today(),
+            "VALOR INICIAL": valor_inicial,
             "VALOR FACTURADO": 0.0,
-            "PENDIENTE POR FACTURAR": saldo,
+            "PENDIENTE POR FACTURAR": valor_inicial,
         }
 
         if isinstance(fila, dict):
             base["FECHA"] = _parse_fecha(fila.get("FECHA"))
             base["VALOR FACTURADO"] = _safe_float(fila.get("VALOR FACTURADO"), 0.0)
 
-        saldo = round(saldo - base["VALOR FACTURADO"], 2)
+        saldo = round(valor_inicial - base["VALOR FACTURADO"], 2)
         base["PENDIENTE POR FACTURAR"] = saldo
         filas.append(base)
 
@@ -439,6 +442,7 @@ def _normalizar_pagos(rows, valor_contrato):
         filas.append(
             {
                 "FECHA": date.today(),
+                "VALOR INICIAL": round(valor_contrato, 2),
                 "VALOR FACTURADO": 0.0,
                 "PENDIENTE POR FACTURAR": round(valor_contrato, 2),
             }
@@ -672,8 +676,8 @@ with tab_financiero:
     st.markdown("### PAGOS")
 
     df_pagos = pd.DataFrame(
-        _normalizar_pagos(datos.get("pagos_rows", []), valor_contrato),
-        columns=["FECHA", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
+    _normalizar_pagos(datos.get("pagos_rows", []), valor_contrato),
+    columns=["FECHA", "VALOR INICIAL", "VALOR FACTURADO", "PENDIENTE POR FACTURAR"],
     )
 
     pagos_editado = st.data_editor(
@@ -681,7 +685,7 @@ with tab_financiero:
         hide_index=True,
         width="stretch",
         num_rows="dynamic",
-        disabled=["PENDIENTE POR FACTURAR"],
+        disabled=["VALOR INICIAL", "PENDIENTE POR FACTURAR"],
         column_config={
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
@@ -705,8 +709,8 @@ with tab_financiero:
         column_config={
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "VALOR INICIAL": st.column_config.NumberColumn("VALOR INICIAL", format="$ %.2f"),
-            "VALOR AMORTIZADO": st.column_config.NumberColumn("VALOR AMORTIZADO", format="$ %.2f"),
-            "SALDO": st.column_config.NumberColumn("SALDO", format="$ %.2f"),
+            "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
+            "PENDIENTE POR FACTURAR": st.column_config.NumberColumn("PENDIENTE POR FACTURAR", format="$ %.2f"),
         },
     )
 with tab_modificaciones:
