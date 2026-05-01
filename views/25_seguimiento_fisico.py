@@ -562,7 +562,7 @@ with st.container(border=True):
     )
 
 with st.container(border=True):
-    st.markdown("### TRAZABILIDAD HISTÓRICA")
+    st.markdown("### EVOLUCIÓN")
 
     filas_historico = []
     for clave_fecha, corte in seguimientos.items():
