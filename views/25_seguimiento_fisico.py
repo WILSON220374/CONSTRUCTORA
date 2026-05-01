@@ -734,6 +734,46 @@ with st.container(border=True):
         )
 
         st.plotly_chart(fig_avance, width="stretch")
+
+
+        avance_general_actual = _normalizar_avance_general(corte_activo.get("avance_general", []))[0]
+
+        pv = _safe_float(avance_general_actual.get("$ PROGRAMADO"), 0.0)
+        ev = valor_contrato * (_safe_float(avance_general_actual.get("% EJECUTADO"), 0.0) / 100.0)
+        ac = _safe_float(avance_general_actual.get("$ EJECUTADO"), 0.0)
+
+        df_valor_ganado = pd.DataFrame(
+            [
+                {
+                    "ÍNDICE": "PV",
+                    "DESCRIPCIÓN": "VALOR PLANEADO",
+                    "VALOR": pv,
+                    "CÁLCULO": "Avance en $ programado a la fecha de corte",
+                },
+                {
+                    "ÍNDICE": "EV",
+                    "DESCRIPCIÓN": "VALOR GANADO",
+                    "VALOR": ev,
+                    "CÁLCULO": "Valor del contrato × porcentaje real de avance",
+                },
+                {
+                    "ÍNDICE": "AC",
+                    "DESCRIPCIÓN": "COSTO DE LAS ACTIVIDADES",
+                    "VALOR": ac,
+                    "CÁLCULO": "Costo cargado como $ ejecutado",
+                },
+            ]
+        )
+
+        st.markdown("### INDICADORES DE VALOR GANADO")
+        st.dataframe(
+            df_valor_ganado,
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "VALOR": st.column_config.NumberColumn("VALOR", format="$ %.2f"),
+            },
+        )
         
     else:
         st.info("Todavía no hay seguimientos físicos guardados.")
