@@ -639,6 +639,34 @@ with st.container(border=True):
     else:
         st.info("Todavía no hay seguimientos físicos guardados.")
 
+    if filas_historico:
+        df_grafica = df_historico[["FECHA DE CORTE", "% EJECUTADO", "% PROGRAMADO"]].copy()
+
+        df_grafica = df_grafica.melt(
+            id_vars="FECHA DE CORTE",
+            value_vars=["% EJECUTADO", "% PROGRAMADO"],
+            var_name="TIPO DE AVANCE",
+            value_name="PORCENTAJE",
+        )
+
+        fig_avance = px.line(
+            df_grafica,
+            x="FECHA DE CORTE",
+            y="PORCENTAJE",
+            color="TIPO DE AVANCE",
+            markers=True,
+            title="Evolución del avance físico: programado vs ejecutado",
+        )
+
+        fig_avance.update_layout(
+            xaxis_title="Fecha de corte",
+            yaxis_title="Porcentaje de avance",
+            legend_title="Tipo de avance",
+        )
+
+        st.plotly_chart(fig_avance, width="stretch")
+
+
 col_guardar, col_limpiar = st.columns([1, 1])
 
 with col_guardar:
