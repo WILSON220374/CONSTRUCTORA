@@ -322,7 +322,7 @@ def _campo_linea_word(doc, etiqueta, valor):
     return tabla
 
 
-def _generar_word(generales, fila, suspensiones):
+def _generar_word(generales, fila, suspensiones, causas_suspension="", concepto_interventoria=""):
     doc = Document()
     _set_doc_defaults(doc)
 
@@ -390,17 +390,11 @@ def _generar_word(generales, fila, suspensiones):
 
     _p(doc, "")
     _p(doc, "CAUSAS QUE DAN ORIGEN A LA SUSPENSIÓN", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-    _p(
-        doc,
-        "(Describir de manera clara y completa las causales que dan origen a la suspensión justificadas por el Contratista y aprobadas por la interventoría, teniendo en cuenta que las mismas no sean imputables a las partes contratantes).",
-    )
+    _p(doc, causas_suspension)
 
     _p(doc, "")
     _p(doc, "CONCEPTO DE LA INTERVENTORÍA", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-    _p(
-        doc,
-        "El Interventor del contrato como representante del CONTRATANTE debe hacer el análisis de las causas que conllevan a la suspensión del contrato de obra y será solidariamente responsable con el Contratista de obra, lo cual refrenda con su firma.",
-    )
+    _p(doc, concepto_interventoria)
 
     _p(doc, "")
     _p(doc, "RESPONSABILIDAD", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -557,10 +551,23 @@ st.text_input(
 )
 
 st.markdown("### CAUSAS QUE DAN ORIGEN A LA SUSPENSIÓN")
-st.info("Este apartado conserva el texto del formato Excel. No se digita información en esta hoja.")
-st.write("(Describir de manera clara y completa las causales que dan origen a la suspensión justificadas por el Contratista y aprobadas por la interventoría, teniendo en cuenta que las mismas no sean imputables a las partes contratantes).")
+causas_suspension = st.text_area(
+    "Describa de manera clara y completa las causales que dan origen a la suspensión, justificadas por el Contratista y aprobadas por la interventoría, teniendo en cuenta que las mismas no sean imputables a las partes contratantes.",
+    value="",
+    height=180,
+    key="acta_suspension_causas",
+)
+
+st.markdown("### CONCEPTO DE LA INTERVENTORÍA")
+concepto_interventoria = st.text_area(
+    "Concepto de la interventoría",
+    value="",
+    height=180,
+    key="acta_suspension_concepto_interventoria",
+)
 
 st.markdown("### NOTAS:")
+
 st.write(
     "1. Los motivos que dan origen a la presente suspensión y que imposibilitan de manera temporal "
     "el desarrollo del contrato no son imputables a las partes contratantes."
@@ -592,7 +599,7 @@ df_firmas = pd.DataFrame(
     ]
 )
 st.dataframe(df_firmas, hide_index=True, width="stretch")
-word = _generar_word(generales, fila, suspensiones)
+word = _generar_word(generales, fila, suspensiones, causas_suspension, concepto_interventoria)
 st.download_button(
     "📄 Descargar Word",
     data=word,
