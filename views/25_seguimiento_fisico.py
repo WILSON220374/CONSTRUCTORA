@@ -642,6 +642,35 @@ with st.container(border=True):
         },
     )
 
+    ejecutado_general = _safe_float(
+        _normalizar_avance_general(avance_general_editado.to_dict("records"))[0].get("$ EJECUTADO"),
+        0.0,
+    )
+
+    ejecutado_actividades = 0.0
+    for fila in _normalizar_avance_actividad(avance_actividad_editado.to_dict("records")):
+        ejecutado_actividades += _safe_float(fila.get("$ EJECUTADO"), 0.0)
+
+    diferencia_ejecutado = ejecutado_general - ejecutado_actividades
+
+    if abs(diferencia_ejecutado) <= 1:
+        st.success(
+            f"Validación correcta: la suma del $ ejecutado por actividad coincide con el $ ejecutado general. "
+            f"Total actividades: $ {ejecutado_actividades:,.2f}"
+        )
+    elif diferencia_ejecutado > 0:
+        st.warning(
+            f"Falta distribuir en actividades: $ {diferencia_ejecutado:,.2f}. "
+            f"$ ejecutado general: $ {ejecutado_general:,.2f} | "
+            f"Suma actividades: $ {ejecutado_actividades:,.2f}"
+        )
+    else:
+        st.error(
+            f"Las actividades superan el $ ejecutado general en: $ {abs(diferencia_ejecutado):,.2f}. "
+            f"$ ejecutado general: $ {ejecutado_general:,.2f} | "
+            f"Suma actividades: $ {ejecutado_actividades:,.2f}"
+        )
+
 with st.container(border=True):
     st.markdown("### EVOLUCIÓN")
 
