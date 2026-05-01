@@ -485,8 +485,10 @@ def _normalizar_anticipo(rows, valor_anticipo):
     return filas
 
 
-def _normalizar_suspensiones(rows, fecha_inicio_acta):
+def _normalizar_suspensiones(rows, fecha_inicial_terminacion):
     filas = []
+    fecha_base = _parse_fecha(fecha_inicial_terminacion)
+
     for fila in rows or []:
         base = _fila_suspension_vacia()
         if isinstance(fila, dict):
@@ -501,7 +503,7 @@ def _normalizar_suspensiones(rows, fecha_inicio_acta):
             dias = 0
 
         base["PERIODO DE SUSPENSIÓN"] = dias
-        base["NUEVA FECHA DE FINALIZACIÓN"] = fecha_inicio_acta + timedelta(days=dias)
+        base["NUEVA FECHA DE FINALIZACIÓN"] = fecha_base + timedelta(days=dias)
         filas.append(base)
 
     if not filas:
@@ -737,7 +739,7 @@ with tab_modificaciones:
         st.date_input("FECHA INICIAL DE TERMINACIÓN", value=fecha_inicial_terminacion, format="DD/MM/YYYY", disabled=True)
 
     df_suspensiones = pd.DataFrame(
-        _normalizar_suspensiones(datos.get("suspensiones_rows", []), fecha_inicio_acta),
+        _normalizar_suspensiones(datos.get("suspensiones_rows", []), fecha_inicial_terminacion),
         columns=[
             "ACTA DE SUSPENSIÓN No.",
             "ACTA DE AMPLIACIÓN SUSPENSIÓN No.",
@@ -764,6 +766,16 @@ with tab_modificaciones:
         },
     )
 
+    suspensiones_recalculadas = _normalizar_suspensiones(
+    suspensiones_editado.to_dict("records"),
+    fecha_inicial_terminacion,
+)
+
+if suspensiones_recalculadas != datos.get("suspensiones_rows", []):
+    datos["suspensiones_rows"] = suspensiones_recalculadas
+    st.rerun()
+
+    
     st.markdown("### ADICIONES")
     salario_minimo_anio_contrato = st.number_input(
         "Salario mínimo del año del contrato",
@@ -843,7 +855,7 @@ if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
     datos["pagos_rows"] = _normalizar_pagos(pagos_editado.to_dict("records"), valor_contrato)
     datos["anticipo_rows"] = _normalizar_anticipo(anticipo_editado.to_dict("records"), valor_anticipo)
-    datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
+    datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicial_terminacion)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
     datos["prorrogas_rows"] = _normalizar_prorrogas(prorrogas_editado.to_dict("records"))
     _guardar()
