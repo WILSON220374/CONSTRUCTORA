@@ -666,7 +666,6 @@ with st.container(border=True):
 
         st.plotly_chart(fig_avance, width="stretch")
 
-
 col_guardar, col_limpiar = st.columns([1, 1])
 
 with col_guardar:
