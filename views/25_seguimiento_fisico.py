@@ -487,13 +487,6 @@ with st.container(border=True):
 
     col_fecha_nuevo, col_boton_nuevo = st.columns([1, 0.7])
 
-    with col_fecha_nuevo:
-        fecha_corte = st.date_input(
-            "FECHA DE CORTE",
-            value=_parse_fecha(datos.get("ultima_fecha_corte")) if _texto(datos.get("ultima_fecha_corte")) else date.today(),
-            key="seguimiento_fisico_fecha_corte_input",
-        )
-
     with col_boton_nuevo:
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         if st.button("➕ Crear nuevo corte", key="seguimiento_fisico_nuevo_vacio", type="primary"):
@@ -505,18 +498,11 @@ with st.container(border=True):
             )
             st.session_state["seguimiento_fisico_fecha_activa"] = _parse_fecha(fecha_corte).isoformat()
             st.rerun()
-
+            
 with st.container(border=True):
-    st.markdown("### CREAR O CONSULTAR CORTE FÍSICO")
+    st.markdown("### CONSULTAR CORTE FÍSICO")
 
-    col_fecha, col_consulta, col_cargar = st.columns([1, 1, 0.7])
-
-    with col_fecha:
-        fecha_corte = st.date_input(
-            "FECHA DE CORTE",
-            value=_parse_fecha(datos.get("ultima_fecha_corte")) if _texto(datos.get("ultima_fecha_corte")) else date.today(),
-            key="seguimiento_fisico_fecha_corte_input",
-        )
+    col_consulta, col_cargar = st.columns([1, 0.7])
 
     with col_consulta:
         fecha_consulta = st.selectbox(
@@ -529,9 +515,9 @@ with st.container(border=True):
     with col_cargar:
         st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
         if st.button("Cargar", key="seguimiento_fisico_cargar"):
-            fecha_objetivo = fecha_consulta if fecha_consulta else fecha_corte
-            _cargar_corte_en_sesion(fecha_objetivo, flujo_fondos, fecha_inicio_acta, mapa_items)
-            st.rerun()
+            if fecha_consulta:
+                _cargar_corte_en_sesion(fecha_consulta, flujo_fondos, fecha_inicio_acta, mapa_items)
+                st.rerun()
 
 if "seguimiento_fisico_corte_activo" not in st.session_state:
     fecha_inicial = datos.get("ultima_fecha_corte") if _texto(datos.get("ultima_fecha_corte")) else fecha_corte
