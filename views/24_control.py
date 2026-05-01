@@ -582,156 +582,23 @@ st.markdown(
 
 st.markdown('<div class="control-titulo">CONTROL</div>', unsafe_allow_html=True)
 
-tab_fisico, tab_financiero, tab_modificaciones = st.tabs(
+st.markdown("### DATOS GENERALES")
+
+c1, c2 = st.columns(2)
+with c1:
+    st.text_input("CONTRATO DE OBRA No.", value=numero_contrato, disabled=True)
+with c2:
+    st.text_input("CONTRATISTA", value=contratista, disabled=True)
+
+st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
+
+tab_financiero, tab_modificaciones = st.tabs(
     [
-        "Seguimiento físico",
         "Seguimiento financiero",
         "Modificaciones del contrato",
     ]
 )
 
-with tab_fisico:
-    st.markdown("### DATOS GENERALES")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.text_input("CONTRATO DE OBRA No.", value=numero_contrato, disabled=True)
-    with c2:
-        st.text_input("CONTRATISTA", value=contratista, disabled=True)
-
-    st.text_area("OBJETO DEL CONTRATO DE OBRA", value=objeto_contrato, disabled=True, height=120)
-
-    fecha_corte_fisico = st.date_input(
-        "FECHA DE CORTE DEL SEGUIMIENTO FÍSICO",
-        value=_parse_fecha(datos.get("fecha_corte_fisico")),
-        key="control_fecha_corte_fisico",
-    )
-
-    st.markdown("### AVANCE GENERAL DE OBRA")
-
-    avance_rows = _normalizar_avance(datos.get("avance_rows", []))
-
-    for fila in avance_rows:
-        pct_programado, valor_programado = _programado_desde_flujo(
-            flujo_fondos,
-            fecha_corte_fisico,
-            fecha_inicio_acta,
-        )
-        fila["FECHA"] = fecha_corte_fisico
-        fila["% PROGRAMADO"] = pct_programado
-        fila["$ PROGRAMADO"] = valor_programado
-
-    df_avance = pd.DataFrame(
-        avance_rows,
-        columns=["% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
-    )
-
-    avance_editado = st.data_editor(
-        df_avance,
-        hide_index=True,
-        width="stretch",
-        num_rows="dynamic",
-        disabled=["% PROGRAMADO", "$ PROGRAMADO"],
-        column_config={
-            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
-            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
-        },
-    )
-
-    st.markdown("### AVANCE POR ACTIVIDAD")
-
-    programa_valores = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
-    mapa_items = {}
-
-    if isinstance(programa_valores, list):
-        for fila in programa_valores:
-            if isinstance(fila, dict):
-                item = _texto(fila.get("ITEM"))
-                descripcion = _texto(fila.get("DESCRIPCIÓN"))
-                if item:
-                    mapa_items[item] = descripcion
-
-    opciones_items = [""] + sorted(mapa_items.keys(), key=_key_codigo_natural)
-
-    col_item_nuevo, col_boton_item = st.columns([2, 1])
-
-    with col_item_nuevo:
-        item_nuevo_avance = st.selectbox(
-            "Agregar actividad al seguimiento",
-            options=opciones_items,
-            key="control_item_nuevo_avance",
-        )
-
-    with col_boton_item:
-        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-        if st.button("➕ Agregar actividad", key="control_agregar_actividad"):
-            if item_nuevo_avance:
-                nueva = _fila_avance_actividad_vacia()
-                nueva["ITEM"] = item_nuevo_avance
-                nueva["DESCRIPCIÓN"] = mapa_items.get(item_nuevo_avance, "")
-                nueva["FECHA"] = fecha_corte_fisico
-
-                pct_programado, valor_programado = _programado_actividad_desde_flujo(
-                    flujo_fondos,
-                    item_nuevo_avance,
-                    fecha_corte_fisico,
-                    fecha_inicio_acta,
-                )
-                nueva["% PROGRAMADO"] = pct_programado
-                nueva["$ PROGRAMADO"] = valor_programado
-
-                filas_actuales = [
-                    fila for fila in _normalizar_avance_actividad(datos.get("avance_actividad_rows", []))
-                    if _texto(fila.get("ITEM"))
-                ]
-
-                datos["avance_actividad_rows"] = filas_actuales + [nueva]
-                _guardar()
-                st.rerun()
-
-    avance_actividad_rows = [
-        fila for fila in _normalizar_avance_actividad(datos.get("avance_actividad_rows", []))
-        if _texto(fila.get("ITEM"))
-    ]
-
-    for fila in avance_actividad_rows:
-        item = _texto(fila.get("ITEM"))
-        fila["DESCRIPCIÓN"] = mapa_items.get(item, _texto(fila.get("DESCRIPCIÓN")))
-
-        pct_programado, valor_programado = _programado_actividad_desde_flujo(
-            flujo_fondos,
-            item,
-            fecha_corte_fisico,
-            fecha_inicio_acta,
-        )
-        fila["FECHA"] = fecha_corte_fisico
-        fila["% PROGRAMADO"] = pct_programado
-        fila["$ PROGRAMADO"] = valor_programado
-
-    df_avance_actividad = pd.DataFrame(
-        avance_actividad_rows,
-        columns=["ITEM", "DESCRIPCIÓN", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
-    )
-
-    avance_actividad_editado = st.data_editor(
-        df_avance_actividad,
-        hide_index=True,
-        width="stretch",
-        num_rows="fixed",
-        disabled=["ITEM", "DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
-        key="control_avance_actividad_editor",
-        column_config={
-            "ITEM": st.column_config.TextColumn("ITEM"),
-            "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
-            "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
-            "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
-            "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
-            "$ PROGRAMADO": st.column_config.NumberColumn("$ PROGRAMADO", format="$ %.2f"),
-        },
-    )
-    
 with tab_financiero:
     st.markdown("### RESUMEN FINANCIERO")
     df_financiero = pd.DataFrame(
@@ -866,40 +733,6 @@ guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
-    datos["fecha_corte_fisico"] = fecha_corte_fisico
-
-    avance_guardar = _normalizar_avance(avance_editado.to_dict("records"))
-
-    for fila in avance_guardar:
-        pct_programado, valor_programado = _programado_desde_flujo(
-            flujo_fondos,
-            fecha_corte_fisico,
-            fecha_inicio_acta,
-        )
-        fila["FECHA"] = fecha_corte_fisico
-        fila["% PROGRAMADO"] = pct_programado
-        fila["$ PROGRAMADO"] = valor_programado
-
-        datos["avance_rows"] = avance_guardar
-
-    avance_actividad_guardar = _normalizar_avance_actividad(avance_actividad_editado.to_dict("records"))
-
-    for fila in avance_actividad_guardar:
-        item = _texto(fila.get("ITEM"))
-        fila["DESCRIPCIÓN"] = mapa_items.get(item, _texto(fila.get("DESCRIPCIÓN")))
-
-        pct_programado, valor_programado = _programado_actividad_desde_flujo(
-            flujo_fondos,
-            item,
-            fecha_corte_fisico,
-            fecha_inicio_acta,
-        )
-        fila["FECHA"] = fecha_corte_fisico
-        fila["% PROGRAMADO"] = pct_programado
-        fila["$ PROGRAMADO"] = valor_programado
-
-    
-    datos["avance_actividad_rows"] = avance_actividad_guardar
     datos["financiero_rows"] = _normalizar_financiero(financiero_editado.to_dict("records"), valor_anticipo)
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicio_acta)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
