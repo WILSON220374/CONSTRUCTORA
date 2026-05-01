@@ -247,7 +247,7 @@ def _programado_desde_flujo(flujo_fondos, fecha_corte, fecha_inicio):
 
 def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_inicio):
     tablas = flujo_fondos.get("__tablas__", {})
-    programa = tablas.get("df_programa_valores", [])
+    programa = tablas.get("df_calculado", [])
 
     if not isinstance(programa, list) or not programa:
         return 0.0, 0.0
@@ -636,7 +636,7 @@ with tab_fisico:
 
     st.markdown("### AVANCE POR ACTIVIDAD")
 
-    programa_valores = flujo_fondos.get("__tablas__", {}).get("df_programa_valores", [])
+    programa_valores = flujo_fondos.get("__tablas__", {}).get("df_calculado", [])
     mapa_items = {}
 
     if isinstance(programa_valores, list):
