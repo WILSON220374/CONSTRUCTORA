@@ -589,10 +589,16 @@ with st.container(border=True):
         df_historico = pd.DataFrame(filas_historico).sort_values("FECHA DE CORTE")
         st.dataframe(df_historico, hide_index=True, width="stretch")
 
-        puntos_ejecutado = df_historico[["FECHA DE CORTE", "$ EJECUTADO"]].copy()
-        puntos_ejecutado["FECHA DE CORTE"] = pd.to_datetime(puntos_ejecutado["FECHA DE CORTE"]).dt.date
-        puntos_ejecutado = puntos_ejecutado.rename(columns={"$ EJECUTADO": "VALOR"})
-        puntos_ejecutado["TIPO DE AVANCE"] = "$ EJECUTADO"
+        puntos_ac = df_historico[["FECHA DE CORTE", "$ EJECUTADO"]].copy()
+        puntos_ac["FECHA DE CORTE"] = pd.to_datetime(puntos_ac["FECHA DE CORTE"]).dt.date
+        puntos_ac = puntos_ac.rename(columns={"$ EJECUTADO": "VALOR"})
+        puntos_ac["TIPO DE AVANCE"] = "AC - COSTO REAL"
+
+        puntos_ev = df_historico[["FECHA DE CORTE", "% EJECUTADO"]].copy()
+        puntos_ev["FECHA DE CORTE"] = pd.to_datetime(puntos_ev["FECHA DE CORTE"]).dt.date
+        puntos_ev["VALOR"] = valor_contrato * (_safe_float(0.0) + puntos_ev["% EJECUTADO"].astype(float) / 100.0)
+        puntos_ev = puntos_ev[["FECHA DE CORTE", "VALOR"]]
+        puntos_ev["TIPO DE AVANCE"] = "EV - VALOR GANADO"
 
         tablas_flujo = flujo_fondos.get("__tablas__", {})
         resumen_flujo = tablas_flujo.get("df_resumen", [])
@@ -611,7 +617,7 @@ with st.container(border=True):
             {
                 "FECHA DE CORTE": fecha_inicio_programacion,
                 "VALOR": 0.0,
-                "TIPO DE AVANCE": "$ PROGRAMADO",
+                "TIPO DE AVANCE": "PV - VALOR PLANEADO",
             }
         )
 
@@ -630,12 +636,12 @@ with st.container(border=True):
                 {
                     "FECHA DE CORTE": fecha_inicio_programacion + timedelta(days=(numero_periodo * 30) - 1),
                     "VALOR": _safe_float(fila_acumulado.get(columna), 0.0),
-                    "TIPO DE AVANCE": "$ PROGRAMADO",
+                    "TIPO DE AVANCE": "PV - VALOR PLANEADO",
                 }
             )
 
         df_programado = pd.DataFrame(puntos_programado)
-        df_grafica = pd.concat([puntos_ejecutado, df_programado], ignore_index=True)
+        df_grafica = pd.concat([df_programado, puntos_ev, puntos_ac], ignore_index=True)
 
         fig_avance = px.line(
             df_grafica,
@@ -645,13 +651,14 @@ with st.container(border=True):
             markers=True,
             title="Valor ganado",
             color_discrete_map={
-                "$ EJECUTADO": "orange",
-                "$ PROGRAMADO": "blue",
+                "PV - VALOR PLANEADO": "blue",
+                "EV - VALOR GANADO": "green",
+                "AC - COSTO REAL": "orange",
             },
         )
 
         fechas_programado = sorted(df_programado["FECHA DE CORTE"].unique())
-        fechas_ejecutado = sorted(puntos_ejecutado["FECHA DE CORTE"].unique())
+        fechas_ejecutado = sorted(puntos_ac["FECHA DE CORTE"].unique())
         fechas_todas = sorted(df_grafica["FECHA DE CORTE"].unique())
 
         fecha_min = min(fechas_todas)
