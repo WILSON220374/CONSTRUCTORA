@@ -25,6 +25,11 @@ def _texto(valor):
         return ""
     return str(valor).strip()
 
+def _texto(valor):
+    if valor is None:
+        return ""
+    return str(valor).strip()
+
 def _key_codigo_natural(value):
     partes = []
     for chunk in _texto(value).split("."):
@@ -33,7 +38,6 @@ def _key_codigo_natural(value):
         except Exception:
             partes.append(chunk)
     return tuple(partes)
-
 
 def _safe_float(valor, default=0.0):
     try:
