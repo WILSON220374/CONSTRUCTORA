@@ -682,6 +682,8 @@ with tab_fisico:
         width="stretch",
         num_rows="dynamic",
         disabled=["DESCRIPCIÓN", "% PROGRAMADO", "$ PROGRAMADO"],
+        key="control_avance_actividad_editor",
+        on_change=st.rerun,
         column_config={
             "ITEM": st.column_config.SelectboxColumn("ITEM", options=opciones_items),
             "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
