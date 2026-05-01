@@ -659,16 +659,20 @@ with st.container(border=True):
             title="Evolución financiera del avance físico: programado vs ejecutado",
         )
 
+        fechas_corte = sorted(df_grafica["FECHA DE CORTE"].unique())
+
         fig_avance.update_layout(
             xaxis_title="Fecha de corte",
             yaxis_title="Valor",
             legend_title="Tipo de avance",
-            xaxis=dict(tickformat="%b %d, %Y"),
+            xaxis=dict(
+                tickmode="array",
+                tickvals=fechas_corte,
+                ticktext=[fecha.strftime("%b %d, %Y") for fecha in fechas_corte],
+            ),
             yaxis_tickprefix="$ ",
             yaxis_tickformat=",",
         )
-
-        st.plotly_chart(fig_avance, width="stretch")
 
 col_guardar, col_limpiar = st.columns([1, 1])
 
