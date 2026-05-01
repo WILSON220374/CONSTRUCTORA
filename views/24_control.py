@@ -826,15 +826,17 @@ guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
     datos["salario_minimo_anio_contrato"] = salario_minimo_anio_contrato
+    datos["fecha_corte_fisico"] = fecha_corte_fisico
 
     avance_guardar = _normalizar_avance(avance_editado.to_dict("records"))
 
     for fila in avance_guardar:
         pct_programado, valor_programado = _programado_desde_flujo(
             flujo_fondos,
-            fila.get("FECHA"),
+            fecha_corte_fisico,
             fecha_inicio_acta,
         )
+        fila["FECHA"] = fecha_corte_fisico
         fila["% PROGRAMADO"] = pct_programado
         fila["$ PROGRAMADO"] = valor_programado
 
