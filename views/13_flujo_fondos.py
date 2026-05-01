@@ -59,6 +59,24 @@ alcance_datos = _get_state_dict("alcance_datos", "alcance")
 cronograma_datos = _get_state_dict("cronograma_datos", "cronograma")
 presupuesto_obra_datos = _get_state_dict("presupuesto_obra_datos", "presupuesto_obra")
 
+with st.expander("DIAGNÓSTICO TEMPORAL - UNIDAD PRESUPUESTO", expanded=False):
+    st.write("Claves principales de presupuesto_obra_datos:")
+    st.write(list(presupuesto_obra_datos.keys()))
+
+    st.write("Claves dentro de __tablas__:")
+    st.write(list((presupuesto_obra_datos.get("__tablas__", {}) or {}).keys()))
+
+    st.write("Primeros registros de flujo_fondos_directos:")
+    st.write((presupuesto_obra_datos.get("flujo_fondos_directos", []) or [])[:3])
+
+    st.write("Primeros grupos_presupuesto_obra:")
+    st.write(
+        ((presupuesto_obra_datos.get("__tablas__", {}) or {}).get("grupos_presupuesto_obra", []) or [])[:1]
+    )
+
+    st.write("Primeros registros de items:")
+    st.write(list((presupuesto_obra_datos.get("items", {}) or {}).items())[:3])
+
 try:
     costos_indirectos_datos = cargar_estado("costos_indirectos") or {}
 except Exception:
