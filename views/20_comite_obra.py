@@ -537,6 +537,16 @@ st.download_button(
     use_container_width=True,
 )
 
+word_todos_comites = _generar_word_todos_comites(actas)
+
+st.download_button(
+    "📄 Descargar todos los comités en Word",
+    data=word_todos_comites,
+    file_name="actas_comite_obra.docx",
+    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    use_container_width=True,
+)
+
 compromisos_iniciales = pd.DataFrame(
     _normalizar_compromisos(acta.get("compromisos", [])),
     columns=["COMPROMISOS PACTADOS", "FECHA DE CUMPLIMIENTO", "RESPONSABLES"],
