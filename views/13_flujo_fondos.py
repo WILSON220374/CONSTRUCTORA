@@ -600,6 +600,7 @@ def _armar_tabla_porcentajes(base_df: pd.DataFrame, periodos: List[str], mapa_ac
             "ITEM": _safe_str(row["ITEM"]),
             "TIPO": _safe_str(row["TIPO"]),
             "DESCRIPCIÓN": _safe_str(row["DESCRIPCIÓN"]),
+            "UNIDAD": _safe_str(row.get("UNIDAD", "")),
             "VALOR BASE": round(_safe_float(row["VALOR BASE"]), 2),
             "AIU %": round(_safe_float(row["AIU %"]), 2),
             "VALOR CON AIU": round(_safe_float(row["VALOR CON AIU"]), 2),
