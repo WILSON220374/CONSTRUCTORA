@@ -20,6 +20,10 @@ def guardar_estado(clave, datos):
 
     guardar_estado_bd(clave, serializar(datos))
 
+def _texto(valor):
+    if valor is None:
+        return ""
+    return str(valor).strip()
 
 def _key_codigo_natural(value):
     partes = []
