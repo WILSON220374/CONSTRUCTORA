@@ -664,15 +664,16 @@ with tab_fisico:
         pct_programado, valor_programado = _programado_actividad_desde_flujo(
             flujo_fondos,
             item,
-            fila.get("FECHA"),
+            fecha_corte_fisico,
             fecha_inicio_acta,
         )
+        fila["FECHA"] = fecha_corte_fisico
         fila["% PROGRAMADO"] = pct_programado
         fila["$ PROGRAMADO"] = valor_programado
 
     df_avance_actividad = pd.DataFrame(
         avance_actividad_rows,
-        columns=["ITEM", "DESCRIPCIÓN", "FECHA", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
+        columns=["ITEM", "DESCRIPCIÓN", "% EJECUTADO", "$ EJECUTADO", "% PROGRAMADO", "$ PROGRAMADO"],
     )
 
     avance_actividad_editado = st.data_editor(
@@ -684,7 +685,6 @@ with tab_fisico:
         column_config={
             "ITEM": st.column_config.SelectboxColumn("ITEM", options=opciones_items),
             "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
-            "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "% EJECUTADO": st.column_config.NumberColumn("% EJECUTADO", format="%.4f"),
             "$ EJECUTADO": st.column_config.NumberColumn("$ EJECUTADO", format="$ %.2f"),
             "% PROGRAMADO": st.column_config.NumberColumn("% PROGRAMADO", format="%.4f"),
