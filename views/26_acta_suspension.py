@@ -212,9 +212,16 @@ def _etiqueta_suspension(fila, idx):
     return f"{idx + 1}. ACTA DE {tipo} No. {numero} | Desde {desde} hasta {hasta}"
 
 
-def _filas_relacion_suspensiones(suspensiones):
+def _filas_relacion_suspensiones(suspensiones, fecha_corte=None):
     filas = []
+    fecha_corte = _parse_fecha(fecha_corte) if fecha_corte else None
+
     for fila in suspensiones:
+        fecha_acta = _parse_fecha(fila.get("FECHA DEL ACTA"))
+
+        if fecha_corte and fecha_acta > fecha_corte:
+            continue
+
         filas.append(
             {
                 "ACTA DE SUSPENSIÓN No.": _texto(fila.get("ACTA DE SUSPENSIÓN No.")),
@@ -228,7 +235,6 @@ def _filas_relacion_suspensiones(suspensiones):
             }
         )
     return filas
-
 
 # ==========================================================
 # Word helpers
@@ -334,7 +340,7 @@ def _generar_word(generales, fila, suspensiones):
 
     _p(doc, "")
     _p(doc, "RELACIÓN SUSPENSIONES Y AMPLIACIONES DE LA SUSPENSIÓN", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-    _tabla_relacion(doc, _filas_relacion_suspensiones(suspensiones))
+      _tabla_relacion(doc, _filas_relacion_suspensiones(suspensiones, fila.get("FECHA DEL ACTA")))
 
     _p(doc, "")
     _p(doc, "NUEVAS CONDICIONES DEL CONTRATO", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -464,7 +470,11 @@ with col2:
 st.text_area("OBJETO DEL CONTRATO DE OBRA", value=generales["objeto"], disabled=True, height=100)
 
 st.markdown("### RELACIÓN SUSPENSIONES Y AMPLIACIONES DE LA SUSPENSIÓN")
-st.dataframe(pd.DataFrame(_filas_relacion_suspensiones(suspensiones)), hide_index=True, width="stretch")
+st.dataframe(
+    pd.DataFrame(_filas_relacion_suspensiones(suspensiones, fila.get("FECHA DEL ACTA"))),
+    hide_index=True,
+    width="stretch",
+)
 
 st.markdown("### NUEVAS CONDICIONES DEL CONTRATO")
 df_acta = pd.DataFrame(
