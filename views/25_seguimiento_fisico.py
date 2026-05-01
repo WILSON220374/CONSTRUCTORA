@@ -642,6 +642,7 @@ with st.container(border=True):
                 tickmode="array",
                 tickvals=fechas_corte,
                 ticktext=[fecha.strftime("%d-%m-%y") for fecha in fechas_corte],
+                tickangle=0,
             ),
             yaxis_tickprefix="$ ",
             yaxis_tickformat=",",
