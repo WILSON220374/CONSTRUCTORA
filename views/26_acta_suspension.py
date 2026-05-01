@@ -307,6 +307,20 @@ def _tabla_relacion(doc, filas):
             _cell_text(cells[i], fila.get(col, ""), align=WD_ALIGN_PARAGRAPH.CENTER)
     return tabla
 
+def _campo_linea_word(doc, etiqueta, valor):
+    tabla = doc.add_table(rows=1, cols=2)
+    tabla.alignment = WD_TABLE_ALIGNMENT.CENTER
+    cells = tabla.rows[0].cells
+
+    _cell_text(cells[0], etiqueta, bold=True)
+    _cell_text(cells[1], _fecha_texto(valor), align=WD_ALIGN_PARAGRAPH.CENTER)
+
+    for cell in cells:
+        for paragraph in cell.paragraphs:
+            paragraph.paragraph_format.space_after = Pt(12)
+
+    return tabla
+
 
 def _generar_word(generales, fila, suspensiones):
     doc = Document()
@@ -344,20 +358,12 @@ def _generar_word(generales, fila, suspensiones):
 
     _p(doc, "")
     _p(doc, "NUEVAS CONDICIONES DEL CONTRATO", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-    _tabla_simple(
-        doc,
-        [
-            ("ACTA DE SUSPENSIÓN No.", _texto(fila.get("ACTA DE SUSPENSIÓN No."))),
-            ("ACTA DE AMPLIACIÓN SUSPENSIÓN No.", _texto(fila.get("ACTA DE AMPLIACIÓN SUSPENSIÓN No."))),
-            ("FECHA DEL ACTA", _fecha_texto(fila.get("FECHA DEL ACTA"))),
-            ("FECHA DE SUSPENSIÓN INICIAL", _fecha_texto(fila.get("DESDE"))),
-            ("DESDE", _fecha_texto(fila.get("DESDE"))),
-            ("HASTA", _fecha_texto(fila.get("HASTA"))),
-            ("FECHA REANUDACIÓN", _fecha_texto(fila.get("HASTA"))),
-            ("PERIODO DE SUSPENSIÓN", f"{_texto(fila.get('PERIODO DE SUSPENSIÓN'))} días"),
-            ("NUEVA FECHA DE VENCIMIENTO", _fecha_texto(fila.get("NUEVA FECHA DE FINALIZACIÓN"))),
-        ],
-    )
+    _p(doc, "")
+    _campo_linea_word(doc, "FECHA DE SUSPENSIÓN INICIAL:", fila.get("DESDE"))
+    _p(doc, "")
+    _campo_linea_word(doc, "FECHA DE REANUDACIÓN:", fila.get("HASTA"))
+    _p(doc, "")
+    _campo_linea_word(doc, "NUEVA FECHA DE VENCIMIENTO:", fila.get("NUEVA FECHA DE FINALIZACIÓN"))
 
     _p(doc, "")
     _p(doc, "CAUSAS QUE DAN ORIGEN A LA SUSPENSIÓN", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -477,23 +483,26 @@ st.dataframe(
 )
 
 st.markdown("### NUEVAS CONDICIONES DEL CONTRATO")
-df_acta = pd.DataFrame(
-    [
-        {
-            "TIPO": _tipo_acta(fila),
-            "ACTA DE SUSPENSIÓN No.": _texto(fila.get("ACTA DE SUSPENSIÓN No.")),
-            "ACTA DE AMPLIACIÓN SUSPENSIÓN No.": _texto(fila.get("ACTA DE AMPLIACIÓN SUSPENSIÓN No.")),
-            "FECHA DEL ACTA": _parse_fecha(fila.get("FECHA DEL ACTA")),
-            "FECHA DE SUSPENSIÓN INICIAL": _parse_fecha(fila.get("DESDE")),
-            "DESDE": _parse_fecha(fila.get("DESDE")),
-            "HASTA": _parse_fecha(fila.get("HASTA")),
-            "FECHA REANUDACIÓN": _parse_fecha(fila.get("HASTA")),
-            "PERIODO DE SUSPENSIÓN": _safe_float(fila.get("PERIODO DE SUSPENSIÓN"), 0.0),
-            "NUEVA FECHA DE VENCIMIENTO": _parse_fecha(fila.get("NUEVA FECHA DE FINALIZACIÓN")),
-        }
-    ]
+
+c_nc1, c_nc2 = st.columns([1, 1])
+with c_nc1:
+    st.text_input(
+        "FECHA DE SUSPENSIÓN INICIAL:",
+        value=_fecha_texto(fila.get("DESDE")),
+        disabled=True,
+    )
+with c_nc2:
+    st.text_input(
+        "FECHA DE REANUDACIÓN:",
+        value=_fecha_texto(fila.get("HASTA")),
+        disabled=True,
+    )
+
+st.text_input(
+    "NUEVA FECHA DE VENCIMIENTO:",
+    value=_fecha_texto(fila.get("NUEVA FECHA DE FINALIZACIÓN")),
+    disabled=True,
 )
-st.dataframe(df_acta, hide_index=True, width="stretch")
 
 st.markdown("### CAUSAS QUE DAN ORIGEN A LA SUSPENSIÓN")
 st.info("Este apartado conserva el texto del formato Excel. No se digita información en esta hoja.")
