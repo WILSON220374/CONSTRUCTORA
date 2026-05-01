@@ -714,13 +714,20 @@ with tab_financiero:
         width="stretch",
         num_rows="dynamic",
         disabled=["VALOR INICIAL", "SALDO"],
+        key="control_anticipo_editor",
         column_config={
             "FECHA": st.column_config.DateColumn("FECHA", format="DD/MM/YYYY"),
             "VALOR INICIAL": st.column_config.NumberColumn("VALOR INICIAL", format="$ %.2f"),
-            "VALOR FACTURADO": st.column_config.NumberColumn("VALOR FACTURADO", format="$ %.2f"),
-            "PENDIENTE POR FACTURAR": st.column_config.NumberColumn("PENDIENTE POR FACTURAR", format="$ %.2f"),
+            "VALOR AMORTIZADO": st.column_config.NumberColumn("VALOR AMORTIZADO", format="$ %.2f"),
+            "SALDO": st.column_config.NumberColumn("SALDO", format="$ %.2f"),
         },
     )
+
+    anticipo_recalculado = _normalizar_anticipo(anticipo_editado.to_dict("records"), valor_anticipo)
+
+    if anticipo_recalculado != datos.get("anticipo_rows", []):
+        datos["anticipo_rows"] = anticipo_recalculado
+        st.rerun()
 with tab_modificaciones:
     st.markdown("### SUSPENSIONES")
     c3, c4 = st.columns(2)
