@@ -638,6 +638,7 @@ def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
                 cargado.get("garantias_modificaciones_bloques", []),
                 contrato_obra.get("garantias", []) or [],
             ),
+        }
 
         st.session_state["_control_obra_group"] = group_id_actual
 
