@@ -879,19 +879,12 @@ with tab_modificaciones:
     for col in ["desde", "hasta"]:
         df_garantias[col] = pd.to_datetime(df_garantias[col], errors="coerce").dt.date
 
-    df_garantias["DURACIÓN INICIAL"] = duracion_inicial
-    df_garantias["VALOR INICIAL"] = round(valor_contrato, 2)
-    df_garantias["FECHA DE TERMINACIÓN"] = fecha_inicial_terminacion
-
     df_garantias = df_garantias[
         [
             "amparo",
             "suficiencia",
             "desde",
             "hasta",
-            "DURACIÓN INICIAL",
-            "VALOR INICIAL",
-            "FECHA DE TERMINACIÓN",
         ]
     ]
 
@@ -904,9 +897,6 @@ with tab_modificaciones:
             "suficiencia": st.column_config.TextColumn("SUFICIENCIA"),
             "desde": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
             "hasta": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
-            "DURACIÓN INICIAL": st.column_config.TextColumn("DURACIÓN INICIAL"),
-            "VALOR INICIAL": st.column_config.NumberColumn("VALOR INICIAL", format="$ %.2f"),
-            "FECHA DE TERMINACIÓN": st.column_config.DateColumn("FECHA DE TERMINACIÓN", format="DD/MM/YYYY"),
         },
     )
 
