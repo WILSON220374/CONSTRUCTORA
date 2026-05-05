@@ -856,6 +856,7 @@ with tab_modificaciones:
     )
 
     st.markdown("### SEGUIMIENTO A GARANTÍAS")
+    st.markdown("#### CONDICIONES INICIALES")
 
     garantias_contrato = contrato_obra.get("garantias", []) or []
 
