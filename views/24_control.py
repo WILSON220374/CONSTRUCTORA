@@ -995,13 +995,28 @@ with tab_modificaciones:
     ):
         numero_bloque = int(bloque.get("numero") or 0)
 
-        st.markdown(f"##### MODIFICACIÓN DE GARANTÍAS No. {numero_bloque}")
+        col_titulo_garantia, col_eliminar_garantia = st.columns([4, 1])
+
+        with col_titulo_garantia:
+            st.markdown(f"##### MODIFICACIÓN DE GARANTÍAS No. {numero_bloque}")
+
+        with col_eliminar_garantia:
+            if st.button(
+                "🗑️ Eliminar",
+                key=f"eliminar_modificacion_garantias_{numero_bloque}",
+            ):
+                datos["garantias_modificaciones_bloques"] = [
+                    b
+                    for b in datos.get("garantias_modificaciones_bloques", [])
+                    if int(b.get("numero") or 0) != numero_bloque
+                ]
+                _guardar()
+                st.rerun()
 
         df_bloque_garantias = pd.DataFrame(
             bloque.get("rows", []),
             columns=["AMPARO", "SUFICIENCIA", "DESDE", "HASTA"],
         )
-
         bloque_editado = st.data_editor(
             df_bloque_garantias,
             hide_index=True,
