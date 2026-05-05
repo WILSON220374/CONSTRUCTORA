@@ -855,6 +855,61 @@ with tab_modificaciones:
         },
     )
 
+    st.markdown("### SEGUIMIENTO A GARANTÍAS")
+
+    garantias_contrato = contrato_obra.get("garantias", []) or []
+
+    df_garantias = pd.DataFrame(
+        garantias_contrato,
+        columns=["amparo", "suficiencia", "desde", "hasta"],
+    )
+
+    if df_garantias.empty:
+        df_garantias = pd.DataFrame(
+            [
+                {
+                    "amparo": "",
+                    "suficiencia": "",
+                    "desde": "",
+                    "hasta": "",
+                }
+            ]
+        )
+
+    for col in ["desde", "hasta"]:
+        df_garantias[col] = pd.to_datetime(df_garantias[col], errors="coerce").dt.date
+
+    df_garantias["DURACIÓN INICIAL"] = duracion_inicial
+    df_garantias["VALOR INICIAL"] = round(valor_contrato, 2)
+    df_garantias["FECHA DE TERMINACIÓN"] = fecha_inicial_terminacion
+
+    df_garantias = df_garantias[
+        [
+            "amparo",
+            "suficiencia",
+            "desde",
+            "hasta",
+            "DURACIÓN INICIAL",
+            "VALOR INICIAL",
+            "FECHA DE TERMINACIÓN",
+        ]
+    ]
+
+    st.dataframe(
+        df_garantias,
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "amparo": st.column_config.TextColumn("AMPARO"),
+            "suficiencia": st.column_config.TextColumn("SUFICIENCIA"),
+            "desde": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
+            "hasta": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
+            "DURACIÓN INICIAL": st.column_config.TextColumn("DURACIÓN INICIAL"),
+            "VALOR INICIAL": st.column_config.NumberColumn("VALOR INICIAL", format="$ %.2f"),
+            "FECHA DE TERMINACIÓN": st.column_config.DateColumn("FECHA DE TERMINACIÓN", format="DD/MM/YYYY"),
+        },
+    )
+
 guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
