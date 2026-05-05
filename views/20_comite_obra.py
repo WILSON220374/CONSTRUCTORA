@@ -435,6 +435,8 @@ def _generar_word_todos_comites(actas):
     buffer.seek(0)
     return buffer
 
+def _generar_word_comite_activo(acta, actas):
+    return _generar_word_todos_comites([acta])
 
 acta_inicio = _leer_acta_inicio()
 contrato_obra = _leer_contrato_obra()
@@ -527,15 +529,15 @@ df_consulta = pd.DataFrame(
 )
 st.dataframe(df_consulta, width="stretch", hide_index=True)
 
-word_todos_comites = _generar_word_todos_comites(actas)
+word_comite_activo = _generar_word_comite_activo(acta, actas)
 
 st.download_button(
-    "📄 Descargar todos los comités en Word",
-    data=word_todos_comites,
-    file_name="actas_comite_obra.docx",
+    "📄 Descargar comité activo en Word",
+    data=word_comite_activo,
+    file_name=f"acta_comite_obra_{int(acta.get('acta_no') or 0)}.docx",
     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     use_container_width=True,
-    key="descargar_todos_comites_word",
+    key=f"descargar_comite_activo_word_{int(acta.get('acta_no') or 0)}",
 )
 
 compromisos_iniciales = pd.DataFrame(
