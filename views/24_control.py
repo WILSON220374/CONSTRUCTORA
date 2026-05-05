@@ -557,40 +557,60 @@ def _parse_fecha_opcional(valor):
     return _parse_fecha(valor)
 
 
-def _normalizar_garantias_modificadas(rows, garantias_contrato):
+def _filas_garantias_en_blanco(garantias_contrato):
     filas = []
 
-    for fila in rows or []:
-        if not isinstance(fila, dict):
+    for garantia in garantias_contrato or []:
+        amparo = _texto(garantia.get("amparo"))
+        if amparo:
+            filas.append(
+                {
+                    "AMPARO": amparo,
+                    "SUFICIENCIA": "",
+                    "DESDE": None,
+                    "HASTA": None,
+                }
+            )
+
+    return filas
+
+
+def _normalizar_bloques_garantias(bloques, garantias_contrato):
+    normalizados = []
+
+    for i, bloque in enumerate(bloques or [], start=1):
+        if not isinstance(bloque, dict):
             continue
 
-        amparo = _texto(fila.get("AMPARO"))
-        if not amparo:
-            continue
+        filas = []
+        for fila in bloque.get("rows", []) or []:
+            if not isinstance(fila, dict):
+                continue
 
-        filas.append(
+            amparo = _texto(fila.get("AMPARO"))
+            if not amparo:
+                continue
+
+            filas.append(
+                {
+                    "AMPARO": amparo,
+                    "SUFICIENCIA": _texto(fila.get("SUFICIENCIA")),
+                    "DESDE": _parse_fecha_opcional(fila.get("DESDE")),
+                    "HASTA": _parse_fecha_opcional(fila.get("HASTA")),
+                }
+            )
+
+        if not filas:
+            filas = _filas_garantias_en_blanco(garantias_contrato)
+
+        normalizados.append(
             {
-                "AMPARO": amparo,
-                "SUFICIENCIA": _safe_float(fila.get("SUFICIENCIA"), 0.0),
-                "DESDE": _parse_fecha_opcional(fila.get("DESDE")),
-                "HASTA": _parse_fecha_opcional(fila.get("HASTA")),
+                "numero": int(bloque.get("numero") or i),
+                "rows": filas,
             }
         )
 
-    if not filas:
-        for garantia in garantias_contrato or []:
-            amparo = _texto(garantia.get("amparo"))
-            if amparo:
-                filas.append(
-                    {
-                        "AMPARO": amparo,
-                        "SUFICIENCIA": 0.0,
-                        "DESDE": None,
-                        "HASTA": None,
-                    }
-                )
-
-    return filas
+    return normalizados
 
 
 def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
@@ -614,7 +634,10 @@ def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
             "suspensiones_rows": _normalizar_suspensiones(cargado.get("suspensiones_rows", []), fecha_inicio_acta),
             "adiciones_rows": _normalizar_adiciones(cargado.get("adiciones_rows", []), valor_contrato),
             "prorrogas_rows": _normalizar_prorrogas(cargado.get("prorrogas_rows", [])),
-        }
+            "garantias_modificaciones_bloques": _normalizar_bloques_garantias(
+                cargado.get("garantias_modificaciones_bloques", []),
+                contrato_obra.get("garantias", []) or [],
+            ),
 
         st.session_state["_control_obra_group"] = group_id_actual
 
@@ -942,6 +965,69 @@ with tab_modificaciones:
         },
     )
 
+    st.markdown("#### MODIFICACIONES DE GARANTÍAS")
+
+    if st.button("➕ Generar modificación de garantías", key="control_generar_modificacion_garantias"):
+        bloques_actuales = _normalizar_bloques_garantias(
+            datos.get("garantias_modificaciones_bloques", []),
+            garantias_contrato,
+        )
+
+        nuevo_numero = len(bloques_actuales) + 1
+
+        bloques_actuales.append(
+            {
+                "numero": nuevo_numero,
+                "rows": _filas_garantias_en_blanco(garantias_contrato),
+            }
+        )
+
+        datos["garantias_modificaciones_bloques"] = bloques_actuales
+        _guardar()
+        st.rerun()
+
+    garantias_modificaciones_editadas = []
+
+    for bloque in _normalizar_bloques_garantias(
+        datos.get("garantias_modificaciones_bloques", []),
+        garantias_contrato,
+    ):
+        numero_bloque = int(bloque.get("numero") or 0)
+
+        st.markdown(f"##### MODIFICACIÓN DE GARANTÍAS No. {numero_bloque}")
+
+        df_bloque_garantias = pd.DataFrame(
+            bloque.get("rows", []),
+            columns=["AMPARO", "SUFICIENCIA", "DESDE", "HASTA"],
+        )
+
+        bloque_editado = st.data_editor(
+            df_bloque_garantias,
+            hide_index=True,
+            width="stretch",
+            num_rows="fixed",
+            disabled=["AMPARO"],
+            key=f"control_modificacion_garantias_{numero_bloque}",
+            column_config={
+                "AMPARO": st.column_config.TextColumn("AMPARO"),
+                "SUFICIENCIA": st.column_config.TextColumn("SUFICIENCIA"),
+                "DESDE": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
+                "HASTA": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
+            },
+        )
+
+        garantias_modificaciones_editadas.append(
+            {
+                "numero": numero_bloque,
+                "rows": bloque_editado.to_dict("records"),
+            }
+        )
+
+    datos["garantias_modificaciones_bloques"] = _normalizar_bloques_garantias(
+        garantias_modificaciones_editadas,
+        garantias_contrato,
+    )
+
 guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
@@ -951,7 +1037,7 @@ if guardar_form:
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicial_terminacion)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
     datos["prorrogas_rows"] = _normalizar_prorrogas(prorrogas_editado.to_dict("records"))
-    datos["garantias_modificadas_rows"] = _normalizar_garantias_modificadas(
-        garantias_modificadas_editado.to_dict("records"),
+    datos["garantias_modificaciones_bloques"] = _normalizar_bloques_garantias(
+        garantias_modificaciones_editadas,
         garantias_contrato,
     )
