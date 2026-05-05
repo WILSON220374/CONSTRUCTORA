@@ -400,7 +400,7 @@ with col_r3:
         disabled=True,
     )
 
-st.markdown("### TEXTO DEL ACTA")
+st.markdown("### ")
 st.write(
     "Se suscribe la presente acta de reanudación del contrato de obra considerando que están dadas las condiciones para continuar con la ejecución del contrato."
 )
