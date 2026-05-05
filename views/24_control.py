@@ -551,6 +551,47 @@ def _normalizar_prorrogas(rows):
 
     return filas
 
+def _parse_fecha_opcional(valor):
+    if valor is None or valor == "":
+        return None
+    return _parse_fecha(valor)
+
+
+def _normalizar_garantias_modificadas(rows, garantias_contrato):
+    filas = []
+
+    for fila in rows or []:
+        if not isinstance(fila, dict):
+            continue
+
+        amparo = _texto(fila.get("AMPARO"))
+        if not amparo:
+            continue
+
+        filas.append(
+            {
+                "AMPARO": amparo,
+                "SUFICIENCIA": _safe_float(fila.get("SUFICIENCIA"), 0.0),
+                "DESDE": _parse_fecha_opcional(fila.get("DESDE")),
+                "HASTA": _parse_fecha_opcional(fila.get("HASTA")),
+            }
+        )
+
+    if not filas:
+        for garantia in garantias_contrato or []:
+            amparo = _texto(garantia.get("amparo"))
+            if amparo:
+                filas.append(
+                    {
+                        "AMPARO": amparo,
+                        "SUFICIENCIA": 0.0,
+                        "DESDE": None,
+                        "HASTA": None,
+                    }
+                )
+
+    return filas
+
 
 def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
     group_id_actual = _texto(st.session_state.get("group_id"))
@@ -910,5 +951,7 @@ if guardar_form:
     datos["suspensiones_rows"] = _normalizar_suspensiones(suspensiones_editado.to_dict("records"), fecha_inicial_terminacion)
     datos["adiciones_rows"] = _normalizar_adiciones(adiciones_editado.to_dict("records"), valor_contrato)
     datos["prorrogas_rows"] = _normalizar_prorrogas(prorrogas_editado.to_dict("records"))
-    _guardar()
-    st.rerun()
+    datos["garantias_modificadas_rows"] = _normalizar_garantias_modificadas(
+        garantias_modificadas_editado.to_dict("records"),
+        garantias_contrato,
+    )
