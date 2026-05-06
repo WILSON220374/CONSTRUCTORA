@@ -537,8 +537,10 @@ def _smmlv_base_adiciones(control_obra):
     return _safe_float(control_obra.get("salario_minimo_anio_contrato"), 0.0)
 
 
-def _estado_vacio():
+def _solicitud_vacia(consecutivo=1):
     return {
+        "consecutivo": int(consecutivo),
+        "fecha_solicitud": date.today().isoformat(),
         "tipo_solicitud": ["ADICIÓN"],
         "modificaciones_rows": [],
         "objeto_solicitud": "",
@@ -555,24 +557,122 @@ def _estado_vacio():
     }
 
 
+def _normalizar_solicitud(solicitud, consecutivo=1):
+    base = _solicitud_vacia(consecutivo)
+    if isinstance(solicitud, dict):
+        base.update(solicitud)
+
+    base["consecutivo"] = int(base.get("consecutivo") or consecutivo)
+    base["fecha_solicitud"] = _parse_fecha(base.get("fecha_solicitud")) or date.today()
+    base["modificaciones_rows"] = _filas_modificaciones(base.get("modificaciones_rows", []))
+    base["discriminacion_rows"] = _filas_discriminacion(base.get("discriminacion_rows", []))
+
+    if not isinstance(base.get("tipo_solicitud"), list):
+        tipo = _texto(base.get("tipo_solicitud"))
+        base["tipo_solicitud"] = [tipo] if tipo else ["ADICIÓN"]
+
+    return base
+
+
+def _estado_global_vacio():
+    return {
+        "solicitudes": [_normalizar_solicitud({}, 1)],
+        "solicitud_activa": 1,
+    }
+
+
+def _normalizar_estado_global(cargado):
+    if not isinstance(cargado, dict):
+        return _estado_global_vacio()
+
+    if isinstance(cargado.get("solicitudes"), list):
+        solicitudes = []
+        for i, solicitud in enumerate(cargado.get("solicitudes", []), start=1):
+            solicitudes.append(_normalizar_solicitud(solicitud, i))
+
+        if not solicitudes:
+            solicitudes = [_normalizar_solicitud({}, 1)]
+
+        consecutivos = [int(x.get("consecutivo") or 0) for x in solicitudes]
+        activa = int(cargado.get("solicitud_activa") or consecutivos[-1] or 1)
+        if activa not in consecutivos:
+            activa = consecutivos[-1]
+
+        return {
+            "solicitudes": solicitudes,
+            "solicitud_activa": activa,
+        }
+
+    # Migración de la versión anterior: una sola solicitud guardada en el nivel principal.
+    return {
+        "solicitudes": [_normalizar_solicitud(cargado, 1)],
+        "solicitud_activa": int(cargado.get("consecutivo") or 1),
+    }
+
+
 def _inicializar_estado():
     group_id_actual = _texto(st.session_state.get("group_id"))
     cache_group = _texto(st.session_state.get("_modificacion_prorroga_group"))
 
     if cache_group != group_id_actual or "modificacion_prorroga_datos" not in st.session_state:
         cargado = cargar_estado(CLAVE_GUARDADO) or {}
-        if not isinstance(cargado, dict):
-            cargado = {}
-        base = _estado_vacio()
-        base.update(cargado)
-        base["modificaciones_rows"] = _filas_modificaciones(base.get("modificaciones_rows", []))
-        base["discriminacion_rows"] = _filas_discriminacion(base.get("discriminacion_rows", []))
-        st.session_state["modificacion_prorroga_datos"] = base
+        st.session_state["modificacion_prorroga_datos"] = _normalizar_estado_global(cargado)
         st.session_state["_modificacion_prorroga_group"] = group_id_actual
 
 
+def _obtener_solicitud_activa():
+    estado = st.session_state["modificacion_prorroga_datos"]
+    activa = int(estado.get("solicitud_activa") or 1)
+
+    for solicitud in estado.get("solicitudes", []):
+        if int(solicitud.get("consecutivo") or 0) == activa:
+            return solicitud
+
+    solicitudes = estado.get("solicitudes", [])
+    if solicitudes:
+        estado["solicitud_activa"] = int(solicitudes[0].get("consecutivo") or 1)
+        return solicitudes[0]
+
+    nueva = _normalizar_solicitud({}, 1)
+    estado["solicitudes"] = [nueva]
+    estado["solicitud_activa"] = 1
+    return nueva
+
+
+def _crear_nueva_solicitud():
+    estado = st.session_state["modificacion_prorroga_datos"]
+    solicitudes = estado.get("solicitudes", [])
+    ultimo = max([int(x.get("consecutivo") or 0) for x in solicitudes], default=0)
+    nueva = _normalizar_solicitud({}, ultimo + 1)
+    solicitudes.append(nueva)
+    estado["solicitudes"] = solicitudes
+    estado["solicitud_activa"] = int(nueva["consecutivo"])
+    return int(nueva["consecutivo"])
+
+
 def _guardar():
-    guardar_estado(CLAVE_GUARDADO, st.session_state["modificacion_prorroga_datos"])
+    estado_actual = st.session_state["modificacion_prorroga_datos"]
+    estado_actual = _normalizar_estado_global(estado_actual)
+
+    guardado = cargar_estado(CLAVE_GUARDADO) or {}
+    estado_guardado = _normalizar_estado_global(guardado)
+
+    solicitudes_actuales = estado_actual.get("solicitudes", [])
+    solicitudes_guardadas = estado_guardado.get("solicitudes", [])
+
+    consecutivos_actuales = {int(x.get("consecutivo") or 0) for x in solicitudes_actuales}
+    consecutivos_guardados = {int(x.get("consecutivo") or 0) for x in solicitudes_guardadas}
+
+    if consecutivos_guardados and not consecutivos_guardados.issubset(consecutivos_actuales):
+        st.error(
+            "No se guardó la solicitud porque el estado actual no contiene todas las solicitudes ya guardadas. "
+            "Esto evita sobrescribir solicitudes anteriores."
+        )
+        return False
+
+    st.session_state["modificacion_prorroga_datos"] = estado_actual
+    guardar_estado(CLAVE_GUARDADO, estado_actual)
+    return True
 
 
 # ==========================================================
@@ -654,6 +754,8 @@ def _generar_word(generales, datos, df_modificaciones, df_prorrogas, df_suspensi
 
     tipos = ", ".join(datos.get("tipo_solicitud", []))
     _p(doc, "SOLICITUD DE ADICIÓN Y/O MODIFICACIÓN Y/O PRÓRROGA CONTRATO DE OBRA", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
+    _p(doc, f"SOLICITUD No. {int(datos.get('consecutivo') or 1)}", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=9)
+    _p(doc, f"FECHA DE SOLICITUD: {_fecha_texto(datos.get('fecha_solicitud'))}", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=9)
     _p(doc, f"TIPO DE SOLICITUD: {tipos}", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=9)
 
     _p(doc, "")
@@ -809,7 +911,50 @@ control_obra = _leer_estado("control_obra")
 seguimiento_fisico = _leer_estado("seguimiento_fisico")
 
 _inicializar_estado()
-datos = st.session_state["modificacion_prorroga_datos"]
+estado_solicitudes = st.session_state["modificacion_prorroga_datos"]
+solicitudes_disponibles = estado_solicitudes.get("solicitudes", [])
+
+st.markdown("### CONTROL DE SOLICITUDES")
+col_sol1, col_sol2, col_sol3 = st.columns([1, 1, 1])
+
+with col_sol1:
+    opciones_solicitud = [int(x.get("consecutivo") or 0) for x in solicitudes_disponibles]
+    solicitud_activa = int(estado_solicitudes.get("solicitud_activa") or (opciones_solicitud[-1] if opciones_solicitud else 1))
+    if solicitud_activa not in opciones_solicitud and opciones_solicitud:
+        solicitud_activa = opciones_solicitud[-1]
+
+    solicitud_seleccionada = st.selectbox(
+        "Solicitud No.",
+        options=opciones_solicitud or [1],
+        index=(opciones_solicitud.index(solicitud_activa) if solicitud_activa in opciones_solicitud else 0),
+        key="mod_prorroga_selector_solicitud",
+    )
+    estado_solicitudes["solicitud_activa"] = int(solicitud_seleccionada)
+
+with col_sol2:
+    if st.button("➕ Nueva solicitud", key="mod_prorroga_nueva_solicitud"):
+        nueva_solicitud = _crear_nueva_solicitud()
+        _guardar()
+        st.session_state["mod_prorroga_selector_solicitud"] = nueva_solicitud
+        st.rerun()
+
+datos = _obtener_solicitud_activa()
+prefijo = f"mod_prorroga_{int(datos.get('consecutivo') or 1)}"
+
+with col_sol3:
+    st.number_input(
+        "Consecutivo",
+        value=int(datos.get("consecutivo") or 1),
+        disabled=True,
+        key=f"{prefijo}_consecutivo",
+    )
+
+datos["fecha_solicitud"] = st.date_input(
+    "FECHA DE SOLICITUD",
+    value=_fecha_input(datos.get("fecha_solicitud", date.today())),
+    format="DD/MM/YYYY",
+    key=f"{prefijo}_fecha_solicitud",
+)
 
 generales = _datos_generales(acta_inicio, contrato_obra, contrato_interventoria, control_obra)
 avance_fisico = _avance_fisico(seguimiento_fisico)
@@ -824,7 +969,7 @@ datos["tipo_solicitud"] = st.multiselect(
     "Seleccione el tipo de solicitud",
     options=["ADICIÓN", "MODIFICACIÓN", "PRÓRROGA"],
     default=datos.get("tipo_solicitud", ["ADICIÓN"]),
-    key="mod_prorroga_tipo_solicitud",
+    key=f"{prefijo}_tipo_solicitud",
 )
 
 st.markdown("### RESPONSABILIDAD")
@@ -855,7 +1000,7 @@ modificaciones_editadas = st.data_editor(
     hide_index=True,
     width="stretch",
     num_rows="dynamic",
-    key="mod_prorroga_modificaciones_editor",
+    key=f"{prefijo}_modificaciones_editor",
     column_config={
         "Modificación No.": st.column_config.TextColumn("Modificación No."),
         "Fecha": st.column_config.DateColumn("Fecha", format="DD/MM/YYYY"),
@@ -874,7 +1019,7 @@ if fechas_prorrogas:
         "Mostrar prórrogas hasta la fecha",
         value=fechas_prorrogas[-1],
         format="DD/MM/YYYY",
-        key="mod_prorroga_fecha_filtro_prorrogas",
+        key=f"{prefijo}_fecha_filtro_prorrogas",
     )
 else:
     fecha_prorrogas = date.today()
@@ -891,7 +1036,7 @@ if fechas_suspensiones:
         "Mostrar suspensiones y ampliaciones hasta la fecha",
         value=fechas_suspensiones[-1],
         format="DD/MM/YYYY",
-        key="mod_prorroga_fecha_filtro_suspensiones",
+        key=f"{prefijo}_fecha_filtro_suspensiones",
     )
 else:
     fecha_suspensiones = date.today()
@@ -905,7 +1050,7 @@ with col_v1:
         "FECHA DE VENCIMIENTO ACTUAL",
         value=_fecha_input(datos.get("fecha_vencimiento_actual", generales["fecha_vencimiento_actual"])),
         format="DD/MM/YYYY",
-        key="mod_prorroga_fecha_vencimiento_actual",
+        key=f"{prefijo}_fecha_vencimiento_actual",
     )
     st.number_input(
         "VALOR INICIAL DEL CONTRATO",
@@ -930,7 +1075,7 @@ if fechas_adiciones:
         "Mostrar adiciones hasta la fecha",
         value=fechas_adiciones[-1],
         format="DD/MM/YYYY",
-        key="mod_prorroga_fecha_filtro_adiciones",
+        key=f"{prefijo}_fecha_filtro_adiciones",
     )
 else:
     fecha_adiciones = date.today()
@@ -942,7 +1087,7 @@ datos["valor_acumulado_contrato"] = st.number_input(
     "VALOR ACUMULADO DEL CONTRATO",
     value=float(datos.get("valor_acumulado_contrato", generales["valor_acumulado"])),
     format="%.2f",
-    key="mod_prorroga_valor_acumulado_contrato",
+    key=f"{prefijo}_valor_acumulado_contrato",
 )
 
 st.markdown("### OBJETO DE LA SOLICITUD")
@@ -950,7 +1095,7 @@ datos["objeto_solicitud"] = st.text_area(
     "Objeto de la solicitud",
     value=_texto(datos.get("objeto_solicitud")),
     height=150,
-    key="mod_prorroga_objeto_solicitud",
+    key=f"{prefijo}_objeto_solicitud",
 )
 
 st.markdown("### ALCANCE DE LAS ACTIVIDADES A DESARROLLAR")
@@ -958,7 +1103,7 @@ datos["alcance_actividades"] = st.text_area(
     "Alcance de las actividades",
     value=_texto(datos.get("alcance_actividades")),
     height=150,
-    key="mod_prorroga_alcance_actividades",
+    key=f"{prefijo}_alcance_actividades",
 )
 
 st.markdown("### DISCRIMINACIÓN DEL VALOR ADICIONAL Y/O REDISTRIBUCIÓN DE RECURSOS SOLICITADOS")
@@ -978,7 +1123,7 @@ discriminacion_editada = st.data_editor(
     hide_index=True,
     width="stretch",
     num_rows="dynamic",
-    key="mod_prorroga_discriminacion_editor",
+    key=f"{prefijo}_discriminacion_editor",
     column_config={
         "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
         "VALOR INICIAL": st.column_config.NumberColumn("VALOR INICIAL", format="$ %.2f"),
@@ -998,7 +1143,7 @@ if fechas_avance_fisico:
         options=fechas_avance_fisico,
         index=len(fechas_avance_fisico) - 1,
         format_func=lambda x: x.strftime("%d/%m/%Y"),
-        key="mod_prorroga_fecha_avance_fisico",
+        key=f"{prefijo}_fecha_avance_fisico",
     )
 else:
     fecha_avance_fisico = date.today()
@@ -1024,7 +1169,7 @@ if fechas_pagos:
         options=fechas_pagos,
         index=len(fechas_pagos) - 1,
         format_func=lambda x: x.strftime("%d/%m/%Y"),
-        key="mod_prorroga_fecha_avance_inversion",
+        key=f"{prefijo}_fecha_avance_inversion",
     )
 else:
     fecha_avance_inversion = date.today()
@@ -1039,7 +1184,7 @@ datos["resumen_valor_amortizado"] = st.number_input(
     "Valor amortizado",
     value=float(datos.get("resumen_valor_amortizado", resumen_financiero.get("VALOR AMORTIZADO", 0.0))),
     format="%.2f",
-    key="mod_prorroga_resumen_valor_amortizado",
+    key=f"{prefijo}_resumen_valor_amortizado",
 )
 
 col_res_fecha, col_res_facturado = st.columns(2)
@@ -1048,14 +1193,14 @@ with col_res_fecha:
         "Fecha",
         value=_fecha_input(datos.get("resumen_fecha_facturado", date.today())),
         format="DD/MM/YYYY",
-        key="mod_prorroga_resumen_fecha_facturado",
+        key=f"{prefijo}_resumen_fecha_facturado",
     )
 with col_res_facturado:
     datos["resumen_valor_facturado"] = st.number_input(
         "Valor facturado",
         value=float(datos.get("resumen_valor_facturado", resumen_financiero.get("VALOR FACTURADO", 0.0))),
         format="%.2f",
-        key="mod_prorroga_resumen_valor_facturado",
+        key=f"{prefijo}_resumen_valor_facturado",
     )
 
 saldo_por_ejecutar = float(generales.get("valor_inicial", 0.0)) - float(datos.get("resumen_valor_facturado", 0.0))
@@ -1065,7 +1210,7 @@ st.number_input(
     value=float(saldo_por_ejecutar),
     disabled=True,
     format="%.2f",
-    key="mod_prorroga_resumen_saldo_por_ejecutar",
+    key=f"{prefijo}_resumen_saldo_por_ejecutar",
 )
 
 df_resumen_financiero = pd.DataFrame(
@@ -1085,23 +1230,23 @@ datos["procesos_multas_sanciones"] = st.text_area(
     "Procesos de multas y sanciones",
     value=_texto(datos.get("procesos_multas_sanciones")),
     height=120,
-    key="mod_prorroga_multas_sanciones",
+    key=f"{prefijo}_multas_sanciones",
 )
 
 st.markdown("### JUSTIFICACIÓN DE LA INTERVENTORÍA")
-datos["justificacion_tecnica"] = st.text_area("Técnica", value=_texto(datos.get("justificacion_tecnica")), height=100, key="mod_prorroga_just_tecnica")
-datos["justificacion_juridica"] = st.text_area("Jurídica", value=_texto(datos.get("justificacion_juridica")), height=100, key="mod_prorroga_just_juridica")
-datos["justificacion_financiera"] = st.text_area("Financiera", value=_texto(datos.get("justificacion_financiera")), height=100, key="mod_prorroga_just_financiera")
-datos["justificacion_presupuestal"] = st.text_area("Presupuestal", value=_texto(datos.get("justificacion_presupuestal")), height=100, key="mod_prorroga_just_presupuestal")
-datos["justificacion_ambiental_social_predial"] = st.text_area("Ambiental / social / predial / sostenibilidad", value=_texto(datos.get("justificacion_ambiental_social_predial")), height=100, key="mod_prorroga_just_ambiental")
-datos["otras_justificaciones"] = st.text_area("Otras justificaciones", value=_texto(datos.get("otras_justificaciones")), height=100, key="mod_prorroga_just_otras")
+datos["justificacion_tecnica"] = st.text_area("Técnica", value=_texto(datos.get("justificacion_tecnica")), height=100, key=f"{prefijo}_just_tecnica")
+datos["justificacion_juridica"] = st.text_area("Jurídica", value=_texto(datos.get("justificacion_juridica")), height=100, key=f"{prefijo}_just_juridica")
+datos["justificacion_financiera"] = st.text_area("Financiera", value=_texto(datos.get("justificacion_financiera")), height=100, key=f"{prefijo}_just_financiera")
+datos["justificacion_presupuestal"] = st.text_area("Presupuestal", value=_texto(datos.get("justificacion_presupuestal")), height=100, key=f"{prefijo}_just_presupuestal")
+datos["justificacion_ambiental_social_predial"] = st.text_area("Ambiental / social / predial / sostenibilidad", value=_texto(datos.get("justificacion_ambiental_social_predial")), height=100, key=f"{prefijo}_just_ambiental")
+datos["otras_justificaciones"] = st.text_area("Otras justificaciones", value=_texto(datos.get("otras_justificaciones")), height=100, key=f"{prefijo}_just_otras")
 
 st.markdown("### OTROS DOCUMENTOS QUE SOPORTAN LA SOLICITUD")
 datos["otros_documentos"] = st.text_area(
     "Otros documentos que soportan la solicitud",
     value=_texto(datos.get("otros_documentos")),
     height=120,
-    key="mod_prorroga_otros_documentos",
+    key=f"{prefijo}_otros_documentos",
 )
 
 st.markdown("### NOTAS")
@@ -1121,7 +1266,7 @@ st.dataframe(df_firmas, hide_index=True, width="stretch")
 
 col_guardar, col_word = st.columns([1, 1])
 with col_guardar:
-    if st.button("💾 Guardar solicitud", type="primary", key="mod_prorroga_guardar"):
+    if st.button("💾 Guardar solicitud", type="primary", key=f"{prefijo}_guardar"):
         _guardar()
         st.success("Solicitud guardada correctamente.")
 
@@ -1143,5 +1288,5 @@ with col_word:
         data=word,
         file_name="solicitud_modificacion_prorroga.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        key="mod_prorroga_descargar_word",
+        key=f"{prefijo}_descargar_word",
     )
