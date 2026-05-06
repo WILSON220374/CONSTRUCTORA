@@ -630,5 +630,3 @@ with st.container(border=True):
             disabled=True,
             key=f"bitacora_responsable_interventor_{folio_activo}",
             )
-
-_guardar()
