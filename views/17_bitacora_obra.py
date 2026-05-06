@@ -268,8 +268,67 @@ def _inicializar_estado(acta_inicio, contrato_obra):
         st.session_state["_bitacora_obra_group"] = group_id_actual
 
 
+def _peso_incidencias(incidencias):
+    peso = 0
+
+    for incidencia in incidencias or []:
+        if not isinstance(incidencia, dict):
+            continue
+
+        if _texto(incidencia.get("anotaciones")):
+            peso += 1
+
+        actividades = incidencia.get("actividades", [])
+        if isinstance(actividades, list):
+            for actividad in actividades:
+                if isinstance(actividad, dict):
+                    if _texto(actividad.get("ÍTEM No.")) or _texto(actividad.get("DESCRIPCIÓN DEL ÍTEM")):
+                        peso += 1
+
+        imagenes = incidencia.get("imagenes", [])
+        if isinstance(imagenes, list):
+            peso += len(imagenes)
+
+    return peso
+
+
 def _guardar():
-    guardar_estado(CLAVE_GUARDADO, st.session_state["bitacora_obra_datos"])
+    datos_actuales = st.session_state["bitacora_obra_datos"]
+    incidencias_actuales = datos_actuales.get("incidencias", [])
+
+    guardado = cargar_estado(CLAVE_GUARDADO) or {}
+    incidencias_guardadas = guardado.get("incidencias", []) if isinstance(guardado, dict) else []
+
+    if not isinstance(incidencias_guardadas, list):
+        incidencias_guardadas = []
+
+    folios_actuales = {
+        int(x.get("folio") or 0)
+        for x in incidencias_actuales
+        if isinstance(x, dict) and int(x.get("folio") or 0) > 0
+    }
+
+    folios_guardados = {
+        int(x.get("folio") or 0)
+        for x in incidencias_guardadas
+        if isinstance(x, dict) and int(x.get("folio") or 0) > 0
+    }
+
+    if folios_guardados and len(folios_actuales) < len(folios_guardados):
+        st.error(
+            "No se guardó la bitácora porque el estado actual tiene menos folios que el estado ya guardado. "
+            "Esto evita sobrescribir información existente."
+        )
+        return
+
+    if _peso_incidencias(incidencias_actuales) < _peso_incidencias(incidencias_guardadas):
+        st.error(
+            "No se guardó la bitácora porque el estado actual tiene menos información que el estado ya guardado. "
+            "Revise la carga antes de guardar."
+        )
+        return
+
+    guardar_estado(CLAVE_GUARDADO, datos_actuales)
     st.success("Bitácora de obra guardada correctamente.")
 
 
