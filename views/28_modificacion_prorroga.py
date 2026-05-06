@@ -594,16 +594,24 @@ def _generar_word(generales, datos, df_modificaciones, df_prorrogas, df_suspensi
     _tabla_simple(
         doc,
         [
-            ("FECHA DE VENCIMIENTO ACTUAL", _fecha_texto(generales.get("fecha_vencimiento_actual"))),
+            ("FECHA DE VENCIMIENTO ACTUAL", _fecha_texto(datos.get("fecha_vencimiento_actual", generales.get("fecha_vencimiento_actual")))),
             ("VALOR INICIAL DEL CONTRATO", _moneda(generales.get("valor_inicial"))),
             ("50% EN SMMLV", _texto(generales.get("valor_inicial_50_smmlv", 0))),
-            ("VALOR ACUMULADO DEL CONTRATO", _moneda(generales.get("valor_acumulado"))),
         ],
     )
 
     _p(doc, "")
     _p(doc, "VALOR ADICIONES", bold=True)
     _tabla_dataframe(doc, df_adiciones)
+
+    _p(doc, "")
+    _tabla_simple(
+        doc,
+        [
+            ("VALOR ACUMULADO DEL CONTRATO", _moneda(datos.get("valor_acumulado_contrato", generales.get("valor_acumulado"))),
+            ),
+        ],
+    )
 
     secciones = [
         ("OBJETO DE LA SOLICITUD", datos.get("objeto_solicitud", "")),
@@ -758,15 +766,36 @@ st.dataframe(df_suspensiones, hide_index=True, width="stretch")
 
 col_v1, col_v2 = st.columns(2)
 with col_v1:
-    st.date_input("FECHA DE VENCIMIENTO ACTUAL", value=_fecha_input(generales["fecha_vencimiento_actual"]), disabled=True, format="DD/MM/YYYY")
-    st.number_input("VALOR INICIAL DEL CONTRATO", value=float(generales["valor_inicial"]), disabled=True, format="%.2f")
+    datos["fecha_vencimiento_actual"] = st.date_input(
+        "FECHA DE VENCIMIENTO ACTUAL",
+        value=_fecha_input(datos.get("fecha_vencimiento_actual", generales["fecha_vencimiento_actual"])),
+        format="DD/MM/YYYY",
+        key="mod_prorroga_fecha_vencimiento_actual",
+    )
+    st.number_input(
+        "VALOR INICIAL DEL CONTRATO",
+        value=float(generales["valor_inicial"]),
+        disabled=True,
+        format="%.2f",
+    )
 with col_v2:
-    st.number_input("50% EN SMMLV", value=float(generales.get("valor_inicial_50_smmlv", 0.0)), disabled=True, format="%.4f")
-    st.number_input("VALOR ACUMULADO DEL CONTRATO", value=float(generales["valor_acumulado"]), disabled=True, format="%.2f")
+    st.number_input(
+        "50% EN SMMLV",
+        value=float(generales.get("valor_inicial_50_smmlv", 0.0)),
+        disabled=True,
+        format="%.4f",
+    )
 
 st.markdown("#### VALOR ADICIONES")
 df_adiciones = _df_adiciones_control(control_obra)
 st.dataframe(df_adiciones, hide_index=True, width="stretch")
+
+datos["valor_acumulado_contrato"] = st.number_input(
+    "VALOR ACUMULADO DEL CONTRATO",
+    value=float(datos.get("valor_acumulado_contrato", generales["valor_acumulado"])),
+    format="%.2f",
+    key="mod_prorroga_valor_acumulado_contrato",
+)
 
 st.markdown("### OBJETO DE LA SOLICITUD")
 datos["objeto_solicitud"] = st.text_area(
