@@ -636,7 +636,16 @@ def _generar_word(generales, datos, df_modificaciones, df_prorrogas, df_suspensi
 
     _p(doc, "")
     _p(doc, "RESUMEN FINANCIERO CONTRATO DE OBRA", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-    _tabla_dataframe(doc, df_resumen_financiero)
+    _tabla_simple(
+        doc,
+        [
+            ("Valor anticipo otorgado", _moneda(df_resumen_financiero.iloc[0].get("VALOR ANTICIPO OTORGADO", 0.0))),
+            ("Valor amortizado", _moneda(df_resumen_financiero.iloc[0].get("VALOR AMORTIZADO", 0.0))),
+            ("Fecha valor facturado", _fecha_texto(df_resumen_financiero.iloc[0].get("FECHA", ""))),
+            ("Valor facturado", _moneda(df_resumen_financiero.iloc[0].get("VALOR FACTURADO", 0.0))),
+            ("Saldo por ejecutar incluido IVA", _moneda(df_resumen_financiero.iloc[0].get("SALDO POR EJECUTAR INCLUIDO IVA", 0.0))),
+        ],
+    )
 
     _p(doc, "")
     _p(doc, "PROCESOS DE MULTAS Y SANCIONES", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -849,9 +858,52 @@ df_avance_inversion = pd.DataFrame([avance_inversion])
 st.markdown("### AVANCE INVERSIÓN DE OBRA")
 st.dataframe(df_avance_inversion, hide_index=True, width="stretch")
 
-df_resumen_financiero = pd.DataFrame([resumen_financiero])
 st.markdown("### RESUMEN FINANCIERO CONTRATO DE OBRA")
-st.dataframe(df_resumen_financiero, hide_index=True, width="stretch")
+
+datos["resumen_valor_amortizado"] = st.number_input(
+    "Valor amortizado",
+    value=float(datos.get("resumen_valor_amortizado", resumen_financiero.get("VALOR AMORTIZADO", 0.0))),
+    format="%.2f",
+    key="mod_prorroga_resumen_valor_amortizado",
+)
+
+col_res_fecha, col_res_facturado = st.columns(2)
+with col_res_fecha:
+    datos["resumen_fecha_facturado"] = st.date_input(
+        "Fecha",
+        value=_fecha_input(datos.get("resumen_fecha_facturado", date.today())),
+        format="DD/MM/YYYY",
+        key="mod_prorroga_resumen_fecha_facturado",
+    )
+with col_res_facturado:
+    datos["resumen_valor_facturado"] = st.number_input(
+        "Valor facturado",
+        value=float(datos.get("resumen_valor_facturado", resumen_financiero.get("VALOR FACTURADO", 0.0))),
+        format="%.2f",
+        key="mod_prorroga_resumen_valor_facturado",
+    )
+
+saldo_por_ejecutar = float(generales.get("valor_inicial", 0.0)) - float(datos.get("resumen_valor_facturado", 0.0))
+
+st.number_input(
+    "Saldo por ejecutar incluido IVA",
+    value=float(saldo_por_ejecutar),
+    disabled=True,
+    format="%.2f",
+    key="mod_prorroga_resumen_saldo_por_ejecutar",
+)
+
+df_resumen_financiero = pd.DataFrame(
+    [
+        {
+            "VALOR ANTICIPO OTORGADO": resumen_financiero.get("VALOR ANTICIPO OTORGADO", 0.0),
+            "VALOR AMORTIZADO": datos.get("resumen_valor_amortizado", 0.0),
+            "FECHA": datos.get("resumen_fecha_facturado", ""),
+            "VALOR FACTURADO": datos.get("resumen_valor_facturado", 0.0),
+            "SALDO POR EJECUTAR INCLUIDO IVA": saldo_por_ejecutar,
+        }
+    ]
+)
 
 st.markdown("### PROCESOS DE MULTAS Y SANCIONES")
 datos["procesos_multas_sanciones"] = st.text_area(
