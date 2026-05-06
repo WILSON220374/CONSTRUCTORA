@@ -292,44 +292,65 @@ def _peso_incidencias(incidencias):
     return peso
 
 
-def _guardar():
+def _guardar(validar=True):
     datos_actuales = st.session_state["bitacora_obra_datos"]
     incidencias_actuales = datos_actuales.get("incidencias", [])
 
-    guardado = cargar_estado(CLAVE_GUARDADO) or {}
-    incidencias_guardadas = guardado.get("incidencias", []) if isinstance(guardado, dict) else []
+    if validar:
+        guardado = cargar_estado(CLAVE_GUARDADO) or {}
+        incidencias_guardadas = guardado.get("incidencias", []) if isinstance(guardado, dict) else []
 
-    if not isinstance(incidencias_guardadas, list):
-        incidencias_guardadas = []
+        if not isinstance(incidencias_guardadas, list):
+            incidencias_guardadas = []
 
-    folios_actuales = {
-        int(x.get("folio") or 0)
-        for x in incidencias_actuales
-        if isinstance(x, dict) and int(x.get("folio") or 0) > 0
-    }
+        folios_actuales = {
+            int(x.get("folio") or 0)
+            for x in incidencias_actuales
+            if isinstance(x, dict) and int(x.get("folio") or 0) > 0
+        }
 
-    folios_guardados = {
-        int(x.get("folio") or 0)
-        for x in incidencias_guardadas
-        if isinstance(x, dict) and int(x.get("folio") or 0) > 0
-    }
+        folios_guardados = {
+            int(x.get("folio") or 0)
+            for x in incidencias_guardadas
+            if isinstance(x, dict) and int(x.get("folio") or 0) > 0
+        }
 
-    if folios_guardados and len(folios_actuales) < len(folios_guardados):
-        st.error(
-            "No se guardó la bitácora porque el estado actual tiene menos folios que el estado ya guardado. "
-            "Esto evita sobrescribir información existente."
-        )
-        return
+        if folios_guardados and len(folios_actuales) < len(folios_guardados):
+            st.error(
+                "No se guardó la bitácora porque el estado actual tiene menos folios que el estado ya guardado. "
+                "Esto evita sobrescribir información existente."
+            )
+            return False
 
-    if _peso_incidencias(incidencias_actuales) < _peso_incidencias(incidencias_guardadas):
-        st.error(
-            "No se guardó la bitácora porque el estado actual tiene menos información que el estado ya guardado. "
-            "Revise la carga antes de guardar."
-        )
-        return
+        if _peso_incidencias(incidencias_actuales) < _peso_incidencias(incidencias_guardadas):
+            st.error(
+                "No se guardó la bitácora porque el estado actual tiene menos información que el estado ya guardado. "
+                "Revise la carga antes de guardar."
+            )
+            return False
 
     guardar_estado(CLAVE_GUARDADO, datos_actuales)
     st.success("Bitácora de obra guardada correctamente.")
+    return True
+
+
+def _eliminar_folio_activo():
+    datos = st.session_state["bitacora_obra_datos"]
+    folio_activo = int(datos.get("folio_activo") or 1)
+
+    incidencias = [
+        incidencia
+        for incidencia in datos.get("incidencias", [])
+        if int(incidencia.get("folio") or 0) != folio_activo
+    ]
+
+    if not incidencias:
+        incidencias = [_incidencia_vacia(1, _leer_acta_inicio(), _leer_contrato_obra())]
+
+    datos["incidencias"] = incidencias
+    datos["folio_activo"] = int(incidencias[0].get("folio") or 1)
+
+    _guardar(validar=False)
 
 
 def _obtener_incidencia_activa():
@@ -502,7 +523,7 @@ folio_activo_default = int(datos.get("folio_activo") or folio_opciones[0])
 st.markdown('<div class="bitacora-titulo">BITÁCORA DE OBRA</div>', unsafe_allow_html=True)
 st.markdown('<div class="bitacora-subtitulo">Registro diario de obra</div>', unsafe_allow_html=True)
 
-col_nueva, col_guardar, col_word, col_selector, col_fecha = st.columns([1, 1, 1.2, 1, 1])
+col_nueva, col_guardar, col_eliminar, col_word, col_selector, col_fecha = st.columns([1, 1, 1, 1.2, 1, 1])
 
 with col_nueva:
     if st.button("➕ Nueva incidencia", type="primary", key="bitacora_nueva_incidencia"):
@@ -511,9 +532,18 @@ with col_nueva:
         st.session_state["bitacora_selector_folio"] = nuevo_folio
         st.rerun()
 
-with col_guardar:
-    if st.button("💾 Guardar bitácora", key="bitacora_guardar_principal"):
-        _guardar()
+with col_eliminar:
+    confirmar_eliminar = st.checkbox(
+        "Confirmar eliminar",
+        key=f"bitacora_confirmar_eliminar_{folio_activo_default}",
+    )
+
+    if st.button("🗑️ Eliminar folio", key=f"bitacora_eliminar_folio_{folio_activo_default}"):
+        if confirmar_eliminar:
+            _eliminar_folio_activo()
+            st.rerun()
+        else:
+            st.warning("Debe marcar la confirmación antes de eliminar el folio.")
 
 with col_word:
     word_bitacora = _generar_word_bitacora(incidencias)
@@ -667,7 +697,7 @@ if imagenes:
             st.caption(_texto(imagen.get("nombre")))
             if st.button("Eliminar", key=f"bitacora_eliminar_imagen_{folio_activo}_{idx}"):
                 incidencia["imagenes"].pop(idx)
-                _guardar()
+                _guardar(validar=False)
                 st.rerun()
 else:
     st.info("No hay imágenes cargadas para este folio.")
