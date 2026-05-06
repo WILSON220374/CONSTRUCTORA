@@ -124,6 +124,106 @@ def _sumar_valores(rows, campo):
     return round(total, 2)
 
 
+def _filtrar_df_hasta_fecha(df, columna_fecha, fecha_corte):
+    if df is None or df.empty or columna_fecha not in df.columns:
+        return df
+
+    fecha_corte = _parse_fecha(fecha_corte)
+    if not fecha_corte:
+        return df
+
+    df_filtrado = df.copy()
+    df_filtrado[columna_fecha] = pd.to_datetime(df_filtrado[columna_fecha], errors="coerce").dt.date
+    return df_filtrado[df_filtrado[columna_fecha].notna() & (df_filtrado[columna_fecha] <= fecha_corte)]
+
+
+def _fechas_disponibles_df(df, columna_fecha):
+    if df is None or df.empty or columna_fecha not in df.columns:
+        return []
+
+    fechas = pd.to_datetime(df[columna_fecha], errors="coerce").dt.date.dropna().unique().tolist()
+    return sorted(fechas)
+
+
+def _fechas_corte_seguimiento(seguimiento_fisico):
+    seguimientos = seguimiento_fisico.get("seguimientos_fisicos", {}) or {}
+    if not isinstance(seguimientos, dict):
+        return []
+
+    fechas = []
+    for clave, corte in seguimientos.items():
+        if isinstance(corte, dict):
+            fecha = _parse_fecha(corte.get("fecha_corte", clave))
+            if fecha:
+                fechas.append(fecha)
+
+    return sorted(set(fechas))
+
+
+def _avance_fisico_por_fecha(seguimiento_fisico, fecha_corte):
+    seguimientos = seguimiento_fisico.get("seguimientos_fisicos", {}) or {}
+    fecha_corte = _parse_fecha(fecha_corte)
+
+    if not isinstance(seguimientos, dict) or not fecha_corte:
+        return {
+            "FECHA DE CORTE": "",
+            "% PROGRAMADO": 0.0,
+            "% EJECUTADO": 0.0,
+            "$ PROGRAMADO": 0.0,
+            "$ EJECUTADO": 0.0,
+        }
+
+    corte_seleccionado = {}
+    for clave, corte in seguimientos.items():
+        if not isinstance(corte, dict):
+            continue
+        fecha = _parse_fecha(corte.get("fecha_corte", clave))
+        if fecha == fecha_corte:
+            corte_seleccionado = corte
+            break
+
+    avance_general = corte_seleccionado.get("avance_general", []) or []
+    fila = avance_general[0] if isinstance(avance_general, list) and avance_general and isinstance(avance_general[0], dict) else {}
+
+    return {
+        "FECHA DE CORTE": fecha_corte.strftime("%d/%m/%Y"),
+        "% PROGRAMADO": _safe_float(fila.get("% PROGRAMADO"), 0.0),
+        "% EJECUTADO": _safe_float(fila.get("% EJECUTADO"), 0.0),
+        "$ PROGRAMADO": _safe_float(fila.get("$ PROGRAMADO"), 0.0),
+        "$ EJECUTADO": _safe_float(fila.get("$ EJECUTADO"), 0.0),
+    }
+
+
+def _avance_inversion_hasta_fecha(control_obra, fecha_corte):
+    fecha_corte = _parse_fecha(fecha_corte)
+    pagos = control_obra.get("pagos_rows", []) or []
+
+    total_facturado = 0.0
+    pendiente = 0.0
+    ultima_fecha = ""
+
+    for fila in pagos:
+        if not isinstance(fila, dict):
+            continue
+
+        fecha = _parse_fecha(fila.get("FECHA"))
+        if fecha_corte and fecha and fecha > fecha_corte:
+            continue
+
+        total_facturado += _safe_float(fila.get("VALOR FACTURADO"), 0.0)
+
+        if fecha:
+            ultima_fecha = fecha.strftime("%d/%m/%Y")
+
+        pendiente = _safe_float(fila.get("PENDIENTE POR FACTURAR"), pendiente)
+
+    return {
+        "INVERSIÓN EJECUTADA ACUMULADA": round(total_facturado, 2),
+        "ÚLTIMO MES FACTURADO": ultima_fecha,
+        "SALDO POR EJECUTAR": round(pendiente, 2),
+    }
+
+
 # ==========================================================
 # Lectura de fuentes
 # ==========================================================
@@ -766,11 +866,37 @@ datos["modificaciones_rows"] = _filas_modificaciones(modificaciones_editadas.to_
 df_modificaciones = pd.DataFrame(datos.get("modificaciones_rows", []))
 
 st.markdown("#### PRÓRROGAS")
-df_prorrogas = _df_prorrogas_control(control_obra)
+df_prorrogas_base = _df_prorrogas_control(control_obra)
+fechas_prorrogas = _fechas_disponibles_df(df_prorrogas_base, "FECHA")
+
+if fechas_prorrogas:
+    fecha_prorrogas = st.date_input(
+        "Mostrar prórrogas hasta la fecha",
+        value=fechas_prorrogas[-1],
+        format="DD/MM/YYYY",
+        key="mod_prorroga_fecha_filtro_prorrogas",
+    )
+else:
+    fecha_prorrogas = date.today()
+
+df_prorrogas = _filtrar_df_hasta_fecha(df_prorrogas_base, "FECHA", fecha_prorrogas)
 st.dataframe(df_prorrogas, hide_index=True, width="stretch")
 
 st.markdown("#### SUSPENSIONES Y AMPLIACIONES DE SUSPENSIÓN")
-df_suspensiones = _df_suspensiones_control(control_obra)
+df_suspensiones_base = _df_suspensiones_control(control_obra)
+fechas_suspensiones = _fechas_disponibles_df(df_suspensiones_base, "FECHA DEL ACTA")
+
+if fechas_suspensiones:
+    fecha_suspensiones = st.date_input(
+        "Mostrar suspensiones y ampliaciones hasta la fecha",
+        value=fechas_suspensiones[-1],
+        format="DD/MM/YYYY",
+        key="mod_prorroga_fecha_filtro_suspensiones",
+    )
+else:
+    fecha_suspensiones = date.today()
+
+df_suspensiones = _filtrar_df_hasta_fecha(df_suspensiones_base, "FECHA DEL ACTA", fecha_suspensiones)
 st.dataframe(df_suspensiones, hide_index=True, width="stretch")
 
 col_v1, col_v2 = st.columns(2)
@@ -796,7 +922,20 @@ with col_v2:
     )
 
 st.markdown("#### VALOR ADICIONES")
-df_adiciones = _df_adiciones_control(control_obra)
+df_adiciones_base = _df_adiciones_control(control_obra)
+fechas_adiciones = _fechas_disponibles_df(df_adiciones_base, "FECHA")
+
+if fechas_adiciones:
+    fecha_adiciones = st.date_input(
+        "Mostrar adiciones hasta la fecha",
+        value=fechas_adiciones[-1],
+        format="DD/MM/YYYY",
+        key="mod_prorroga_fecha_filtro_adiciones",
+    )
+else:
+    fecha_adiciones = date.today()
+
+df_adiciones = _filtrar_df_hasta_fecha(df_adiciones_base, "FECHA", fecha_adiciones)
 st.dataframe(df_adiciones, hide_index=True, width="stretch")
 
 datos["valor_acumulado_contrato"] = st.number_input(
@@ -850,12 +989,48 @@ discriminacion_editada = st.data_editor(
 )
 datos["discriminacion_rows"] = _filas_discriminacion(discriminacion_editada.to_dict("records"))
 
-df_avance_fisico = pd.DataFrame([avance_fisico])
 st.markdown("### AVANCE FÍSICO DE OBRA")
+fechas_avance_fisico = _fechas_corte_seguimiento(seguimiento_fisico)
+
+if fechas_avance_fisico:
+    fecha_avance_fisico = st.selectbox(
+        "Seleccione fecha de corte del avance físico",
+        options=fechas_avance_fisico,
+        index=len(fechas_avance_fisico) - 1,
+        format_func=lambda x: x.strftime("%d/%m/%Y"),
+        key="mod_prorroga_fecha_avance_fisico",
+    )
+else:
+    fecha_avance_fisico = date.today()
+
+avance_fisico = _avance_fisico_por_fecha(seguimiento_fisico, fecha_avance_fisico)
+df_avance_fisico = pd.DataFrame([avance_fisico])
 st.dataframe(df_avance_fisico, hide_index=True, width="stretch")
 
-df_avance_inversion = pd.DataFrame([avance_inversion])
 st.markdown("### AVANCE INVERSIÓN DE OBRA")
+
+fechas_pagos = []
+for fila_pago in control_obra.get("pagos_rows", []) or []:
+    if isinstance(fila_pago, dict):
+        fecha_pago = _parse_fecha(fila_pago.get("FECHA"))
+        if fecha_pago:
+            fechas_pagos.append(fecha_pago)
+
+fechas_pagos = sorted(set(fechas_pagos))
+
+if fechas_pagos:
+    fecha_avance_inversion = st.selectbox(
+        "Seleccione fecha del avance de inversión",
+        options=fechas_pagos,
+        index=len(fechas_pagos) - 1,
+        format_func=lambda x: x.strftime("%d/%m/%Y"),
+        key="mod_prorroga_fecha_avance_inversion",
+    )
+else:
+    fecha_avance_inversion = date.today()
+
+avance_inversion = _avance_inversion_hasta_fecha(control_obra, fecha_avance_inversion)
+df_avance_inversion = pd.DataFrame([avance_inversion])
 st.dataframe(df_avance_inversion, hide_index=True, width="stretch")
 
 st.markdown("### RESUMEN FINANCIERO CONTRATO DE OBRA")
