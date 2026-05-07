@@ -777,20 +777,31 @@ def _editor_items(titulo, key, rows, tipo):
     return _normalizar_items(editado.to_dict("records"), mapa_catalogo, estado.get("actas", []), acta_no, tipo)
 
 
-acta["items_previstos"] = _editor_items(
+items_previstos_actualizados = _editor_items(
     "ÍTEMS PREVISTOS",
     f"recibo_items_previstos_{acta_no}",
     acta.get("items_previstos", []),
     "previstos",
 )
 
-acta["items_no_previstos"] = _editor_items(
+items_no_previstos_actualizados = _editor_items(
     "ÍTEMS NO PREVISTOS",
     f"recibo_items_no_previstos_{acta_no}",
     acta.get("items_no_previstos", []),
     "no_previstos",
 )
 
+if (
+    items_previstos_actualizados != acta.get("items_previstos", [])
+    or items_no_previstos_actualizados != acta.get("items_no_previstos", [])
+):
+    acta["items_previstos"] = items_previstos_actualizados
+    acta["items_no_previstos"] = items_no_previstos_actualizados
+    _recalcular_resumen(acta, estado.get("actas", []))
+    st.rerun()
+
+acta["items_previstos"] = items_previstos_actualizados
+acta["items_no_previstos"] = items_no_previstos_actualizados
 _recalcular_resumen(acta, estado.get("actas", []))
 
 st.markdown("### VALOR TOTAL")
@@ -804,19 +815,29 @@ with col_aiu2:
     st.number_input("Utilidad %", value=float(aiu_info.get("UTILIDAD %", 0.0)), disabled=True, format="%.4f")
 
 col_ant1, col_ant2 = st.columns(2)
-with col_ant1:
-    st.number_input("Valor Anticipo Otorgado", value=float(acta.get("valor_anticipo_otorgado", 0.0)), disabled=True, format="%.2f")
-    st.number_input("Valor Amortizado Presente Acta", value=float(acta.get("valor_amortizado_presente_acta", 0.0)), disabled=True, format="%.2f")
-    st.number_input("Valor Amortizado Acumulado", value=float(acta.get("valor_amortizado_acumulado", 0.0)), disabled=True, format="%.2f")
 with col_ant2:
     st.number_input("Porcentaje Anticipo", value=float(acta.get("porcentaje_anticipo", 0.0)), disabled=True, format="%.4f")
-    acta["porcentaje_amortizado_presente_acta"] = st.number_input(
+    nuevo_pct_amortizado = st.number_input(
         "Porcentaje amortizado presente acta",
         value=float(acta.get("porcentaje_amortizado_presente_acta", 0.0)),
         format="%.4f",
         key=f"recibo_pct_amortizado_{acta_no}",
     )
+
+if nuevo_pct_amortizado != float(acta.get("porcentaje_amortizado_presente_acta", 0.0)):
+    acta["porcentaje_amortizado_presente_acta"] = nuevo_pct_amortizado
     _recalcular_resumen(acta, estado.get("actas", []))
+    st.rerun()
+
+acta["porcentaje_amortizado_presente_acta"] = nuevo_pct_amortizado
+_recalcular_resumen(acta, estado.get("actas", []))
+
+with col_ant1:
+    st.number_input("Valor Anticipo Otorgado", value=float(acta.get("valor_anticipo_otorgado", 0.0)), disabled=True, format="%.2f")
+    st.number_input("Valor Amortizado Presente Acta", value=float(acta.get("valor_amortizado_presente_acta", 0.0)), disabled=True, format="%.2f")
+    st.number_input("Valor Amortizado Acumulado", value=float(acta.get("valor_amortizado_acumulado", 0.0)), disabled=True, format="%.2f")
+
+with col_ant2:
     st.number_input("Valor Saldo por Amortizar", value=float(acta.get("valor_saldo_por_amortizar", 0.0)), disabled=True, format="%.2f")
 
 st.markdown("### RESUMEN PRESENTE MES PARA PAGO")
