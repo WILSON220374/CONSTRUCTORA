@@ -572,8 +572,27 @@ def _crear_nuevo_informe(generales):
 
 def _guardar(datos=None):
     estado = st.session_state["informe_interventoria_datos"]
+
+    informes_actuales = estado.get("informes", [])
+    if not isinstance(informes_actuales, list):
+        informes_actuales = []
+
+    guardado = cargar_estado(CLAVE_GUARDADO) or {}
+    informes_guardados = guardado.get("informes", []) if isinstance(guardado, dict) else []
+
+    if not isinstance(informes_guardados, list):
+        informes_guardados = []
+
+    if informes_guardados and len(informes_actuales) < len(informes_guardados):
+        st.error(
+            "No se guardó el informe porque el estado actual tiene menos informes que el estado ya guardado. "
+            "Esto evita sobrescribir informes anteriores."
+        )
+        return False
+
     guardar_estado(CLAVE_GUARDADO, estado)
     st.success("Informe de interventoría guardado correctamente.")
+    return True
 
 
 # ==========================================================
@@ -650,7 +669,7 @@ def _generar_word(generales, datos, df_suspensiones, df_modificaciones, df_adici
     valor_actual = _safe_float(generales.get("valor_inicial_obra"), 0.0) + valor_adiciones
 
     _p(doc, "INFORME DE INTERVENTORÍA", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
-    _p(doc, f"INFORME No. {datos.get("consecutivo", "")}", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
+    _p(doc, f"INFORME No. {datos.get('consecutivo', '')}", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
     _p(doc, "")
     _tabla_simple(
         doc,
