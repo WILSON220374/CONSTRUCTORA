@@ -808,14 +808,16 @@ fechas_corte = _fechas_corte_seguimiento(seguimiento_fisico)
 fecha_actual_informe = _fecha_input(datos.get("fecha_informe", date.today()))
 
 if fechas_corte:
-    indice_fecha = fechas_corte.index(fecha_actual_informe) if fecha_actual_informe in fechas_corte else len(fechas_corte) - 1
-    fecha_informe = st.selectbox(
-        "FECHA",
-        options=fechas_corte,
-        index=indice_fecha,
-        format_func=lambda x: x.strftime("%d/%m/%Y"),
-        key=f"informe_fecha_corte_{consecutivo_informe}",
-    )
+    fecha_base_informe = fecha_actual_informe if fecha_actual_informe in fechas_corte else fechas_corte[-1]
+else:
+    fecha_base_informe = fecha_actual_informe
+
+fecha_informe = st.date_input(
+    "FECHA",
+    value=fecha_base_informe,
+    format="DD/MM/YYYY",
+    key=f"informe_fecha_{consecutivo_informe}",
+)
 else:
     fecha_informe = st.date_input(
         "FECHA",
