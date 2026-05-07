@@ -479,6 +479,8 @@ def _indicadores_calculados_seguimiento(seguimiento_fisico, fecha_corte, valor_c
 # ==========================================================
 def _estado_vacio(generales):
     return {
+        "consecutivo": 1,
+        "fecha_informe": date.today().isoformat(),
         "fecha_terminacion_real": _fecha_texto(generales.get("fecha_terminacion_acta")),
         "valor_adiciones_editable": generales.get("valor_adiciones", 0.0),
         "aseguradora": "",
@@ -493,20 +495,84 @@ def _estado_vacio(generales):
     }
 
 
+def _normalizar_informe(informe, consecutivo, generales):
+    base = _estado_vacio(generales)
+    base["consecutivo"] = int(consecutivo or 1)
+
+    if isinstance(informe, dict):
+        base.update(informe)
+        base["consecutivo"] = int(informe.get("consecutivo") or consecutivo or 1)
+
+    return base
+
+
+def _normalizar_estado_informes(cargado, generales):
+    if not isinstance(cargado, dict):
+        cargado = {}
+
+    if isinstance(cargado.get("informes"), list):
+        informes = [
+            _normalizar_informe(informe, i, generales)
+            for i, informe in enumerate(cargado.get("informes", []), start=1)
+            if isinstance(informe, dict)
+        ]
+    else:
+        informe_migrado = _estado_vacio(generales)
+        informe_migrado.update(cargado)
+        informe_migrado["consecutivo"] = int(cargado.get("consecutivo") or 1)
+        informes = [informe_migrado]
+
+    if not informes:
+        informes = [_normalizar_informe({}, 1, generales)]
+
+    informes = sorted(informes, key=lambda x: int(x.get("consecutivo") or 0))
+    activo = int(cargado.get("informe_activo") or informes[-1].get("consecutivo") or 1)
+
+    if activo not in [int(x.get("consecutivo") or 0) for x in informes]:
+        activo = int(informes[-1].get("consecutivo") or 1)
+
+    return {"informes": informes, "informe_activo": activo}
+
+
 def _inicializar_estado(generales):
     group_id_actual = _texto(st.session_state.get("group_id"))
     cache_group = _texto(st.session_state.get("_informe_interventoria_group"))
     if cache_group != group_id_actual or "informe_interventoria_datos" not in st.session_state:
         cargado = cargar_estado(CLAVE_GUARDADO) or {}
-        base = _estado_vacio(generales)
-        if isinstance(cargado, dict):
-            base.update(cargado)
-        st.session_state["informe_interventoria_datos"] = base
+        st.session_state["informe_interventoria_datos"] = _normalizar_estado_informes(cargado, generales)
         st.session_state["_informe_interventoria_group"] = group_id_actual
 
 
-def _guardar(datos):
-    guardar_estado(CLAVE_GUARDADO, datos)
+def _obtener_informe_activo(generales):
+    estado = st.session_state["informe_interventoria_datos"]
+    informes = estado.get("informes", [])
+    activo = int(estado.get("informe_activo") or 1)
+
+    for informe in informes:
+        if int(informe.get("consecutivo") or 0) == activo:
+            return informe
+
+    nuevo = _normalizar_informe({}, 1, generales)
+    estado["informes"] = [nuevo]
+    estado["informe_activo"] = 1
+    return nuevo
+
+
+def _crear_nuevo_informe(generales):
+    estado = st.session_state["informe_interventoria_datos"]
+    informes = estado.get("informes", [])
+    ultimo = max([int(x.get("consecutivo") or 0) for x in informes], default=0)
+    nuevo = _normalizar_informe({}, ultimo + 1, generales)
+    nuevo["fecha_informe"] = date.today().isoformat()
+    informes.append(nuevo)
+    estado["informes"] = informes
+    estado["informe_activo"] = int(nuevo["consecutivo"])
+    return int(nuevo["consecutivo"])
+
+
+def _guardar(datos=None):
+    estado = st.session_state["informe_interventoria_datos"]
+    guardar_estado(CLAVE_GUARDADO, estado)
     st.success("Informe de interventoría guardado correctamente.")
 
 
@@ -584,6 +650,7 @@ def _generar_word(generales, datos, df_suspensiones, df_modificaciones, df_adici
     valor_actual = _safe_float(generales.get("valor_inicial_obra"), 0.0) + valor_adiciones
 
     _p(doc, "INFORME DE INTERVENTORÍA", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
+    _p(doc, f"INFORME No. {datos.get("consecutivo", "")}", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
     _p(doc, "")
     _tabla_simple(
         doc,
@@ -681,27 +748,61 @@ modificacion_prorroga = _leer_estado("modificacion_prorroga")
 
 generales = _datos_generales(acta_inicio, contrato_obra, contrato_interventoria, control_obra)
 _inicializar_estado(generales)
-datos = st.session_state["informe_interventoria_datos"]
+estado_informes = st.session_state["informe_interventoria_datos"]
+
+# ==========================================================
+# Selector de informes
+# ==========================================================
+st.markdown("### INFORMES GENERADOS")
+
+col_nuevo_informe, col_selector_informe = st.columns([1, 3])
+
+with col_nuevo_informe:
+    if st.button("➕ Nuevo informe", key="informe_nuevo"):
+        nuevo_consecutivo = _crear_nuevo_informe(generales)
+        _guardar()
+        st.session_state["informe_selector_activo"] = nuevo_consecutivo
+        st.rerun()
+
+informes = estado_informes.get("informes", [])
+opciones_informes = [int(x.get("consecutivo") or 0) for x in informes]
+activo_actual = int(estado_informes.get("informe_activo") or (opciones_informes[-1] if opciones_informes else 1))
+
+with col_selector_informe:
+    informe_activo = st.selectbox(
+        "Seleccione informe",
+        options=opciones_informes,
+        index=opciones_informes.index(activo_actual) if activo_actual in opciones_informes else 0,
+        format_func=lambda x: f"Informe No. {x}",
+        key="informe_selector_activo",
+    )
+
+estado_informes["informe_activo"] = int(informe_activo)
+datos = _obtener_informe_activo(generales)
+consecutivo_informe = int(datos.get("consecutivo") or informe_activo or 1)
 
 # ==========================================================
 # Encabezado
 # ==========================================================
 st.markdown("### DATOS GENERALES DEL INFORME")
 fechas_corte = _fechas_corte_seguimiento(seguimiento_fisico)
+fecha_actual_informe = _fecha_input(datos.get("fecha_informe", date.today()))
+
 if fechas_corte:
+    indice_fecha = fechas_corte.index(fecha_actual_informe) if fecha_actual_informe in fechas_corte else len(fechas_corte) - 1
     fecha_informe = st.selectbox(
         "FECHA",
         options=fechas_corte,
-        index=len(fechas_corte) - 1,
+        index=indice_fecha,
         format_func=lambda x: x.strftime("%d/%m/%Y"),
-        key="informe_fecha_corte",
+        key=f"informe_fecha_corte_{consecutivo_informe}",
     )
 else:
     fecha_informe = st.date_input(
         "FECHA",
-        value=_fecha_input(datos.get("fecha_informe", date.today())),
+        value=fecha_actual_informe,
         format="DD/MM/YYYY",
-        key="informe_fecha_manual",
+        key=f"informe_fecha_manual_{consecutivo_informe}",
     )
 datos["fecha_informe"] = fecha_informe
 
@@ -724,7 +825,7 @@ with c3:
         "FECHA DE TERMINACIÓN REAL",
         value=_fecha_input(datos.get("fecha_terminacion_real", generales["fecha_terminacion_acta"])),
         format="DD/MM/YYYY",
-        key="informe_fecha_terminacion_real",
+        key=f"informe_fecha_terminacion_real_{consecutivo_informe}",
     )
 with c4:
     st.number_input("VALOR INICIAL CONTRATO DE OBRA", value=float(generales["valor_inicial_obra"]), disabled=True, format="%.2f")
@@ -733,7 +834,7 @@ with c5:
         "VALOR ADICIONES",
         value=float(datos.get("valor_adiciones_editable", generales["valor_adiciones"])),
         format="%.2f",
-        key="informe_valor_adiciones",
+        key=f"informe_valor_adiciones_{consecutivo_informe}",
     )
 
 valor_actual_obra = float(generales["valor_inicial_obra"]) + float(datos.get("valor_adiciones_editable", 0.0))
@@ -746,7 +847,7 @@ st.markdown("### SUSPENSIONES Y AMPLIACIONES DE SUSPENSIÓN")
 df_susp_base = _df_suspensiones(control_obra)
 fechas_susp = _fechas_disponibles_df(df_susp_base, "FECHA DEL ACTA")
 if fechas_susp:
-    fecha_susp = st.date_input("Mostrar suspensiones hasta", value=fechas_susp[-1], format="DD/MM/YYYY", key="informe_fecha_suspensiones")
+    fecha_susp = st.date_input("Mostrar suspensiones hasta", value=fechas_susp[-1], format="DD/MM/YYYY", key=f"informe_fecha_suspensiones_{consecutivo_informe}")
 else:
     fecha_susp = date.today()
 df_suspensiones = _filtrar_df_hasta_fecha(df_susp_base, "FECHA DEL ACTA", fecha_susp)
@@ -756,7 +857,7 @@ st.markdown("### MODIFICACIONES")
 df_mod_base = _df_modificaciones(modificacion_prorroga)
 fechas_mod = _fechas_disponibles_df(df_mod_base, "FECHA")
 if fechas_mod:
-    fecha_mod = st.date_input("Mostrar modificaciones hasta", value=fechas_mod[-1], format="DD/MM/YYYY", key="informe_fecha_modificaciones")
+    fecha_mod = st.date_input("Mostrar modificaciones hasta", value=fechas_mod[-1], format="DD/MM/YYYY", key=f"informe_fecha_modificaciones_{consecutivo_informe}")
 else:
     fecha_mod = date.today()
 df_modificaciones = _filtrar_df_hasta_fecha(df_mod_base, "FECHA", fecha_mod)
@@ -766,7 +867,7 @@ st.markdown("### ADICIONES")
 df_adic_base = _df_adiciones(control_obra)
 fechas_adic = _fechas_disponibles_df(df_adic_base, "FECHA")
 if fechas_adic:
-    fecha_adic = st.date_input("Mostrar adiciones hasta", value=fechas_adic[-1], format="DD/MM/YYYY", key="informe_fecha_adiciones")
+    fecha_adic = st.date_input("Mostrar adiciones hasta", value=fechas_adic[-1], format="DD/MM/YYYY", key=f"informe_fecha_adiciones_{consecutivo_informe}")
 else:
     fecha_adic = date.today()
 df_adiciones = _filtrar_df_hasta_fecha(df_adic_base, "FECHA", fecha_adic)
@@ -778,11 +879,11 @@ st.dataframe(df_adiciones, hide_index=True, width="stretch")
 st.markdown("### PÓLIZAS VIGENTES")
 col_pol1, col_pol2, col_pol3 = st.columns(3)
 with col_pol1:
-    datos["aseguradora"] = st.text_input("ASEGURADORA", value=datos.get("aseguradora", ""), key="informe_aseguradora")
+    datos["aseguradora"] = st.text_input("ASEGURADORA", value=datos.get("aseguradora", ""), key=f"informe_aseguradora_{consecutivo_informe}")
 with col_pol2:
-    datos["poliza_no"] = st.text_input("PÓLIZA No", value=datos.get("poliza_no", ""), key="informe_poliza_no")
+    datos["poliza_no"] = st.text_input("PÓLIZA No", value=datos.get("poliza_no", ""), key=f"informe_poliza_no_{consecutivo_informe}")
 with col_pol3:
-    datos["anexo_no"] = st.text_input("ANEXO No", value=datos.get("anexo_no", ""), key="informe_anexo_no")
+    datos["anexo_no"] = st.text_input("ANEXO No", value=datos.get("anexo_no", ""), key=f"informe_anexo_no_{consecutivo_informe}")
 
 df_garantias = pd.concat(
     [_df_garantias_iniciales(contrato_obra), _df_garantias_modificadas(control_obra)],
@@ -798,19 +899,19 @@ datos["anticipo_fecha"] = st.date_input(
     "FECHA ANTICIPO",
     value=_fecha_input(datos.get("anticipo_fecha", date.today())),
     format="DD/MM/YYYY",
-    key="informe_anticipo_fecha",
+    key=f"informe_anticipo_fecha_{consecutivo_informe}",
 )
 datos["anticipo_valor"] = st.number_input(
     "VALOR ANTICIPO",
     value=float(datos.get("anticipo_valor", _valor_anticipo(control_obra))),
     format="%.2f",
-    key="informe_anticipo_valor",
+    key=f"informe_anticipo_valor_{consecutivo_informe}",
 )
 
 df_pagos_base = _df_pagos(control_obra)
 fechas_pagos = _fechas_disponibles_df(df_pagos_base, "FECHA")
 if fechas_pagos:
-    fecha_pago = st.date_input("Mostrar actas parciales hasta", value=fechas_pagos[-1], format="DD/MM/YYYY", key="informe_fecha_pagos")
+    fecha_pago = st.date_input("Mostrar actas parciales hasta", value=fechas_pagos[-1], format="DD/MM/YYYY", key=f"informe_fecha_pagos_{consecutivo_informe}")
 else:
     fecha_pago = date.today()
 df_pagos_filtrados = _filtrar_df_hasta_fecha(df_pagos_base, "FECHA", fecha_pago)
@@ -842,7 +943,7 @@ datos["actividades_obra"] = st.text_area(
     value=datos.get("actividades_obra", ""),
     height=180,
     label_visibility="collapsed",
-    key="informe_actividades_obra",
+    key=f"informe_actividades_obra_{consecutivo_informe}",
 )
 
 st.markdown("### ACTIVIDADES DESARROLLADAS CONTRATISTA DE INTERVENTORÍA")
@@ -851,7 +952,7 @@ datos["actividades_interventoria"] = st.text_area(
     value=datos.get("actividades_interventoria", ""),
     height=180,
     label_visibility="collapsed",
-    key="informe_actividades_interventoria",
+    key=f"informe_actividades_interventoria_{consecutivo_informe}",
 )
 
 st.markdown("### SEGUIMIENTO")
@@ -915,7 +1016,7 @@ st.markdown("### FIRMA")
 datos["nombre_interventor_firma"] = st.text_input(
     "Nombre del interventor",
     value=datos.get("nombre_interventor_firma", generales.get("interventor", "")),
-    key="informe_nombre_interventor_firma",
+    key=f"informe_nombre_interventor_firma_{consecutivo_informe}",
 )
 
 # ==========================================================
@@ -923,7 +1024,7 @@ datos["nombre_interventor_firma"] = st.text_input(
 # ==========================================================
 col_b1, col_b2 = st.columns([1, 1])
 with col_b1:
-    if st.button("💾 Guardar informe", key="informe_guardar"):
+    if st.button("💾 Guardar informe", key=f"informe_guardar_{consecutivo_informe}"):
         _guardar(datos)
 
 with col_b2:
@@ -942,8 +1043,8 @@ with col_b2:
     st.download_button(
         "📄 Descargar informe en Word",
         data=word,
-        file_name="informe_interventoria.docx",
+        file_name=f"informe_interventoria_{consecutivo_informe}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         width="stretch",
-        key="informe_descargar_word",
+        key=f"informe_descargar_word_{consecutivo_informe}",
     )
