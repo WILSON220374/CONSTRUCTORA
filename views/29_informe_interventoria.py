@@ -855,13 +855,6 @@ datos["actividades_interventoria"] = st.text_area(
 )
 
 st.markdown("### SEGUIMIENTO")
-datos["seguimiento"] = st.text_area(
-    "Seguimiento",
-    value=datos.get("seguimiento", ""),
-    height=320,
-    label_visibility="collapsed",
-    key="informe_seguimiento",
-)
 
 # ==========================================================
 # Avance físico e indicadores
