@@ -308,6 +308,7 @@ else:
         st.Page("views/25_seguimiento_fisico.py", title="25. Seguimiento físico", icon="📉"),
         st.Page("views/27_acta_reanudacion.py", title="27. ACTA DE REANUDACIÓN", icon="▶️"),
         st.Page("views/28_modificacion_prorroga.py", title="28. Modificación y prórroga", icon="📝"),
+        st.Page("views/29_informe_interventoria.py", title="29. Informe de interventoría", icon="📄"),
         
     ]
 
