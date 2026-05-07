@@ -818,13 +818,7 @@ fecha_informe = st.date_input(
     format="DD/MM/YYYY",
     key=f"informe_fecha_{consecutivo_informe}",
 )
-else:
-    fecha_informe = st.date_input(
-    "FECHA",
-    value=fecha_base_informe,
-    format="DD/MM/YYYY",
-    key=f"informe_fecha_{consecutivo_informe}",
-)
+
 datos["fecha_informe"] = fecha_informe
 
 c1, c2 = st.columns(2)
