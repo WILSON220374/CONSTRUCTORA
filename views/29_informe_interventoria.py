@@ -1,7 +1,8 @@
 from io import BytesIO
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -393,6 +394,84 @@ def _df_avance_actividad(corte):
     if isinstance(filas, list) and filas:
         return pd.DataFrame(filas)
     return pd.DataFrame()
+
+
+def _df_valor_ganado_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato):
+    seguimientos = seguimiento_fisico.get("seguimientos_fisicos", {}) or {}
+    fecha_corte = _parse_fecha(fecha_corte)
+    filas = []
+
+    if not isinstance(seguimientos, dict) or not fecha_corte:
+        return pd.DataFrame(columns=["FECHA", "TIPO", "VALOR"])
+
+    for clave, corte in seguimientos.items():
+        if not isinstance(corte, dict):
+            continue
+
+        fecha = _parse_fecha(corte.get("fecha_corte", clave))
+        if not fecha or fecha > fecha_corte:
+            continue
+
+        avance_general = corte.get("avance_general", []) or []
+        fila = avance_general[0] if isinstance(avance_general, list) and avance_general and isinstance(avance_general[0], dict) else {}
+
+        pv = _safe_float(fila.get("$ PROGRAMADO"), 0.0)
+        ev = _safe_float(valor_contrato, 0.0) * (_safe_float(fila.get("% EJECUTADO"), 0.0) / 100.0)
+        ac = _safe_float(fila.get("$ EJECUTADO"), 0.0)
+
+        filas.extend(
+            [
+                {"FECHA": fecha, "TIPO": "PV - VALOR PLANEADO", "VALOR": pv},
+                {"FECHA": fecha, "TIPO": "EV - VALOR GANADO", "VALOR": ev},
+                {"FECHA": fecha, "TIPO": "AC - COSTO REAL", "VALOR": ac},
+            ]
+        )
+
+    return pd.DataFrame(filas, columns=["FECHA", "TIPO", "VALOR"])
+
+
+def _indicadores_calculados_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato):
+    corte = _corte_seguimiento(seguimiento_fisico, fecha_corte)
+    avance_general = corte.get("avance_general", []) or []
+    fila = avance_general[0] if isinstance(avance_general, list) and avance_general and isinstance(avance_general[0], dict) else {}
+
+    pv = _safe_float(fila.get("$ PROGRAMADO"), 0.0)
+    ev = _safe_float(valor_contrato, 0.0) * (_safe_float(fila.get("% EJECUTADO"), 0.0) / 100.0)
+    ac = _safe_float(fila.get("$ EJECUTADO"), 0.0)
+
+    spi = ev / pv if pv > 0 else 0.0
+    cpi = ev / ac if ac > 0 else 0.0
+
+    df_grafica = _df_valor_ganado_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato)
+    fecha_corte_parseada = _parse_fecha(fecha_corte)
+    retraso = 0
+
+    if not df_grafica.empty and ev > 0 and fecha_corte_parseada:
+        df_pv = df_grafica[df_grafica["TIPO"] == "PV - VALOR PLANEADO"].sort_values("FECHA")
+        puntos = [
+            {"fecha": _parse_fecha(fila_pv.get("FECHA")), "valor": _safe_float(fila_pv.get("VALOR"), 0.0)}
+            for _, fila_pv in df_pv.iterrows()
+        ]
+        puntos = [p for p in puntos if p["fecha"]]
+        fecha_programacion_ganada = None
+
+        if puntos:
+            for i in range(1, len(puntos)):
+                anterior = puntos[i - 1]
+                actual = puntos[i]
+                if anterior["valor"] <= ev <= actual["valor"] and actual["valor"] > anterior["valor"]:
+                    proporcion = (ev - anterior["valor"]) / (actual["valor"] - anterior["valor"])
+                    dias = (actual["fecha"] - anterior["fecha"]).days
+                    fecha_programacion_ganada = anterior["fecha"] + timedelta(days=round(dias * proporcion))
+                    break
+
+            if fecha_programacion_ganada is None:
+                fecha_programacion_ganada = puntos[0]["fecha"] if ev <= puntos[0]["valor"] else puntos[-1]["fecha"]
+
+        if fecha_programacion_ganada:
+            retraso = (fecha_corte_parseada - fecha_programacion_ganada).days
+
+    return {"CPI": round(cpi, 4), "SPI": round(spi, 4), "RETRASO": retraso}
 
 
 # ==========================================================
@@ -798,7 +877,38 @@ if not df_avance_actividad.empty:
     st.markdown("#### AVANCE POR ACTIVIDAD")
     st.dataframe(df_avance_actividad, hide_index=True, width="stretch")
 
-indicadores = _indicadores_desde_corte(corte)
+st.markdown("### GRÁFICO DE VALOR GANADO")
+df_valor_ganado_grafico = _df_valor_ganado_seguimiento(
+    seguimiento_fisico,
+    datos.get("fecha_informe"),
+    generales.get("valor_obra", 0.0),
+)
+
+if not df_valor_ganado_grafico.empty:
+    fig_valor_ganado = px.line(
+        df_valor_ganado_grafico,
+        x="FECHA",
+        y="VALOR",
+        color="TIPO",
+        markers=True,
+        title="Valor ganado",
+    )
+    fig_valor_ganado.update_layout(
+        xaxis_title="Periodo",
+        yaxis_title="Valor",
+        legend_title="Indicador",
+        yaxis_tickprefix="$ ",
+        yaxis_tickformat=",",
+    )
+    st.plotly_chart(fig_valor_ganado, width="stretch")
+else:
+    st.info("No hay cortes de seguimiento físico suficientes para generar el gráfico de valor ganado.")
+
+indicadores = _indicadores_calculados_seguimiento(
+    seguimiento_fisico,
+    datos.get("fecha_informe"),
+    generales.get("valor_obra", 0.0),
+)
 st.markdown("### INDICADORES")
 col_i1, col_i2, col_i3 = st.columns(3)
 with col_i1:
