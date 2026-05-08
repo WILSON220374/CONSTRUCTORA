@@ -532,6 +532,10 @@ with col_nueva:
         st.session_state["bitacora_selector_folio"] = nuevo_folio
         st.rerun()
 
+with col_guardar:
+    if st.button("💾 Guardar bitácora", key="bitacora_guardar_principal"):
+        _guardar()
+
 with col_eliminar:
     confirmar_eliminar = st.checkbox(
         "Confirmar eliminar",
