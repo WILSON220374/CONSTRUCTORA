@@ -267,7 +267,13 @@ def _normalizar_acta(acta, consecutivo, generales, mapa_catalogo):
         base["consecutivo"] = int(acta.get("consecutivo") or consecutivo or 1)
         base["fecha"] = (_parse_fecha(acta.get("fecha")) or date.today()).isoformat()
         base["fecha_vencimiento"] = (_parse_fecha(acta.get("fecha_vencimiento")) or date.today()).isoformat()
-        base["valor_acumulado"] = _safe_float(acta.get("valor_acumulado"), generales.get("valor_inicial", 0.0))
+        valor_acumulado_guardado = _safe_float(acta.get("valor_acumulado"), generales.get("valor_inicial", 0.0))
+        valor_inicial_base = _safe_float(generales.get("valor_inicial"), 0.0)
+
+        if valor_acumulado_guardado > valor_inicial_base * 10 and valor_inicial_base > 0:
+            valor_acumulado_guardado = valor_inicial_base
+
+        base["valor_acumulado"] = valor_acumulado_guardado
         base["items"] = _normalizar_items(acta.get("items", []), mapa_catalogo)
         base["observaciones"] = _texto(acta.get("observaciones"))
         base["nombre_contratista_firma"] = _primero_no_vacio(acta.get("nombre_contratista_firma"), generales.get("contratista"))
@@ -557,11 +563,24 @@ with c2:
         format="DD/MM/YYYY",
         key=f"items_no_previstos_fecha_vencimiento_{acta_no}",
     )
+    key_valor_acumulado = f"items_no_previstos_valor_acumulado_{acta_no}"
+    valor_inicial_base = _safe_float(generales.get("valor_inicial"), 0.0)
+    valor_acumulado_mostrar = _safe_float(acta.get("valor_acumulado"), valor_inicial_base)
+
+    if valor_acumulado_mostrar > valor_inicial_base * 10 and valor_inicial_base > 0:
+        valor_acumulado_mostrar = valor_inicial_base
+        acta["valor_acumulado"] = valor_acumulado_mostrar
+
+    if key_valor_acumulado in st.session_state:
+        valor_widget = _safe_float(st.session_state.get(key_valor_acumulado), 0.0)
+        if valor_widget > valor_inicial_base * 10 and valor_inicial_base > 0:
+            st.session_state[key_valor_acumulado] = valor_inicial_base
+
     acta["valor_acumulado"] = st.number_input(
         "VALOR ACUMULADO",
-        value=float(acta.get("valor_acumulado", generales.get("valor_inicial", 0.0))),
+        value=float(valor_acumulado_mostrar),
         format="%.2f",
-        key=f"items_no_previstos_valor_acumulado_{acta_no}",
+        key=key_valor_acumulado,
     )
 
 st.markdown("### DATOS ESPECÍFICOS")
