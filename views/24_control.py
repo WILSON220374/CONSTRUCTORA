@@ -43,10 +43,17 @@ def _safe_float(valor, default=0.0):
     try:
         if valor is None or valor == "":
             return None if default is None else float(default)
+
         if isinstance(valor, (int, float)):
             return float(valor)
+
         txt = str(valor).strip().replace("$", "").replace(" ", "")
-        txt = txt.replace(".", "").replace(",", ".")
+
+        if "," in txt and "." in txt:
+            txt = txt.replace(".", "").replace(",", ".")
+        elif "," in txt:
+            txt = txt.replace(",", ".")
+
         return float(txt)
     except Exception:
         return None if default is None else float(default)
@@ -113,13 +120,11 @@ def _primero_no_vacio(*valores):
     return ""
 
 
-def _valor_contrato_desde_fuentes(acta_inicio, contrato_obra):
+def _valor_contrato_desde_contrato_obra(contrato_obra):
     candidatos = [
-        acta_inicio.get("valor_total_contrato_obra"),
-        acta_inicio.get("valor_contrato"),
-        acta_inicio.get("valor"),
         contrato_obra.get("valor_total_numeros"),
         contrato_obra.get("valor_contrato"),
+        contrato_obra.get("valor"),
     ]
     for valor in candidatos:
         numero = _safe_float(valor, None)
@@ -171,7 +176,7 @@ def _valor_anticipo_desde_fuentes(plan_anticipo, acta_inicio, contrato_obra):
     if valor_directo is not None and valor_directo > 0:
         return round(valor_directo, 2)
 
-    valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
+    valor_contrato = _valor_contrato_desde_contrato_obra(contrato_obra)
     porcentaje = _safe_float(plan_anticipo.get("porcentaje_anticipo"), 0.0)
     if porcentaje <= 0:
         return 0.0
