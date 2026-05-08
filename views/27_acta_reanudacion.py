@@ -173,7 +173,7 @@ def _fecha_vencimiento_inicial(acta_inicio, contrato_obra):
     return fecha_inicio + timedelta(days=plazo_dias)
 
 
-def _datos_generales(acta_inicio, contrato_obra):
+def _datos_generales(acta_inicio, contrato_obra, contrato_interventoria):
     return {
         "numero_contrato": _primero_no_vacio(
             acta_inicio.get("numero_contrato"),
@@ -210,10 +210,8 @@ def _datos_generales(acta_inicio, contrato_obra):
         "fecha_inicio": _fecha_inicio(acta_inicio),
         "fecha_vencimiento_inicial": _fecha_vencimiento_inicial(acta_inicio, contrato_obra),
         "contrato_interventoria": _primero_no_vacio(
-            contrato_obra.get("numero_contrato_interventoria"),
-            acta_inicio.get("numero_contrato_interventoria"),
+            contrato_interventoria.get("numero_proceso_contratacion"),
         ),
-    }
 
 
 def _suspensiones(control_obra):
@@ -372,9 +370,10 @@ def _generar_word(generales, fila, fecha_reanudacion, nueva_fecha_vencimiento):
 # ==========================================================
 acta_inicio = _leer_estado("acta_inicio_obra")
 contrato_obra = _leer_estado("contrato_obra")
+contrato_interventoria = _leer_estado("contrato_interventoria")
 control_obra = _leer_estado("control_obra")
 
-generales = _datos_generales(acta_inicio, contrato_obra)
+generales = _datos_generales(acta_inicio, contrato_obra, contrato_interventoria)
 suspensiones = _suspensiones(control_obra)
 
 st.markdown("# ACTA DE REANUDACIÓN")
