@@ -9,7 +9,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from docx.shared import Pt, Inches
 
 from supabase_state import cargar_estado
-
+from supabase_state import guardar_estado as guardar_estado_bd
 
 # ==========================================================
 # Helpers
@@ -62,6 +62,51 @@ def _fecha_texto(valor):
 def _leer_estado(clave):
     datos = cargar_estado(clave) or {}
     return datos if isinstance(datos, dict) else {}
+
+def guardar_estado(clave, datos):
+    def serializar(obj):
+        if isinstance(obj, dict):
+            return {k: serializar(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [serializar(x) for x in obj]
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        return obj
+
+    return guardar_estado_bd(clave, serializar(datos))
+
+
+def _clave_acta_reanudacion(fila):
+    tipo = "ampliacion" if _texto(fila.get("ACTA DE AMPLIACIÓN SUSPENSIÓN No.")) else "suspension"
+    numero = _texto(fila.get("ACTA DE AMPLIACIÓN SUSPENSIÓN No.")) or _texto(fila.get("ACTA DE SUSPENSIÓN No.")) or "0"
+    fecha = _fecha_texto(fila.get("FECHA DEL ACTA")).replace("/", "_")
+    return f"{tipo}_{numero}_{fecha}"
+
+
+def _cargar_actas_reanudacion_guardadas():
+    datos = cargar_estado("acta_reanudacion") or {}
+    return datos if isinstance(datos, dict) else {}
+
+
+def _guardar_acta_reanudacion(clave_acta, payload):
+    datos = _cargar_actas_reanudacion_guardadas()
+    actas = datos.get("actas", {})
+
+    if not isinstance(actas, dict):
+        actas = {}
+
+    actas[clave_acta] = payload
+    datos["actas"] = actas
+    datos["acta_activa"] = clave_acta
+
+    respuesta = guardar_estado("acta_reanudacion", datos)
+
+    if respuesta is None:
+        st.error("No se pudo guardar el acta de reanudación en la nube.")
+        return False
+
+    st.success("Acta de reanudación guardada correctamente.")
+    return True
 
 
 def _primero_no_vacio(*valores):
@@ -345,8 +390,16 @@ seleccion = st.selectbox(
 )
 fila = suspensiones[opciones[seleccion]]
 
+clave_acta = _clave_acta_reanudacion(fila)
+actas_guardadas = _cargar_actas_reanudacion_guardadas().get("actas", {})
+acta_guardada = actas_guardadas.get(clave_acta, {}) if isinstance(actas_guardadas, dict) else {}
+
 fecha_suspension_inicial = _parse_fecha(fila.get("DESDE")) or date.today()
-fecha_reanudacion_base = _parse_fecha(fila.get("HASTA")) or date.today()
+fecha_reanudacion_base = (
+    _parse_fecha(acta_guardada.get("fecha_reanudacion"))
+    or _parse_fecha(fila.get("HASTA"))
+    or date.today()
+)
 nueva_fecha_base = _parse_fecha(fila.get("NUEVA FECHA DE FINALIZACIÓN")) or generales.get("fecha_vencimiento_inicial") or date.today()
 
 st.markdown("### DATOS GENERALES")
@@ -424,6 +477,16 @@ df_firmas = pd.DataFrame(
     ]
 )
 st.dataframe(df_firmas, hide_index=True, width="stretch")
+
+if st.button("💾 Guardar acta de reanudación", key=f"guardar_acta_reanudacion_{clave_acta}"):
+    _guardar_acta_reanudacion(
+        clave_acta,
+        {
+            "clave_acta": clave_acta,
+            "fecha_reanudacion": fecha_reanudacion,
+            "fila_origen": fila,
+        },
+    )
 
 word = _generar_word(generales, fila, fecha_reanudacion, nueva_fecha_base)
 st.download_button(
