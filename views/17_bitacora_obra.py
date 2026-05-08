@@ -26,7 +26,7 @@ def guardar_estado(clave, datos):
             return obj.isoformat()
         return obj
 
-    guardar_estado_bd(clave, serializar(datos))
+    return guardar_estado_bd(clave, serializar(datos))
 
 
 def _texto(valor) -> str:
@@ -329,7 +329,16 @@ def _guardar(validar=True):
             )
             return False
 
-    guardar_estado(CLAVE_GUARDADO, datos_actuales)
+    respuesta = guardar_estado(CLAVE_GUARDADO, datos_actuales)
+
+    if respuesta is None:
+        st.error(
+            "No se pudo guardar la bitácora en la nube. "
+            "El sistema no confirmó el guardado en Supabase. "
+            "No recargue la página hasta resolver el error."
+        )
+        return False
+
     st.success("Bitácora de obra guardada correctamente.")
     return True
 
