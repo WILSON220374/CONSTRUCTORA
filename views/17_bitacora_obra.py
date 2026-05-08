@@ -15,6 +15,11 @@ from supabase_state import guardar_estado as guardar_estado_bd
 CLAVE_GUARDADO = "bitacora_obra"
 MIN_FILAS_ACTIVIDADES = 1
 
+CLAVE_INDICE_FOLIOS = f"{CLAVE_GUARDADO}__indice_folios"
+
+def _clave_folio(folio):
+    return f"{CLAVE_GUARDADO}__folio_{int(folio)}"
+
 
 def guardar_estado(clave, datos):
     def serializar(obj):
@@ -237,6 +242,100 @@ def _normalizar_incidencia(incidencia, acta_inicio, contrato_obra):
         "imagenes": incidencia.get("imagenes", []) if isinstance(incidencia.get("imagenes"), list) else [],
     }
 
+def _folios_desde_incidencias(incidencias):
+    folios = []
+
+    for incidencia in incidencias or []:
+        if not isinstance(incidencia, dict):
+            continue
+
+        try:
+            folio = int(incidencia.get("folio") or 0)
+        except Exception:
+            folio = 0
+
+        if folio > 0 and folio not in folios:
+            folios.append(folio)
+
+    return sorted(folios)
+
+
+def _cargar_indice_folios():
+    indice = cargar_estado(CLAVE_INDICE_FOLIOS) or {}
+
+    if not isinstance(indice, dict):
+        return [], None
+
+    folios = []
+    for folio in indice.get("folios", []) or []:
+        try:
+            folio_int = int(folio)
+        except Exception:
+            folio_int = 0
+
+        if folio_int > 0 and folio_int not in folios:
+            folios.append(folio_int)
+
+    folio_activo = indice.get("folio_activo")
+    try:
+        folio_activo = int(folio_activo)
+    except Exception:
+        folio_activo = None
+
+    return sorted(folios), folio_activo
+
+
+def _guardar_indice_folios(folios, folio_activo):
+    return guardar_estado(
+        CLAVE_INDICE_FOLIOS,
+        {
+            "folios": sorted([int(f) for f in folios if int(f) > 0]),
+            "folio_activo": int(folio_activo or 1),
+        },
+    )
+
+
+def _cargar_incidencias_por_folio(acta_inicio, contrato_obra):
+    folios, folio_activo_indice = _cargar_indice_folios()
+    incidencias = []
+
+    for folio in folios:
+        payload = cargar_estado(_clave_folio(folio)) or {}
+
+        if not isinstance(payload, dict):
+            continue
+
+        incidencia = payload.get("incidencia", payload)
+
+        if isinstance(incidencia, dict):
+            incidencias.append(_normalizar_incidencia(incidencia, acta_inicio, contrato_obra))
+
+    return incidencias, folios, folio_activo_indice
+
+
+def _combinar_incidencias(incidencias_base, incidencias_por_folio):
+    mapa = {}
+
+    for incidencia in incidencias_base or []:
+        if not isinstance(incidencia, dict):
+            continue
+
+        folio = int(incidencia.get("folio") or 0)
+
+        if folio > 0:
+            mapa[folio] = incidencia
+
+    for incidencia in incidencias_por_folio or []:
+        if not isinstance(incidencia, dict):
+            continue
+
+        folio = int(incidencia.get("folio") or 0)
+
+        if folio > 0:
+            mapa[folio] = incidencia
+
+    return [mapa[folio] for folio in sorted(mapa.keys())]
+
 
 def _inicializar_estado(acta_inicio, contrato_obra):
     group_id_actual = _texto(st.session_state.get("group_id"))
@@ -256,14 +355,30 @@ def _inicializar_estado(acta_inicio, contrato_obra):
             for x in incidencias
         ]
 
+        incidencias_individuales, folios_indice, folio_activo_indice = _cargar_incidencias_por_folio(
+            acta_inicio,
+            contrato_obra,
+        )
+
+        incidencias_normalizadas = _combinar_incidencias(
+            incidencias_normalizadas,
+            incidencias_individuales,
+        )
+
         if not incidencias_normalizadas:
             incidencias_normalizadas = [
                 _incidencia_vacia(1, acta_inicio, contrato_obra)
             ]
 
+        folio_activo_base = (
+            folio_activo_indice
+            or cargado.get("folio_activo")
+            or incidencias_normalizadas[-1]["folio"]
+        )
+
         st.session_state["bitacora_obra_datos"] = {
             "incidencias": incidencias_normalizadas,
-            "folio_activo": int(cargado.get("folio_activo") or incidencias_normalizadas[-1]["folio"]),
+            "folio_activo": int(folio_activo_base),
         }
         st.session_state["_bitacora_obra_group"] = group_id_actual
 
@@ -294,52 +409,47 @@ def _peso_incidencias(incidencias):
 
 def _guardar(validar=True):
     datos_actuales = st.session_state["bitacora_obra_datos"]
-    incidencias_actuales = datos_actuales.get("incidencias", [])
+    incidencia = _obtener_incidencia_activa()
 
-    if validar:
-        guardado = cargar_estado(CLAVE_GUARDADO) or {}
-        incidencias_guardadas = guardado.get("incidencias", []) if isinstance(guardado, dict) else []
+    folio = int(incidencia.get("folio") or 0)
 
-        if not isinstance(incidencias_guardadas, list):
-            incidencias_guardadas = []
+    if folio <= 0:
+        st.error("No se pudo guardar porque el folio activo no es válido.")
+        return False
 
-        folios_actuales = {
-            int(x.get("folio") or 0)
-            for x in incidencias_actuales
-            if isinstance(x, dict) and int(x.get("folio") or 0) > 0
-        }
+    incidencia_normalizada = _normalizar_incidencia(
+        incidencia,
+        _leer_acta_inicio(),
+        _leer_contrato_obra(),
+    )
 
-        folios_guardados = {
-            int(x.get("folio") or 0)
-            for x in incidencias_guardadas
-            if isinstance(x, dict) and int(x.get("folio") or 0) > 0
-        }
+    respuesta_folio = guardar_estado(
+        _clave_folio(folio),
+        {"incidencia": incidencia_normalizada},
+    )
 
-        if folios_guardados and len(folios_actuales) < len(folios_guardados):
-            st.error(
-                "No se guardó la bitácora porque el estado actual tiene menos folios que el estado ya guardado. "
-                "Esto evita sobrescribir información existente."
-            )
-            return False
-
-        if _peso_incidencias(incidencias_actuales) < _peso_incidencias(incidencias_guardadas):
-            st.error(
-                "No se guardó la bitácora porque el estado actual tiene menos información que el estado ya guardado. "
-                "Revise la carga antes de guardar."
-            )
-            return False
-
-    respuesta = guardar_estado(CLAVE_GUARDADO, datos_actuales)
-
-    if respuesta is None:
+    if respuesta_folio is None:
         st.error(
-            "No se pudo guardar la bitácora en la nube. "
-            "El sistema no confirmó el guardado en Supabase. "
-            "No recargue la página hasta resolver el error."
+            "No se pudo guardar el folio activo en la nube. "
+            "Supabase no confirmó el guardado."
         )
         return False
 
-    st.success("Bitácora de obra guardada correctamente.")
+    folios = _folios_desde_incidencias(datos_actuales.get("incidencias", []))
+
+    respuesta_indice = _guardar_indice_folios(
+        folios,
+        datos_actuales.get("folio_activo", folio),
+    )
+
+    if respuesta_indice is None:
+        st.error(
+            "El folio se guardó, pero no se pudo actualizar el índice de folios. "
+            "No recargue la página hasta guardar nuevamente."
+        )
+        return False
+
+    st.success(f"Folio {folio} guardado correctamente.")
     return True
 
 
