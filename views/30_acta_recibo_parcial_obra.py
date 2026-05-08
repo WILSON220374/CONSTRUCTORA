@@ -131,6 +131,11 @@ def _valor_contrato_obra(acta_inicio, contrato_obra):
 
 
 def _valor_anticipo_acta_inicio(acta_inicio, plan_anticipo, valor_contrato):
+    porcentaje = _porcentaje_anticipo_acta_inicio(acta_inicio, plan_anticipo)
+
+    if porcentaje > 0 and valor_contrato > 0:
+        return round(valor_contrato * porcentaje / 100.0, 2)
+
     for valor in [
         plan_anticipo.get("valor_anticipo"),
         plan_anticipo.get("anticipo"),
@@ -142,9 +147,6 @@ def _valor_anticipo_acta_inicio(acta_inicio, plan_anticipo, valor_contrato):
         if numero > 0:
             return numero
 
-    porcentaje = _porcentaje_anticipo_acta_inicio(acta_inicio, plan_anticipo)
-    if porcentaje > 0 and valor_contrato > 0:
-        return round(valor_contrato * porcentaje / 100.0, 2)
     return 0.0
 
 
@@ -364,12 +366,12 @@ def _normalizar_acta(acta, acta_no, generales, actas, mapa_catalogo, valor_antic
     base["items_no_previstos"] = _normalizar_items(base.get("items_no_previstos", []), mapa_catalogo, actas, base["acta_no"], "no_previstos")
     base["porcentaje_amortizado_presente_acta"] = _safe_float(base.get("porcentaje_amortizado_presente_acta"), 0.0)
 
-    valor_anticipo_guardado = _safe_float(base.get("valor_anticipo_otorgado"), valor_anticipo)
+    valor_anticipo_guardado = _safe_float(base.get("valor_anticipo_otorgado"), 0.0)
 
-    if valor_anticipo_guardado > valor_anticipo * 10 and valor_anticipo > 0:
+    if valor_anticipo > 0:
         valor_anticipo_guardado = valor_anticipo
 
-    base["valor_anticipo_otorgado"] = valor_anticipo_guardado if valor_anticipo_guardado > 0 else valor_anticipo
+    base["valor_anticipo_otorgado"] = valor_anticipo_guardado
     base["porcentaje_anticipo"] = _safe_float(base.get("porcentaje_anticipo"), porcentaje_anticipo)
 
     base["valor_en_letras"] = _texto(base.get("valor_en_letras"))
