@@ -1085,9 +1085,15 @@ else:
 df_adiciones = _filtrar_df_hasta_fecha(df_adiciones_base, "FECHA", fecha_adiciones)
 st.dataframe(df_adiciones, hide_index=True, width="stretch")
 
+valor_acumulado_guardado = _safe_float(datos.get("valor_acumulado_contrato"), 0.0)
+valor_acumulado_base = _safe_float(generales.get("valor_acumulado"), 0.0)
+
+if valor_acumulado_guardado > valor_acumulado_base * 10 and valor_acumulado_base > 0:
+    valor_acumulado_guardado = valor_acumulado_base
+
 datos["valor_acumulado_contrato"] = st.number_input(
     "VALOR ACUMULADO DEL CONTRATO",
-    value=float(datos.get("valor_acumulado_contrato", generales["valor_acumulado"])),
+    value=float(valor_acumulado_guardado if valor_acumulado_guardado > 0 else valor_acumulado_base),
     format="%.2f",
     key=f"{prefijo}_valor_acumulado_contrato",
 )
