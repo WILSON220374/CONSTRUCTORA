@@ -111,11 +111,11 @@ def _fecha_inicio_desde_fuentes(acta_inicio):
     )
 
 
-def _valor_contrato_desde_fuentes(acta_inicio, contrato_obra):
+def _valor_contrato_desde_contrato_obra(contrato_obra):
     for valor in [
-        acta_inicio.get("valor_total_contrato_obra"),
-        acta_inicio.get("valor_contrato"),
-        acta_inicio.get("valor"),
+        contrato_obra.get("valor_total_numeros"),
+        contrato_obra.get("valor_contrato"),
+        contrato_obra.get("valor"),
     ]:
         numero = _safe_float(valor, 0.0)
         if numero > 0:
@@ -490,7 +490,7 @@ def _mapa_items_desde_flujo(flujo_fondos):
     return mapa
 
 fecha_inicio_acta = _fecha_inicio_desde_fuentes(acta_inicio)
-valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
+valor_contrato = _valor_contrato_desde_contrato_obra(contrato_obra)
 mapa_items = _mapa_items_desde_flujo(flujo_fondos)
 mapa_programa_obra = _mapa_programa_obra_desde_flujo(flujo_fondos)
 opciones_items = [""] + sorted(mapa_items.keys(), key=_key_codigo_natural)
