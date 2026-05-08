@@ -199,12 +199,11 @@ def _avance_fisico_por_fecha(seguimiento_fisico, fecha_corte):
     }
 
 
-def _avance_inversion_hasta_fecha(control_obra, fecha_corte):
+def _avance_inversion_hasta_fecha(control_obra, fecha_corte, valor_contrato):
     fecha_corte = _parse_fecha(fecha_corte)
     pagos = control_obra.get("pagos_rows", []) or []
 
     total_facturado = 0.0
-    pendiente = 0.0
     ultima_fecha = ""
 
     for fila in pagos:
@@ -220,12 +219,12 @@ def _avance_inversion_hasta_fecha(control_obra, fecha_corte):
         if fecha:
             ultima_fecha = fecha.strftime("%d/%m/%Y")
 
-        pendiente = _safe_float(fila.get("PENDIENTE POR FACTURAR"), pendiente)
+    saldo_por_ejecutar = _safe_float(valor_contrato, 0.0) - total_facturado
 
     return {
         "INVERSIÓN EJECUTADA ACUMULADA": round(total_facturado, 2),
         "ÚLTIMO MES FACTURADO": ultima_fecha,
-        "SALDO POR EJECUTAR": round(pendiente, 2),
+        "SALDO POR EJECUTAR": round(saldo_por_ejecutar, 2),
     }
 
 
@@ -1189,7 +1188,11 @@ if fechas_pagos:
 else:
     fecha_avance_inversion = date.today()
 
-avance_inversion = _avance_inversion_hasta_fecha(control_obra, fecha_avance_inversion)
+avance_inversion = _avance_inversion_hasta_fecha(
+    control_obra,
+    fecha_avance_inversion,
+    generales.get("valor_inicial", 0.0),
+)
 df_avance_inversion = pd.DataFrame([avance_inversion])
 st.dataframe(df_avance_inversion, hide_index=True, width="stretch")
 
