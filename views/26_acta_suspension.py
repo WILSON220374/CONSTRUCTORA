@@ -24,10 +24,17 @@ def _safe_float(valor, default=0.0):
     try:
         if valor is None or valor == "":
             return float(default)
+
         if isinstance(valor, (int, float)):
             return float(valor)
+
         txt = str(valor).strip().replace("$", "").replace(" ", "")
-        txt = txt.replace(".", "").replace(",", ".")
+
+        if "," in txt and "." in txt:
+            txt = txt.replace(".", "").replace(",", ".")
+        elif "," in txt:
+            txt = txt.replace(",", ".")
+
         return float(txt)
     except Exception:
         return float(default)
@@ -134,9 +141,6 @@ def _extraer_dias_plazo(valor):
 
 def _valor_contrato(acta_inicio, contrato_obra):
     for valor in [
-        acta_inicio.get("valor_total_contrato_obra"),
-        acta_inicio.get("valor_contrato"),
-        acta_inicio.get("valor"),
         contrato_obra.get("valor_total_numeros"),
         contrato_obra.get("valor_contrato"),
         contrato_obra.get("valor"),
