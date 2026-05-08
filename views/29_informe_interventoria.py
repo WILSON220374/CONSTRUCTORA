@@ -986,7 +986,29 @@ df_avance = pd.DataFrame([avance_general])
 st.dataframe(df_avance, hide_index=True, width="stretch")
 
 df_avance_actividad = _df_avance_actividad(corte)
+
 if not df_avance_actividad.empty:
+    columnas_ordenadas = [
+        "ITEM",
+        "DESCRIPCIÓN",
+        "% EJECUTADO",
+        "$ EJECUTADO",
+        "% PROGRAMADO",
+        "$ PROGRAMADO",
+    ]
+
+    columnas_existentes = [
+        col for col in columnas_ordenadas
+        if col in df_avance_actividad.columns
+    ]
+
+    columnas_restantes = [
+        col for col in df_avance_actividad.columns
+        if col not in columnas_existentes
+    ]
+
+    df_avance_actividad = df_avance_actividad[columnas_existentes + columnas_restantes]
+
     st.markdown("#### AVANCE POR ACTIVIDAD")
     st.dataframe(df_avance_actividad, hide_index=True, width="stretch")
 
