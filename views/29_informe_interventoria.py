@@ -479,7 +479,7 @@ def _df_valor_ganado_seguimiento(seguimiento_fisico, flujo_fondos, fecha_corte, 
     return pd.DataFrame(filas_pv + filas_ev_ac, columns=["FECHA DE CORTE", "TIPO DE AVANCE", "VALOR"])
 
 
-def _indicadores_calculados_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato):
+def _indicadores_calculados_seguimiento(seguimiento_fisico, flujo_fondos, fecha_corte, fecha_inicio, valor_contrato):
     corte = _corte_seguimiento(seguimiento_fisico, fecha_corte)
     avance_general = corte.get("avance_general", []) or []
     fila = avance_general[0] if isinstance(avance_general, list) and avance_general and isinstance(avance_general[0], dict) else {}
@@ -491,7 +491,13 @@ def _indicadores_calculados_seguimiento(seguimiento_fisico, fecha_corte, valor_c
     spi = ev / pv if pv > 0 else 0.0
     cpi = ev / ac if ac > 0 else 0.0
 
-    df_grafica = _df_valor_ganado_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato)
+    df_grafica = _df_valor_ganado_seguimiento(
+        seguimiento_fisico,
+        flujo_fondos,
+        fecha_corte,
+        fecha_inicio,
+        valor_contrato,
+    )
     fecha_corte_parseada = _parse_fecha(fecha_corte)
     retraso = 0
 
@@ -1096,7 +1102,9 @@ else:
 
 indicadores = _indicadores_calculados_seguimiento(
     seguimiento_fisico,
+    flujo_fondos,
     datos.get("fecha_informe"),
+    generales.get("fecha_inicio"),
     generales.get("valor_obra", 0.0),
 )
 st.markdown("### INDICADORES")
