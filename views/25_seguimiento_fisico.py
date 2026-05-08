@@ -52,7 +52,13 @@ def _safe_float(valor, default=0.0):
         if isinstance(valor, (int, float)):
             return float(valor)
         txt = str(valor).strip().replace("$", "").replace(" ", "")
-        txt = txt.replace(".", "").replace(",", ".")
+        if "," in txt and "." in txt:
+            txt = txt.replace(".", "").replace(",", ".")
+        elif "," in txt:
+            txt = txt.replace(",", ".")
+        else:
+            txt = txt
+
         return float(txt)
     except Exception:
         return None if default is None else float(default)
