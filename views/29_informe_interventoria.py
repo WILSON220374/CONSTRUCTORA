@@ -502,11 +502,18 @@ def _indicadores_calculados_seguimiento(seguimiento_fisico, flujo_fondos, fecha_
     retraso = 0
 
     if not df_grafica.empty and ev > 0 and fecha_corte_parseada:
-        df_pv = df_grafica[df_grafica["TIPO"] == "PV - VALOR PLANEADO"].sort_values("FECHA")
+        df_pv = df_grafica[
+            df_grafica["TIPO DE AVANCE"] == "PV - VALOR PLANEADO"
+        ].sort_values("FECHA DE CORTE")
+
         puntos = [
-            {"fecha": _parse_fecha(fila_pv.get("FECHA")), "valor": _safe_float(fila_pv.get("VALOR"), 0.0)}
+            {
+                "fecha": _parse_fecha(fila_pv.get("FECHA DE CORTE")),
+                "valor": _safe_float(fila_pv.get("VALOR"), 0.0),
+            }
             for _, fila_pv in df_pv.iterrows()
         ]
+
         puntos = [p for p in puntos if p["fecha"]]
         fecha_programacion_ganada = None
 
@@ -514,6 +521,7 @@ def _indicadores_calculados_seguimiento(seguimiento_fisico, flujo_fondos, fecha_
             for i in range(1, len(puntos)):
                 anterior = puntos[i - 1]
                 actual = puntos[i]
+
                 if anterior["valor"] <= ev <= actual["valor"] and actual["valor"] > anterior["valor"]:
                     proporcion = (ev - anterior["valor"]) / (actual["valor"] - anterior["valor"])
                     dias = (actual["fecha"] - anterior["fecha"]).days
