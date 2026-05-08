@@ -627,7 +627,7 @@ def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
         if not isinstance(cargado, dict):
             cargado = {}
 
-        valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
+        valor_contrato = _valor_contrato_desde_contrato_obra(contrato_obra)
         valor_anticipo = _valor_anticipo_desde_fuentes(plan_anticipo, acta_inicio, contrato_obra)
         fecha_inicio_acta = _fecha_inicio_desde_fuentes(acta_inicio)
 
@@ -663,7 +663,7 @@ _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo)
 datos = st.session_state["control_obra_datos"]
 
 fecha_inicio_acta = _fecha_inicio_desde_fuentes(acta_inicio)
-valor_contrato = _valor_contrato_desde_fuentes(acta_inicio, contrato_obra)
+valor_contrato = _valor_contrato_desde_contrato_obra(contrato_obra)
 valor_anticipo = _valor_anticipo_desde_fuentes(plan_anticipo, acta_inicio, contrato_obra)
 duracion_inicial = _duracion_inicial_texto(acta_inicio, contrato_obra)
 fecha_inicial_terminacion = _fecha_terminacion_inicial(acta_inicio, contrato_obra)
