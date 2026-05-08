@@ -400,13 +400,15 @@ def _df_avance_actividad(corte):
     return pd.DataFrame()
 
 
-def _df_valor_ganado_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato):
+def _df_valor_ganado_seguimiento(seguimiento_fisico, flujo_fondos, fecha_corte, fecha_inicio, valor_contrato):
     seguimientos = seguimiento_fisico.get("seguimientos_fisicos", {}) or {}
     fecha_corte = _parse_fecha(fecha_corte)
-    filas = []
+    fecha_inicio = _parse_fecha(fecha_inicio)
 
-    if not isinstance(seguimientos, dict) or not fecha_corte:
-        return pd.DataFrame(columns=["FECHA", "TIPO", "VALOR"])
+    if not isinstance(seguimientos, dict) or not fecha_corte or not fecha_inicio:
+        return pd.DataFrame(columns=["FECHA DE CORTE", "TIPO DE AVANCE", "VALOR"])
+
+    filas_ev_ac = []
 
     for clave, corte in seguimientos.items():
         if not isinstance(corte, dict):
@@ -419,19 +421,62 @@ def _df_valor_ganado_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato
         avance_general = corte.get("avance_general", []) or []
         fila = avance_general[0] if isinstance(avance_general, list) and avance_general and isinstance(avance_general[0], dict) else {}
 
-        pv = _safe_float(fila.get("$ PROGRAMADO"), 0.0)
         ev = _safe_float(valor_contrato, 0.0) * (_safe_float(fila.get("% EJECUTADO"), 0.0) / 100.0)
         ac = _safe_float(fila.get("$ EJECUTADO"), 0.0)
 
-        filas.extend(
+        filas_ev_ac.extend(
             [
-                {"FECHA": fecha, "TIPO": "PV - VALOR PLANEADO", "VALOR": pv},
-                {"FECHA": fecha, "TIPO": "EV - VALOR GANADO", "VALOR": ev},
-                {"FECHA": fecha, "TIPO": "AC - COSTO REAL", "VALOR": ac},
+                {
+                    "FECHA DE CORTE": fecha,
+                    "TIPO DE AVANCE": "EV - VALOR GANADO",
+                    "VALOR": ev,
+                },
+                {
+                    "FECHA DE CORTE": fecha,
+                    "TIPO DE AVANCE": "AC - COSTO REAL",
+                    "VALOR": ac,
+                },
             ]
         )
 
-    return pd.DataFrame(filas, columns=["FECHA", "TIPO", "VALOR"])
+    tablas_flujo = flujo_fondos.get("__tablas__", {}) or {}
+    resumen_flujo = tablas_flujo.get("df_resumen", []) or []
+
+    fila_acumulado = {}
+    if isinstance(resumen_flujo, list):
+        for fila in resumen_flujo:
+            if isinstance(fila, dict) and _texto(fila.get("CONCEPTO")).upper() == "ACUMULADO":
+                fila_acumulado = fila
+                break
+
+    filas_pv = [
+        {
+            "FECHA DE CORTE": fecha_inicio,
+            "TIPO DE AVANCE": "PV - VALOR PLANEADO",
+            "VALOR": 0.0,
+        }
+    ]
+
+    periodos_programacion = []
+    for columna in fila_acumulado.keys():
+        nombre = _texto(columna)
+        if nombre.startswith("Periodo "):
+            try:
+                numero_periodo = int(nombre.replace("Periodo ", "").strip())
+                periodos_programacion.append((numero_periodo, nombre))
+            except Exception:
+                pass
+
+    for numero_periodo, columna in sorted(periodos_programacion, key=lambda x: x[0]):
+        filas_pv.append(
+            {
+                "FECHA DE CORTE": fecha_inicio + timedelta(days=(numero_periodo * 30) - 1),
+                "TIPO DE AVANCE": "PV - VALOR PLANEADO",
+                "VALOR": _safe_float(fila_acumulado.get(columna), 0.0),
+            }
+        )
+
+    return pd.DataFrame(filas_pv + filas_ev_ac, columns=["FECHA DE CORTE", "TIPO DE AVANCE", "VALOR"])
 
 
 def _indicadores_calculados_seguimiento(seguimiento_fisico, fecha_corte, valor_contrato):
@@ -767,6 +812,7 @@ contrato_obra = _leer_estado("contrato_obra")
 contrato_interventoria = _leer_estado("contrato_interventoria")
 control_obra = _leer_estado("control_obra")
 seguimiento_fisico = _leer_estado("seguimiento_fisico")
+flujo_fondos = _leer_estado("flujo_fondos")
 modificacion_prorroga = _leer_estado("modificacion_prorroga")
 
 generales = _datos_generales(acta_inicio, contrato_obra, contrato_interventoria, control_obra)
@@ -1015,26 +1061,35 @@ if not df_avance_actividad.empty:
 st.markdown("### GRÁFICO DE VALOR GANADO")
 df_valor_ganado_grafico = _df_valor_ganado_seguimiento(
     seguimiento_fisico,
+    flujo_fondos,
     datos.get("fecha_informe"),
+    generales.get("fecha_inicio"),
     generales.get("valor_obra", 0.0),
 )
 
 if not df_valor_ganado_grafico.empty:
     fig_valor_ganado = px.line(
         df_valor_ganado_grafico,
-        x="FECHA",
+        x="FECHA DE CORTE",
         y="VALOR",
-        color="TIPO",
+        color="TIPO DE AVANCE",
         markers=True,
         title="Valor ganado",
+        color_discrete_map={
+            "PV - VALOR PLANEADO": "blue",
+            "EV - VALOR GANADO": "green",
+            "AC - COSTO REAL": "orange",
+        },
     )
+
     fig_valor_ganado.update_layout(
-        xaxis_title="Periodo",
+        xaxis_title="Fecha de programación",
         yaxis_title="Valor",
-        legend_title="Indicador",
+        legend_title="Tipo de avance",
         yaxis_tickprefix="$ ",
         yaxis_tickformat=",",
     )
+
     st.plotly_chart(fig_valor_ganado, width="stretch")
 else:
     st.info("No hay cortes de seguimiento físico suficientes para generar el gráfico de valor ganado.")
