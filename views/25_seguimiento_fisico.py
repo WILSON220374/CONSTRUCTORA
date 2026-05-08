@@ -112,19 +112,15 @@ def _fecha_inicio_desde_fuentes(acta_inicio):
 
 
 def _valor_contrato_desde_fuentes(acta_inicio, contrato_obra):
-    candidatos = [
+    for valor in [
         acta_inicio.get("valor_total_contrato_obra"),
         acta_inicio.get("valor_contrato"),
         acta_inicio.get("valor"),
-        contrato_obra.get("valor_total_numeros"),
-        contrato_obra.get("valor_contrato"),
-    ]
-    for valor in candidatos:
-        numero = _safe_float(valor, None)
-        if numero is not None and numero > 0:
+    ]:
+        numero = _safe_float(valor, 0.0)
+        if numero > 0:
             return numero
     return 0.0
-
 
 # ==========================================================
 # Programado desde flujo de fondos
