@@ -145,10 +145,11 @@ def _valor_anticipo_acta_inicio(acta_inicio, plan_anticipo, valor_contrato):
     ]:
         numero = _safe_float(valor, 0.0)
         if numero > 0:
+            if valor_contrato > 0 and numero > valor_contrato:
+                numero = numero / 100
             return numero
 
     return 0.0
-
 
 def _porcentaje_anticipo_acta_inicio(acta_inicio, plan_anticipo):
     for valor in [
@@ -370,9 +371,12 @@ def _normalizar_acta(acta, acta_no, generales, actas, mapa_catalogo, valor_antic
 
     if valor_anticipo > 0:
         valor_anticipo_guardado = valor_anticipo
+    elif valor_anticipo_guardado > 0 and generales.get("valor_inicial", 0.0) > 0:
+        if valor_anticipo_guardado > generales.get("valor_inicial", 0.0):
+            valor_anticipo_guardado = valor_anticipo_guardado / 100
 
-    base["valor_anticipo_otorgado"] = valor_anticipo_guardado
-    base["porcentaje_anticipo"] = _safe_float(base.get("porcentaje_anticipo"), porcentaje_anticipo)
+base["valor_anticipo_otorgado"] = valor_anticipo_guardado
+base["porcentaje_anticipo"] = _safe_float(base.get("porcentaje_anticipo"), porcentaje_anticipo)
 
     base["valor_en_letras"] = _texto(base.get("valor_en_letras"))
     base["observaciones"] = _texto(base.get("observaciones"))
@@ -846,7 +850,28 @@ acta["porcentaje_amortizado_presente_acta"] = nuevo_pct_amortizado
 _recalcular_resumen(acta, estado.get("actas", []))
 
 with col_ant1:
-    st.number_input("Valor Anticipo Otorgado", value=float(acta.get("valor_anticipo_otorgado", 0.0)), disabled=True, format="%.2f")
+    key_valor_anticipo = f"recibo_valor_anticipo_otorgado_{acta_no}"
+    valor_anticipo_mostrar = _safe_float(acta.get("valor_anticipo_otorgado"), 0.0)
+    valor_inicial_base = _safe_float(generales.get("valor_inicial"), 0.0)
+
+    if valor_anticipo_mostrar > valor_inicial_base and valor_inicial_base > 0:
+        valor_anticipo_mostrar = valor_anticipo_mostrar / 100
+        acta["valor_anticipo_otorgado"] = valor_anticipo_mostrar
+
+    if key_valor_anticipo in st.session_state:
+        valor_widget_anticipo = _safe_float(st.session_state.get(key_valor_anticipo), 0.0)
+
+        if valor_widget_anticipo > valor_inicial_base and valor_inicial_base > 0:
+            st.session_state[key_valor_anticipo] = valor_widget_anticipo / 100
+
+    st.number_input(
+        "Valor Anticipo Otorgado",
+        value=float(valor_anticipo_mostrar),
+        disabled=True,
+        format="%.2f",
+        key=key_valor_anticipo,
+    )
+
     st.number_input("Valor Amortizado Presente Acta", value=float(acta.get("valor_amortizado_presente_acta", 0.0)), disabled=True, format="%.2f")
     st.number_input("Valor Amortizado Acumulado", value=float(acta.get("valor_amortizado_acumulado", 0.0)), disabled=True, format="%.2f")
 
