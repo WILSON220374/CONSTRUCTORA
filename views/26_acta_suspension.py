@@ -529,7 +529,7 @@ if not suspensiones:
     st.warning("No hay registros en la tabla de suspensiones de la hoja 24.")
     st.stop()
 
-oopciones = {_etiqueta_suspension(fila, idx): idx for idx, fila in enumerate(suspensiones)}
+opciones = {_etiqueta_suspension(fila, idx): idx for idx, fila in enumerate(suspensiones)}
 seleccion = st.selectbox("Seleccione el acta de suspensión o ampliación", options=list(opciones.keys()))
 fila = suspensiones[opciones[seleccion]]
 
