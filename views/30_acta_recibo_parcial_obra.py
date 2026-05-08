@@ -501,6 +501,12 @@ def _amortizado_acumulado_anterior(actas, acta_no):
 def _recalcular_resumen(acta, actas):
     valor_total = _total_presente_acta(acta)
     valor_anticipo = _safe_float(acta.get("valor_anticipo_otorgado"), 0.0)
+    valor_inicial_base = _safe_float(acta.get("valor_inicial"), 0.0)
+
+    if valor_anticipo > valor_inicial_base and valor_inicial_base > 0:
+        valor_anticipo = valor_anticipo / 100
+        acta["valor_anticipo_otorgado"] = valor_anticipo
+
     pct_amortizado = _safe_float(acta.get("porcentaje_amortizado_presente_acta"), 0.0)
     amortizado_presente = round(valor_anticipo * pct_amortizado / 100.0, 2)
     amortizado_acumulado = _amortizado_acumulado_anterior(actas, acta.get("acta_no"))
