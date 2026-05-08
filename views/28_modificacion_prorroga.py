@@ -1087,15 +1087,22 @@ st.dataframe(df_adiciones, hide_index=True, width="stretch")
 
 valor_acumulado_guardado = _safe_float(datos.get("valor_acumulado_contrato"), 0.0)
 valor_acumulado_base = _safe_float(generales.get("valor_acumulado"), 0.0)
+key_valor_acumulado = f"{prefijo}_valor_acumulado_contrato"
 
 if valor_acumulado_guardado > valor_acumulado_base * 10 and valor_acumulado_base > 0:
     valor_acumulado_guardado = valor_acumulado_base
+    datos["valor_acumulado_contrato"] = valor_acumulado_base
+
+if key_valor_acumulado in st.session_state:
+    valor_widget = _safe_float(st.session_state.get(key_valor_acumulado), 0.0)
+    if valor_widget > valor_acumulado_base * 10 and valor_acumulado_base > 0:
+        st.session_state[key_valor_acumulado] = valor_acumulado_base
 
 datos["valor_acumulado_contrato"] = st.number_input(
     "VALOR ACUMULADO DEL CONTRATO",
     value=float(valor_acumulado_guardado if valor_acumulado_guardado > 0 else valor_acumulado_base),
     format="%.2f",
-    key=f"{prefijo}_valor_acumulado_contrato",
+    key=key_valor_acumulado,
 )
 
 st.markdown("### OBJETO DE LA SOLICITUD")
