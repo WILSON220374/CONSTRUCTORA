@@ -9,7 +9,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from docx.shared import Pt, Inches
 
 from supabase_state import cargar_estado
-
+from supabase_state import guardar_estado as guardar_estado_bd
 
 # ==========================================================
 # Helpers
@@ -66,6 +66,51 @@ def _moneda(valor):
 def _leer_estado(clave):
     datos = cargar_estado(clave) or {}
     return datos if isinstance(datos, dict) else {}
+
+def guardar_estado(clave, datos):
+    def serializar(obj):
+        if isinstance(obj, dict):
+            return {k: serializar(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [serializar(x) for x in obj]
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        return obj
+
+    return guardar_estado_bd(clave, serializar(datos))
+
+
+def _clave_acta_guardada(fila):
+    tipo = "ampliacion" if _texto(fila.get("ACTA DE AMPLIACIÓN SUSPENSIÓN No.")) else "suspension"
+    numero = _texto(fila.get("ACTA DE AMPLIACIÓN SUSPENSIÓN No.")) or _texto(fila.get("ACTA DE SUSPENSIÓN No.")) or "0"
+    fecha = _fecha_texto(fila.get("FECHA DEL ACTA")).replace("/", "_")
+    return f"{tipo}_{numero}_{fecha}"
+
+
+def _cargar_actas_suspension_guardadas():
+    datos = cargar_estado("acta_suspension") or {}
+    return datos if isinstance(datos, dict) else {}
+
+
+def _guardar_acta_suspension(clave_acta, payload):
+    datos = _cargar_actas_suspension_guardadas()
+    actas = datos.get("actas", {})
+
+    if not isinstance(actas, dict):
+        actas = {}
+
+    actas[clave_acta] = payload
+    datos["actas"] = actas
+    datos["acta_activa"] = clave_acta
+
+    respuesta = guardar_estado("acta_suspension", datos)
+
+    if respuesta is None:
+        st.error("No se pudo guardar el acta de suspensión en la nube.")
+        return False
+
+    st.success("Acta de suspensión guardada correctamente.")
+    return True
 
 
 def _primero_no_vacio(*valores):
@@ -484,9 +529,13 @@ if not suspensiones:
     st.warning("No hay registros en la tabla de suspensiones de la hoja 24.")
     st.stop()
 
-opciones = {_etiqueta_suspension(fila, idx): idx for idx, fila in enumerate(suspensiones)}
+oopciones = {_etiqueta_suspension(fila, idx): idx for idx, fila in enumerate(suspensiones)}
 seleccion = st.selectbox("Seleccione el acta de suspensión o ampliación", options=list(opciones.keys()))
 fila = suspensiones[opciones[seleccion]]
+
+clave_acta = _clave_acta_guardada(fila)
+actas_guardadas = _cargar_actas_suspension_guardadas().get("actas", {})
+acta_guardada = actas_guardadas.get(clave_acta, {}) if isinstance(actas_guardadas, dict) else {}
 
 st.markdown("### RESPONSABILIDAD")
 st.write(
@@ -553,17 +602,17 @@ st.text_input(
 st.markdown("### CAUSAS QUE DAN ORIGEN A LA SUSPENSIÓN")
 causas_suspension = st.text_area(
     "Describa de manera clara y completa las causales que dan origen a la suspensión, justificadas por el Contratista y aprobadas por la interventoría, teniendo en cuenta que las mismas no sean imputables a las partes contratantes.",
-    value="",
+    value=_texto(acta_guardada.get("causas_suspension")),
     height=180,
-    key="acta_suspension_causas",
+    key=f"acta_suspension_causas_{clave_acta}",
 )
 
 st.markdown("### CONCEPTO DE LA INTERVENTORÍA")
 concepto_interventoria = st.text_area(
     "Concepto de la interventoría",
-    value="",
+    value=_texto(acta_guardada.get("concepto_interventoria")),
     height=180,
-    key="acta_suspension_concepto_interventoria",
+    key=f"acta_suspension_concepto_interventoria_{clave_acta}",
 )
 
 st.markdown("### NOTAS:")
@@ -599,6 +648,18 @@ df_firmas = pd.DataFrame(
     ]
 )
 st.dataframe(df_firmas, hide_index=True, width="stretch")
+
+if st.button("💾 Guardar acta de suspensión", key=f"guardar_acta_suspension_{clave_acta}"):
+    _guardar_acta_suspension(
+        clave_acta,
+        {
+            "clave_acta": clave_acta,
+            "causas_suspension": causas_suspension,
+            "concepto_interventoria": concepto_interventoria,
+            "fila_origen": fila,
+        },
+    )
+
 word = _generar_word(generales, fila, suspensiones, causas_suspension, concepto_interventoria)
 st.download_button(
     "📄 Descargar Word",
