@@ -212,8 +212,7 @@ def _datos_generales(acta_inicio, contrato_obra, contrato_interventoria):
         "contrato_interventoria": _primero_no_vacio(
             contrato_interventoria.get("numero_proceso_contratacion"),
         ),
-
-
+    }
 def _suspensiones(control_obra):
     rows = control_obra.get("suspensiones_rows", []) or []
     return [fila for fila in rows if isinstance(fila, dict)]
