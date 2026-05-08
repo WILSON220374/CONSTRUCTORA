@@ -357,15 +357,35 @@ def _acta_vacia(acta_no, generales, valor_anticipo, porcentaje_anticipo):
 
 def _normalizar_acta(acta, acta_no, generales, actas, mapa_catalogo, valor_anticipo, porcentaje_anticipo):
     base = _acta_vacia(acta_no, generales, valor_anticipo, porcentaje_anticipo)
+
     if isinstance(acta, dict):
         base.update(acta)
+
     base["acta_no"] = int(base.get("acta_no") or acta_no or 1)
     base["fecha"] = _fecha_input(base.get("fecha")).isoformat()
     base["fecha_vencimiento_actual"] = _fecha_input(base.get("fecha_vencimiento_actual")).isoformat()
     base["valor_adiciones"] = _safe_float(base.get("valor_adiciones"), 0.0)
-    base["items_previstos"] = _normalizar_items(base.get("items_previstos", []), mapa_catalogo, actas, base["acta_no"], "previstos")
-    base["items_no_previstos"] = _normalizar_items(base.get("items_no_previstos", []), mapa_catalogo, actas, base["acta_no"], "no_previstos")
-    base["porcentaje_amortizado_presente_acta"] = _safe_float(base.get("porcentaje_amortizado_presente_acta"), 0.0)
+
+    base["items_previstos"] = _normalizar_items(
+        base.get("items_previstos", []),
+        mapa_catalogo,
+        actas,
+        base["acta_no"],
+        "previstos",
+    )
+
+    base["items_no_previstos"] = _normalizar_items(
+        base.get("items_no_previstos", []),
+        mapa_catalogo,
+        actas,
+        base["acta_no"],
+        "no_previstos",
+    )
+
+    base["porcentaje_amortizado_presente_acta"] = _safe_float(
+        base.get("porcentaje_amortizado_presente_acta"),
+        0.0,
+    )
 
     valor_anticipo_guardado = _safe_float(base.get("valor_anticipo_otorgado"), 0.0)
 
@@ -375,11 +395,15 @@ def _normalizar_acta(acta, acta_no, generales, actas, mapa_catalogo, valor_antic
         if valor_anticipo_guardado > generales.get("valor_inicial", 0.0):
             valor_anticipo_guardado = valor_anticipo_guardado / 100
 
-base["valor_anticipo_otorgado"] = valor_anticipo_guardado
-base["porcentaje_anticipo"] = _safe_float(base.get("porcentaje_anticipo"), porcentaje_anticipo)
+    base["valor_anticipo_otorgado"] = valor_anticipo_guardado
+    base["porcentaje_anticipo"] = _safe_float(
+        base.get("porcentaje_anticipo"),
+        porcentaje_anticipo,
+    )
 
     base["valor_en_letras"] = _texto(base.get("valor_en_letras"))
     base["observaciones"] = _texto(base.get("observaciones"))
+
     return base
 
 
