@@ -153,6 +153,14 @@ def _formato_numero_contrato(valor):
         return texto_si_vacio(valor)
 
 
+def _formato_numero_contrato(valor):
+    try:
+        numero = float(valor)
+        return f"{numero:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except Exception:
+        return texto_si_vacio(valor)
+
+
 def construir_tabla_garantias_markdown(garantias):
     if not garantias or not isinstance(garantias, list):
         return (
@@ -227,7 +235,6 @@ def construir_tabla_garantias_doc(doc, garantias):
         celdas[3].text = cobertura
         celdas[4].text = desde
         celdas[5].text = hasta
-
 
 def construir_bloque_anexos(datos):
     anexos = []
