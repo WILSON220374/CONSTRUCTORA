@@ -376,7 +376,7 @@ def _items_desde_presupuesto(presupuesto_obra):
                     "No. ORDEN": item,
                     "DESCRIPCIÓN ITEM": descripcion,
                     "UNIDAD": "",
-                    "VALOR UNITARIO": 0.0,
+                    "VALOR UNITARIO AJUSTADO POR DISTANCIA": 0.0,
                     "CANTIDAD": 0.0,
                     "VALOR TOTAL EJECUTADO": 0.0,
                 },
@@ -401,7 +401,7 @@ def _items_desde_presupuesto(presupuesto_obra):
             if cantidad > 0:
                 rec["CANTIDAD"] = round(cantidad, 4)
 
-            # Regla vigente: el VALOR UNITARIO del acta definitiva se alimenta primero
+            # Regla vigente: el VALOR UNITARIO AJUSTADO POR DISTANCIA del acta definitiva se alimenta primero
             # desde la columna del presupuesto llamada VR AFECTADO POR FACTOR.
             valor_unitario = _safe_float(
                 _primero_no_vacio(
@@ -409,6 +409,7 @@ def _items_desde_presupuesto(presupuesto_obra):
                     fila.get("VALOR AFECTADO POR FACTOR"),
                     fila.get("VR_AFECTADO_POR_FACTOR"),
                     fila.get("VALOR_UNITARIO_AFECTADO"),
+                    fila.get("VALOR UNITARIO AJUSTADO POR DISTANCIA"),
                     fila.get("VALOR UNITARIO"),
                     fila.get("VR UNITARIO"),
                     fila.get("VALOR_UNITARIO"),
@@ -417,9 +418,9 @@ def _items_desde_presupuesto(presupuesto_obra):
             )
 
             if valor_unitario > 0:
-                rec["VALOR UNITARIO"] = round(valor_unitario, 2)
+                rec["VALOR UNITARIO AJUSTADO POR DISTANCIA"] = round(valor_unitario, 2)
 
-            if rec["VALOR UNITARIO"] <= 0 and rec["CANTIDAD"] > 0:
+            if rec["VALOR UNITARIO AJUSTADO POR DISTANCIA"] <= 0 and rec["CANTIDAD"] > 0:
                 valor_base = _safe_float(
                     _primero_no_vacio(
                         fila.get("VALOR BASE"),
@@ -429,7 +430,7 @@ def _items_desde_presupuesto(presupuesto_obra):
                     0.0,
                 )
                 if valor_base > 0:
-                    rec["VALOR UNITARIO"] = round(valor_base / rec["CANTIDAD"], 2)
+                    rec["VALOR UNITARIO AJUSTADO POR DISTANCIA"] = round(valor_base / rec["CANTIDAD"], 2)
 
             registros[item] = rec
 
@@ -451,9 +452,9 @@ def _normalizar_cantidades(rows, mapa_items):
             continue
 
         base = mapa_items.get(item, {})
-        valor_unitario = _safe_float(fila.get("VALOR UNITARIO"), 0.0)
+        valor_unitario = _safe_float(fila.get("VALOR UNITARIO AJUSTADO POR DISTANCIA"), 0.0)
         if valor_unitario <= 0:
-            valor_unitario = _safe_float(base.get("VALOR UNITARIO"), 0.0)
+            valor_unitario = _safe_float(base.get("VALOR UNITARIO AJUSTADO POR DISTANCIA"), 0.0)
 
         valor_total = _safe_float(fila.get("VALOR TOTAL EJECUTADO"), 0.0)
         cantidad = round(valor_total / valor_unitario, 4) if valor_unitario > 0 else 0.0
@@ -464,7 +465,7 @@ def _normalizar_cantidades(rows, mapa_items):
                 "DESCRIPCIÓN ITEM": _primero_no_vacio(fila.get("DESCRIPCIÓN ITEM"), base.get("DESCRIPCIÓN ITEM")),
                 "UNIDAD": _primero_no_vacio(fila.get("UNIDAD"), base.get("UNIDAD")),
                 "CANTIDAD": cantidad,
-                "VALOR UNITARIO": round(valor_unitario, 2),
+                "VALOR UNITARIO AJUSTADO POR DISTANCIA": round(valor_unitario, 2),
                 "VALOR TOTAL EJECUTADO": round(valor_total, 2),
             }
         )
@@ -704,7 +705,7 @@ def _generar_word(payload):
     doc.add_paragraph()
     _doc_parrafo(doc, "DESCRIPCIÓN CANTIDADES DE OBRA Y PROVISIONES EJECUTADAS", bold=True)
     _doc_tabla_df(doc, pd.DataFrame(payload.get("cantidades_rows", [])), [
-        "No. ORDEN", "DESCRIPCIÓN ITEM", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL EJECUTADO"
+        "No. ORDEN", "DESCRIPCIÓN ITEM", "UNIDAD", "CANTIDAD", "VALOR UNITARIO AJUSTADO POR DISTANCIA", "VALOR TOTAL EJECUTADO"
     ])
 
     doc.add_paragraph()
@@ -888,7 +889,7 @@ if st.button("Agregar ítem", key="agregar_item_definitivo"):
             st.rerun()
 
 df_cantidades = pd.DataFrame(_normalizar_cantidades(guardado.get("cantidades_rows", []), mapa_items), columns=[
-    "No. ORDEN", "DESCRIPCIÓN ITEM", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL EJECUTADO"
+    "No. ORDEN", "DESCRIPCIÓN ITEM", "UNIDAD", "CANTIDAD", "VALOR UNITARIO AJUSTADO POR DISTANCIA", "VALOR TOTAL EJECUTADO"
 ])
 
 cantidades_editadas = st.data_editor(
@@ -902,14 +903,14 @@ cantidades_editadas = st.data_editor(
         "DESCRIPCIÓN ITEM": st.column_config.TextColumn("DESCRIPCIÓN ITEM", disabled=True),
         "UNIDAD": st.column_config.TextColumn("UNIDAD", disabled=True),
         "CANTIDAD": st.column_config.NumberColumn("CANTIDAD", format="%.4f", disabled=True),
-        "VALOR UNITARIO": st.column_config.NumberColumn("VALOR UNITARIO", format="$ %.2f", disabled=True),
+        "VALOR UNITARIO AJUSTADO POR DISTANCIA": st.column_config.NumberColumn("VALOR UNITARIO AJUSTADO POR DISTANCIA", format="$ %.2f", disabled=True),
         "VALOR TOTAL EJECUTADO": st.column_config.NumberColumn("VALOR TOTAL EJECUTADO", format="$ %.2f"),
     },
 )
 
 cantidades_recalculadas = _normalizar_cantidades(cantidades_editadas.to_dict("records"), mapa_items)
 df_cantidades_recalculadas = pd.DataFrame(cantidades_recalculadas, columns=[
-    "No. ORDEN", "DESCRIPCIÓN ITEM", "UNIDAD", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL EJECUTADO"
+    "No. ORDEN", "DESCRIPCIÓN ITEM", "UNIDAD", "CANTIDAD", "VALOR UNITARIO AJUSTADO POR DISTANCIA", "VALOR TOTAL EJECUTADO"
 ])
 
 st.markdown("#### Cantidades recalculadas")
@@ -922,7 +923,7 @@ st.dataframe(
         "DESCRIPCIÓN ITEM": st.column_config.TextColumn("DESCRIPCIÓN ITEM"),
         "UNIDAD": st.column_config.TextColumn("UNIDAD"),
         "CANTIDAD": st.column_config.NumberColumn("CANTIDAD", format="%.4f"),
-        "VALOR UNITARIO": st.column_config.NumberColumn("VALOR UNITARIO", format="$ %.2f"),
+        "VALOR UNITARIO AJUSTADO POR DISTANCIA": st.column_config.NumberColumn("VALOR UNITARIO AJUSTADO POR DISTANCIA", format="$ %.2f"),
         "VALOR TOTAL EJECUTADO": st.column_config.NumberColumn("VALOR TOTAL EJECUTADO", format="$ %.2f"),
     },
 )
