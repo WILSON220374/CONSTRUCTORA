@@ -473,7 +473,7 @@ with st.expander("9. Garantías", expanded=False):
         valor_contrato_garantias = float(valor_contrato_texto)
     except Exception:
         valor_contrato_garantias = 0.0
-        
+
     for col in ["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"]:
         if col not in df_garantias.columns:
             df_garantias[col] = ""
@@ -484,13 +484,8 @@ with st.expander("9. Garantías", expanded=False):
     for col in ["desde", "hasta"]:
         df_garantias[col] = pd.to_datetime(df_garantias[col], errors="coerce").dt.date
 
-    st.session_state["df_garantias_contrato"] = df_garantias[
-        ["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"]
-    ].copy()
-
-with st.form("form_garantias_contrato"):
     df_editado = st.data_editor(
-        st.session_state["df_garantias_contrato"],
+        df_garantias[["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"]],
         num_rows="dynamic",
         use_container_width=True,
         key="editor_garantias",
@@ -504,16 +499,16 @@ with st.form("form_garantias_contrato"):
         }
     )
 
+    df_editado["%"] = pd.to_numeric(df_editado["%"], errors="coerce").fillna(0.0)
+    df_editado["cobertura"] = df_editado["%"] * valor_contrato_garantias / 100.0
+
     plazo_garantias_dias = st.text_input(
         "Plazo en días hábiles para presentar garantías",
         value=datos["plazo_garantias_dias"],
         key="plazo_garantias_dias"
     )
 
-    if st.form_submit_button("Guardar sección 9"):
-        df_editado["%"] = pd.to_numeric(df_editado["%"], errors="coerce").fillna(0.0)
-        df_editado["cobertura"] = df_editado["%"] * valor_contrato_garantias / 100.0
-
+    if st.button("Guardar sección 9", key="guardar_9"):
         registros = []
         for fila in df_editado.to_dict(orient="records"):
             fila_limpia = {}
@@ -526,11 +521,12 @@ with st.form("form_garantias_contrato"):
                     fila_limpia[k] = v
             registros.append(fila_limpia)
 
-        st.session_state["df_garantias_contrato"] = df_editado.copy()
         datos["garantias"] = registros
         datos["plazo_garantias_dias"] = plazo_garantias_dias
         guardar_y_refrescar()
-        
+
+
+with st.expander("10. Notificaciones", expanded=False):
     st.markdown("**Notificaciones del contratante**")
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -575,7 +571,6 @@ with st.form("form_garantias_contrato"):
 
     if st.button("Guardar sección 10", key="guardar_10"):
         guardar_y_refrescar()
-
 
 with st.expander("11. Supervisión e interventoría", expanded=False):
     datos["tipo_seguimiento"] = st.selectbox(
