@@ -654,14 +654,23 @@ def _guardar_desde_df(df_pct: pd.DataFrame, periodos: List[str], df_obra: pd.Dat
         row_id = _safe_str(row["ROW_ID"])
         payload[row_id] = {f"{p} %": _safe_float(row[f"{p} %"]) for p in periodos}
 
+    columnas_df_calculado = ["ITEM", "TIPO", "DESCRIPCIÓN", "VALOR CON AIU"] + [f"{p} $" for p in periodos]
+    if df_val is None:
+        df_calculado_guardar = pd.DataFrame(columns=columnas_df_calculado)
+    else:
+        df_calculado_guardar = df_val.copy()
+        for col in columnas_df_calculado:
+            if col not in df_calculado_guardar.columns:
+                df_calculado_guardar[col] = 0.0 if col not in ["ITEM", "TIPO", "DESCRIPCIÓN"] else ""
+        df_calculado_guardar = df_calculado_guardar[columnas_df_calculado].copy()
+
     payload["__tablas__"] = {
         "df_programa_obra": [] if df_obra is None else df_obra.to_dict(orient="records"),
-        "df_calculado": [] if df_val is None else df_val.to_dict(orient="records"),
+        "df_calculado": df_calculado_guardar.to_dict(orient="records"),
         "df_resumen": [] if df_resumen is None else df_resumen.to_dict(orient="records"),
     }
 
     _guardar_programacion(payload)
-
 
 
 def _aplicar_editor_a_tabla(df_pct: pd.DataFrame, row_id: str, payload_pct: dict, periodos: List[str], mapa_activos: Dict[str, Set[int]]) -> pd.DataFrame:
