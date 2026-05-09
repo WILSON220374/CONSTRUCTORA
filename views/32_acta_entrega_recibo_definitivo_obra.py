@@ -1027,7 +1027,7 @@ with c_aiu3:
 with c_aiu4:
     st.number_input("U %", value=float(aiu.get("utilidad", 0.0)), format="%.2f", disabled=True)
 
-st.markdown("### DESCRIPCIÓN CANTIDADES DE OBRA Y PROVISIONES EJECUTADAS")
+st.markdown("### DESCRIPCIÓN CANTIDADES DE OBRA ")
 
 opciones_items = [""] + [fila["No. ORDEN"] for fila in items_presupuesto]
 item_sel = st.selectbox("Seleccionar ítem desde presupuesto", options=opciones_items)
