@@ -783,7 +783,7 @@ def _generar_word(payload):
     )
 
     doc.add_paragraph()
-    _doc_parrafo(doc, "DESCRIPCIÓN CANTIDADES DE OBRA Y PROVISIONES EJECUTADAS", bold=True)
+    _doc_parrafo(doc, "DESCRIPCIÓN CANTIDADES DE OBRA EJECUTADAS", bold=True)
     _doc_tabla_df(doc, pd.DataFrame(payload.get("cantidades_rows", [])))
 
     doc.add_paragraph()
