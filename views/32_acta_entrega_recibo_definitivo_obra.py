@@ -912,6 +912,18 @@ gestion_ambiental_social_predial = st.text_area(
 )
 observaciones_generales = st.text_area("OBSERVACIONES", value=guardado.get("observaciones_generales", ""), height=90)
 
+observaciones_garantias = st.text_area(
+    "OBSERVACIONES DEL INTERVENTOR RESPECTO DEL ESTADO DE LAS GARANTÍAS Y SEGUROS CONTRACTUALES EXIGIDOS AL CONTRATISTA DE OBRA",
+    value=guardado.get("observaciones_garantias", ""),
+    height=90,
+)
+
+observaciones_generales = st.text_area(
+    "OBSERVACIONES",
+    value=guardado.get("observaciones_generales", ""),
+    height=90,
+)
+
 st.markdown("### FIRMAS")
 c_f1, c_f2 = st.columns(2)
 with c_f1:
