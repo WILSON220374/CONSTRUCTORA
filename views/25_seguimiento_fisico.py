@@ -196,7 +196,7 @@ def _programado_desde_flujo(flujo_fondos, fecha_corte, fecha_inicio):
     return round(pct_programado, 4), round(valor_programado, 2)
 
 
-ddef _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_inicio):
+def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_inicio):
     tablas = flujo_fondos.get("__tablas__", {})
     programa = tablas.get("df_calculado", [])
 
