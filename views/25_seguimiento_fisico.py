@@ -468,9 +468,13 @@ flujo_fondos = _leer_flujo_fondos()
 def _tabla_programa_obra_desde_flujo(flujo_fondos):
     tablas = flujo_fondos.get("__tablas__", {}) or {}
     programa_obra = tablas.get("df_programa_obra", []) or []
+    programa_calculado = tablas.get("df_calculado", []) or []
 
-    if isinstance(programa_obra, list):
+    if isinstance(programa_obra, list) and programa_obra:
         return programa_obra
+
+    if isinstance(programa_calculado, list) and programa_calculado:
+        return programa_calculado
 
     return []
 
