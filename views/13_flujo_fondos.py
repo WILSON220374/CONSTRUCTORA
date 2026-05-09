@@ -777,6 +777,11 @@ guardado = _cargar_programacion()
 
 df_pct_base = _armar_tabla_porcentajes(base_df, periodos, mapa_activos, guardado)
 
+with st.expander("DEBUG df_pct_base", expanded=False):
+    st.write("Filas:", len(df_pct_base))
+    st.write("Columnas:", list(df_pct_base.columns))
+    st.dataframe(df_pct_base, use_container_width=True)
+
 st.subheader("Programación de avance")
 st.caption("Verde: periodo habilitado para la actividad. Gris: periodo fuera de programación; si se aplica un valor allí, vuelve a 0.")
 
