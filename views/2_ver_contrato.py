@@ -145,6 +145,14 @@ def escapar_tabla(valor):
     return texto_si_vacio(valor).replace("|", "\\|")
 
 
+def _formato_numero_contrato(valor):
+    try:
+        numero = float(valor)
+        return f"{numero:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except Exception:
+        return texto_si_vacio(valor)
+
+
 def construir_tabla_garantias_markdown(garantias):
     if not garantias or not isinstance(garantias, list):
         return (
@@ -160,8 +168,8 @@ def construir_tabla_garantias_markdown(garantias):
 
         amparo = escapar_tabla(fila.get("amparo", ""))
         suficiencia = escapar_tabla(fila.get("suficiencia", ""))
-        porcentaje = escapar_tabla(fila.get("%", ""))
-        cobertura = escapar_tabla(fila.get("cobertura", ""))
+        porcentaje = _formato_numero_contrato(fila.get("%", ""))
+        cobertura = "$ " + _formato_numero_contrato(fila.get("cobertura", ""))
 
         desde_valor = fila.get("desde", "")
         hasta_valor = fila.get("hasta", "")
@@ -172,16 +180,6 @@ def construir_tabla_garantias_markdown(garantias):
         desde = escapar_tabla(desde_valor)
         hasta = escapar_tabla(hasta_valor)
 
-        if (
-            amparo == "PENDIENTE"
-            and suficiencia == "PENDIENTE"
-            and porcentaje == "PENDIENTE"
-            and cobertura == "PENDIENTE"
-            and desde == "PENDIENTE"
-            and hasta == "PENDIENTE"
-        ):
-            continue
-
         filas.append(f"| {amparo} | {suficiencia} | {porcentaje} | {cobertura} | {desde} | {hasta} |")
 
     if not filas:
@@ -189,35 +187,46 @@ def construir_tabla_garantias_markdown(garantias):
 
     encabezado = "| Amparo | Suficiencia | % | Cobertura | Desde | Hasta |\n|---|---:|---:|---:|---|---|"
     return encabezado + "\n" + "\n".join(filas)
+
+
+def construir_tabla_garantias_doc(doc, garantias):
+    tabla = doc.add_table(rows=1, cols=6)
     tabla.style = "Table Grid"
+
     encabezado = tabla.rows[0].cells
     encabezado[0].text = "Amparo"
     encabezado[1].text = "Suficiencia"
-    encabezado[2].text = "Desde"
-    encabezado[3].text = "Hasta"
+    encabezado[2].text = "%"
+    encabezado[3].text = "Cobertura"
+    encabezado[4].text = "Desde"
+    encabezado[5].text = "Hasta"
 
     filas_validas = []
     if garantias and isinstance(garantias, list):
         for fila in garantias:
             if not isinstance(fila, dict):
                 continue
+
             amparo = texto_si_vacio(fila.get("amparo", ""))
             suficiencia = texto_si_vacio(fila.get("suficiencia", ""))
+            porcentaje = _formato_numero_contrato(fila.get("%", ""))
+            cobertura = "$ " + _formato_numero_contrato(fila.get("cobertura", ""))
             desde = texto_si_vacio(fila.get("desde", ""))
             hasta = texto_si_vacio(fila.get("hasta", ""))
-            if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and desde == "PENDIENTE" and hasta == "PENDIENTE":
-                continue
-            filas_validas.append((amparo, suficiencia, desde, hasta))
+
+            filas_validas.append((amparo, suficiencia, porcentaje, cobertura, desde, hasta))
 
     if not filas_validas:
-        filas_validas.append(("PENDIENTE", "PENDIENTE", "PENDIENTE", "PENDIENTE"))
+        filas_validas.append(("PENDIENTE", "PENDIENTE", "PENDIENTE", "PENDIENTE", "PENDIENTE", "PENDIENTE"))
 
-    for amparo, suficiencia, desde, hasta in filas_validas:
+    for amparo, suficiencia, porcentaje, cobertura, desde, hasta in filas_validas:
         celdas = tabla.add_row().cells
         celdas[0].text = amparo
         celdas[1].text = suficiencia
-        celdas[2].text = desde
-        celdas[3].text = hasta
+        celdas[2].text = porcentaje
+        celdas[3].text = cobertura
+        celdas[4].text = desde
+        celdas[5].text = hasta
 
 
 def construir_bloque_anexos(datos):
