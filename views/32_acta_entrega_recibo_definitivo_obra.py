@@ -916,12 +916,14 @@ observaciones_garantias = st.text_area(
     "OBSERVACIONES DEL INTERVENTOR RESPECTO DEL ESTADO DE LAS GARANTÍAS Y SEGUROS CONTRACTUALES EXIGIDOS AL CONTRATISTA DE OBRA",
     value=guardado.get("observaciones_garantias", ""),
     height=90,
+    key="acta_def_observaciones_garantias",
 )
 
 observaciones_generales = st.text_area(
     "OBSERVACIONES",
     value=guardado.get("observaciones_generales", ""),
     height=90,
+    key="acta_def_observaciones_generales",
 )
 
 st.markdown("### FIRMAS")
