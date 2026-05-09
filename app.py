@@ -313,6 +313,7 @@ else:
         st.Page("views/30_acta_recibo_parcial_obra.py", title="30. Acta recibo parcial obra", icon="📄"),
         st.Page("views/31_items_no_previstos.py", title="31. Ítems no previstos", icon="📄"),
         st.Page("views/32_acta_entrega_recibo_definitivo_obra.py", title="32. Acta entrega y recibo definitivo obra", icon="📄"),
+        st.Page("views/33_acta_liquidacion_obra.py", title="33. Acta liquidación obra", icon="📄"),
     ]
 
     pg = st.navigation(pages)
