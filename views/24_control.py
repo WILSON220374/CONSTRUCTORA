@@ -571,9 +571,11 @@ def _filas_garantias_en_blanco(garantias_contrato):
             filas.append(
                 {
                     "AMPARO": amparo,
-                    "SUFICIENCIA": "",
-                    "DESDE": None,
-                    "HASTA": None,
+                    "SUFICIENCIA": _texto(garantia.get("suficiencia")),
+                    "%": _safe_float(garantia.get("%"), 0.0),
+                    "COBERTURA": _safe_float(garantia.get("cobertura"), 0.0),
+                    "DESDE": _parse_fecha_opcional(garantia.get("desde")),
+                    "HASTA": _parse_fecha_opcional(garantia.get("hasta")),
                 }
             )
 
@@ -600,6 +602,8 @@ def _normalizar_bloques_garantias(bloques, garantias_contrato):
                 {
                     "AMPARO": amparo,
                     "SUFICIENCIA": _texto(fila.get("SUFICIENCIA")),
+                    "%": _safe_float(fila.get("%"), 0.0),
+                    "COBERTURA": _safe_float(fila.get("COBERTURA"), 0.0),
                     "DESDE": _parse_fecha_opcional(fila.get("DESDE")),
                     "HASTA": _parse_fecha_opcional(fila.get("HASTA")),
                 }
@@ -616,7 +620,6 @@ def _normalizar_bloques_garantias(bloques, garantias_contrato):
         )
 
     return normalizados
-
 
 def _inicializar_estado(acta_inicio, contrato_obra, plan_anticipo):
     group_id_actual = _texto(st.session_state.get("group_id"))
@@ -1028,8 +1031,14 @@ with tab_modificaciones:
 
         df_bloque_garantias = pd.DataFrame(
             bloque.get("rows", []),
-            columns=["AMPARO", "SUFICIENCIA", "DESDE", "HASTA"],
+            columns=["AMPARO", "SUFICIENCIA", "%", "COBERTURA", "DESDE", "HASTA"],
         )
+
+        for col in ["%", "COBERTURA"]:
+            df_bloque_garantias[col] = pd.to_numeric(
+                df_bloque_garantias[col], errors="coerce"
+            ).fillna(0.0)
+
         bloque_editado = st.data_editor(
             df_bloque_garantias,
             hide_index=True,
@@ -1040,16 +1049,11 @@ with tab_modificaciones:
             column_config={
                 "AMPARO": st.column_config.TextColumn("AMPARO"),
                 "SUFICIENCIA": st.column_config.TextColumn("SUFICIENCIA"),
+                "%": st.column_config.NumberColumn("%", format="%.2f"),
+                "COBERTURA": st.column_config.NumberColumn("COBERTURA", format="$ %.2f"),
                 "DESDE": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
                 "HASTA": st.column_config.DateColumn("HASTA", format="DD/MM/YYYY"),
             },
-        )
-
-        garantias_modificaciones_editadas.append(
-            {
-                "numero": numero_bloque,
-                "rows": bloque_editado.to_dict("records"),
-            }
         )
 
     datos["garantias_modificaciones_bloques"] = _normalizar_bloques_garantias(
