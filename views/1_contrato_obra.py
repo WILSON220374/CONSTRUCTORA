@@ -461,11 +461,18 @@ with st.expander("8. Cláusula penal", expanded=False):
 with st.expander("9. Garantías", expanded=False):
     df_garantias = pd.DataFrame(datos["garantias"])
 
-    valor_contrato_garantias = pd.to_numeric(datos.get("valor_total_numeros", 0), errors="coerce")
-    if pd.isna(valor_contrato_garantias):
+   valor_contrato_texto = str(datos.get("valor_total_numeros", "0")).strip()
+    valor_contrato_texto = valor_contrato_texto.replace("$", "").replace(" ", "")
+
+    if "," in valor_contrato_texto and "." in valor_contrato_texto:
+        valor_contrato_texto = valor_contrato_texto.replace(".", "").replace(",", ".")
+    elif "," in valor_contrato_texto:
+        valor_contrato_texto = valor_contrato_texto.replace(",", ".")
+
+    try:
+        valor_contrato_garantias = float(valor_contrato_texto)
+    except Exception:
         valor_contrato_garantias = 0.0
-    else:
-        valor_contrato_garantias = float(valor_contrato_garantias)
         
     for col in ["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"]:
         if col not in df_garantias.columns:
