@@ -930,7 +930,7 @@ with tab_modificaciones:
 
     garantias_contrato = contrato_obra.get("garantias", []) or []
 
-        df_garantias = pd.DataFrame(
+    df_garantias = pd.DataFrame(
         garantias_contrato,
         columns=["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"],
     )
