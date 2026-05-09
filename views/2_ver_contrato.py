@@ -532,7 +532,7 @@ def generar_word(datos):
             doc.add_heading(bloque.replace("# ", "").strip(), level=1)
         elif bloque.strip().startswith("## "):
             doc.add_heading(bloque.replace("## ", "").strip(), level=2)
-        elif "| Amparo | Suficiencia | Desde | Hasta |" in bloque:
+        elif "| Amparo | Suficiencia | % | Cobertura | Desde | Hasta |" in bloque:
             construir_tabla_garantias_doc(doc, datos.get("garantias", []))
         else:
             doc.add_paragraph(bloque.strip())
