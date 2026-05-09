@@ -176,16 +176,10 @@ def _programado_desde_flujo(flujo_fondos, fecha_corte, fecha_inicio):
     if dias_transcurridos <= 0:
         return 0.0, 0.0
 
-    periodo_calculado = int((dias_transcurridos - 1) // 30) + 1
-    ultimo_periodo = periodos[-1][0]
-
-    if periodo_calculado >= ultimo_periodo:
-        periodo_actual = ultimo_periodo
-        factor_periodo = 1.0
-    else:
-        periodo_actual = periodo_calculado
-        dia_periodo = ((dias_transcurridos - 1) % 30) + 1
-        factor_periodo = dia_periodo / 30.0
+    periodo_actual = int((dias_transcurridos - 1) // 30) + 1
+    dia_periodo = ((dias_transcurridos - 1) % 30) + 1
+    factor_periodo = dia_periodo / 30.0
+    periodo_actual = min(periodo_actual, periodos[-1][0])
 
     nombre_actual = f"Periodo {periodo_actual}"
     nombre_anterior = f"Periodo {periodo_actual - 1}"
