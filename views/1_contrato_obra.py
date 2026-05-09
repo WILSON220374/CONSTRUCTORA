@@ -461,7 +461,7 @@ with st.expander("8. Cláusula penal", expanded=False):
 with st.expander("9. Garantías", expanded=False):
     df_garantias = pd.DataFrame(datos["garantias"])
 
-    valor_contrato_texto = str(datos.get("valor_total_numeros", "0")).strip()
+    valor_contrato_texto = str(st.session_state.get("valor_total_numeros", datos.get("valor_total_numeros", "0"))).strip()
     valor_contrato_texto = valor_contrato_texto.replace("$", "").replace(" ", "")
 
     if "," in valor_contrato_texto and "." in valor_contrato_texto:
