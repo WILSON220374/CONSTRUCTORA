@@ -490,6 +490,19 @@ acta_inicio = _leer_acta_inicio()
 contrato_obra = _leer_contrato_obra()
 flujo_fondos = _leer_flujo_fondos()
 
+with st.expander("DEBUG df_calculado", expanded=False):
+    tablas_debug = flujo_fondos.get("__tablas__", {})
+    df_calculado_debug = tablas_debug.get("df_calculado", [])
+
+    st.write("Tipo:", type(df_calculado_debug))
+    st.write("Cantidad de filas:", len(df_calculado_debug) if isinstance(df_calculado_debug, list) else "No es lista")
+
+    if isinstance(df_calculado_debug, list) and df_calculado_debug:
+        st.write("Columnas primera fila:", list(df_calculado_debug[0].keys()))
+        st.dataframe(pd.DataFrame(df_calculado_debug), use_container_width=True)
+    else:
+        st.warning("df_calculado está vacío o no existe.")
+
 def _tabla_programa_obra_desde_flujo(flujo_fondos):
     tablas = flujo_fondos.get("__tablas__", {}) or {}
     programa_obra = tablas.get("df_programa_obra", []) or []
