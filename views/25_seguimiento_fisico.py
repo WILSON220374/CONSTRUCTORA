@@ -196,7 +196,7 @@ def _programado_desde_flujo(flujo_fondos, fecha_corte, fecha_inicio):
     return round(pct_programado, 4), round(valor_programado, 2)
 
 
-def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_inicio):
+ddef _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_inicio):
     tablas = flujo_fondos.get("__tablas__", {})
     programa = tablas.get("df_calculado", [])
 
@@ -220,25 +220,20 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
     if valor_total_item <= 0:
         return 0.0, 0.0
 
-    periodos_pct = []
-    periodos_valor = []
-
+    periodos = []
     for columna in fila_item.keys():
         nombre = _texto(columna)
-
-        if nombre.startswith("Periodo ") and nombre.endswith(" %"):
-            try:
-                numero = int(nombre.replace("Periodo ", "").replace(" %", "").strip())
-                periodos_pct.append((numero, nombre))
-            except Exception:
-                continue
-
         if nombre.startswith("Periodo ") and nombre.endswith(" $"):
             try:
                 numero = int(nombre.replace("Periodo ", "").replace(" $", "").strip())
-                periodos_valor.append((numero, nombre))
+                periodos.append((numero, nombre))
             except Exception:
                 continue
+
+    if not periodos:
+        return 0.0, 0.0
+
+    periodos = sorted(periodos, key=lambda x: x[0])
 
     fecha_corte = _parse_fecha(fecha_corte)
     fecha_inicio = _parse_fecha(fecha_inicio)
@@ -246,6 +241,36 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
 
     if dias_transcurridos <= 0:
         return 0.0, 0.0
+
+    periodo_actual = int((dias_transcurridos - 1) // 30) + 1
+    dia_periodo = ((dias_transcurridos - 1) % 30) + 1
+    factor_periodo = dia_periodo / 30.0
+    periodo_actual = min(periodo_actual, periodos[-1][0])
+
+    valor_anterior_base = 0.0
+    valor_total_base = 0.0
+
+    for numero, columna in periodos:
+        valor_periodo = _safe_float(fila_item.get(columna), 0.0)
+        valor_total_base += valor_periodo
+
+        if numero < periodo_actual:
+            valor_anterior_base += valor_periodo
+
+    columna_actual = f"Periodo {periodo_actual} $"
+    valor_mes_actual_base = _safe_float(fila_item.get(columna_actual), 0.0)
+
+    valor_programado_base = valor_anterior_base + (valor_mes_actual_base * factor_periodo)
+
+    if valor_total_base <= 0:
+        return 0.0, 0.0
+
+    pct_programado = (valor_programado_base / valor_total_base) * 100.0
+    pct_programado = max(0.0, min(100.0, pct_programado))
+
+    valor_programado = (pct_programado / 100.0) * valor_total_item
+
+    return round(pct_programado, 4), round(valor_programado, 2)
 
     # 1) Preferir siempre la programación porcentual si existe
     if periodos_pct:
