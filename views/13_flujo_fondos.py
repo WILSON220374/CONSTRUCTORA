@@ -757,6 +757,12 @@ if tipo_presupuesto_proyecto != "Obra":
     st.stop()
 
 base_df = _cargar_base_actividades()
+
+with st.expander("DEBUG base_df", expanded=False):
+    st.write("Filas:", len(base_df))
+    st.write("Columnas:", list(base_df.columns))
+    st.dataframe(base_df, use_container_width=True)
+
 if base_df.empty:
     st.warning("No hay actividades disponibles en el presupuesto.")
     st.stop()
