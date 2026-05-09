@@ -148,9 +148,9 @@ def escapar_tabla(valor):
 def construir_tabla_garantias_markdown(garantias):
     if not garantias or not isinstance(garantias, list):
         return (
-            "| Amparo | Suficiencia | Desde | Hasta |\n"
-            "|---|---|---|---|\n"
-            "| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |"
+            "| Amparo | Suficiencia | % | Cobertura | Desde | Hasta |\n"
+            "|---|---:|---:|---:|---|---|\n"
+            "| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |"
         )
 
     filas = []
@@ -160,6 +160,8 @@ def construir_tabla_garantias_markdown(garantias):
 
         amparo = escapar_tabla(fila.get("amparo", ""))
         suficiencia = escapar_tabla(fila.get("suficiencia", ""))
+        porcentaje = escapar_tabla(fila.get("%", ""))
+        cobertura = escapar_tabla(fila.get("cobertura", ""))
 
         desde_valor = fila.get("desde", "")
         hasta_valor = fila.get("hasta", "")
@@ -170,19 +172,23 @@ def construir_tabla_garantias_markdown(garantias):
         desde = escapar_tabla(desde_valor)
         hasta = escapar_tabla(hasta_valor)
 
-        if amparo == "PENDIENTE" and suficiencia == "PENDIENTE" and desde == "PENDIENTE" and hasta == "PENDIENTE":
+        if (
+            amparo == "PENDIENTE"
+            and suficiencia == "PENDIENTE"
+            and porcentaje == "PENDIENTE"
+            and cobertura == "PENDIENTE"
+            and desde == "PENDIENTE"
+            and hasta == "PENDIENTE"
+        ):
             continue
 
-        filas.append(f"| {amparo} | {suficiencia} | {desde} | {hasta} |")
+        filas.append(f"| {amparo} | {suficiencia} | {porcentaje} | {cobertura} | {desde} | {hasta} |")
 
     if not filas:
-        filas.append("| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |")
+        filas.append("| PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |")
 
-    encabezado = "| Amparo | Suficiencia | Desde | Hasta |\n|---|---|---|---|"
+    encabezado = "| Amparo | Suficiencia | % | Cobertura | Desde | Hasta |\n|---|---:|---:|---:|---|---|"
     return encabezado + "\n" + "\n".join(filas)
-
-def construir_tabla_garantias_doc(doc, garantias):
-    tabla = doc.add_table(rows=1, cols=4)
     tabla.style = "Table Grid"
     encabezado = tabla.rows[0].cells
     encabezado[0].text = "Amparo"
