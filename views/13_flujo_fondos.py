@@ -936,6 +936,12 @@ st.data_editor(
 )
 
 df_pct = _recalcular_bloqueos(df_pct_base.copy(), periodos, mapa_activos)
+
+with st.expander("DEBUG df_pct", expanded=False):
+    st.write("Filas:", len(df_pct))
+    st.write("Columnas:", list(df_pct.columns))
+    st.dataframe(df_pct, use_container_width=True)
+
 invalidas = df_pct[~df_pct["TOTAL %"].round(2).eq(100.0)]
 
 if invalidas.empty:
