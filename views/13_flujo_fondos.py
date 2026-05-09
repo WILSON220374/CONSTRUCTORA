@@ -767,11 +767,6 @@ if tipo_presupuesto_proyecto != "Obra":
 
 base_df = _cargar_base_actividades()
 
-with st.expander("DEBUG base_df", expanded=False):
-    st.write("Filas:", len(base_df))
-    st.write("Columnas:", list(base_df.columns))
-    st.dataframe(base_df, use_container_width=True)
-
 if base_df.empty:
     st.warning("No hay actividades disponibles en el presupuesto.")
     st.stop()
@@ -785,11 +780,6 @@ mapa_activos = _mapa_periodos_activos(base_df, periodos)
 guardado = _cargar_programacion()
 
 df_pct_base = _armar_tabla_porcentajes(base_df, periodos, mapa_activos, guardado)
-
-with st.expander("DEBUG df_pct_base", expanded=False):
-    st.write("Filas:", len(df_pct_base))
-    st.write("Columnas:", list(df_pct_base.columns))
-    st.dataframe(df_pct_base, use_container_width=True)
 
 st.subheader("Programación de avance")
 st.caption("Verde: periodo habilitado para la actividad. Gris: periodo fuera de programación; si se aplica un valor allí, vuelve a 0.")
@@ -946,11 +936,6 @@ st.data_editor(
 
 df_pct = _recalcular_bloqueos(df_pct_base.copy(), periodos, mapa_activos)
 
-with st.expander("DEBUG df_pct", expanded=False):
-    st.write("Filas:", len(df_pct))
-    st.write("Columnas:", list(df_pct.columns))
-    st.dataframe(df_pct, use_container_width=True)
-
 invalidas = df_pct[~df_pct["TOTAL %"].round(2).eq(100.0)]
 
 if invalidas.empty:
@@ -1002,11 +987,6 @@ guardar_y_recalcular = st.button("Guardar y recalcular", width="stretch")
 
 st.subheader("Programa de iversiones")
 df_val = _tabla_valores(df_pct, periodos)
-
-with st.expander("DEBUG df_val / Programa de inversiones", expanded=False):
-    st.write("Filas:", len(df_val))
-    st.write("Columnas:", list(df_val.columns))
-    st.dataframe(df_val, use_container_width=True)
 
 column_order_val = ["ITEM", "TIPO", "DESCRIPCIÓN", "VALOR CON AIU"] + [f"{p} $" for p in periodos] + ["TOTAL PROGRAMADO"]
 
