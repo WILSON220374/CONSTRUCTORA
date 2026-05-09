@@ -445,12 +445,15 @@ with col_r2:
         key="acta_reanudacion_fecha_reanudacion",
     )
 with col_r3:
+    fecha_vencimiento_inicial = generales.get("fecha_vencimiento_inicial") or date.today()
+    dias_reales_suspendidos = max(0, (fecha_reanudacion - fecha_suspension_inicial).days)
+    nueva_fecha_recalculada = fecha_vencimiento_inicial + timedelta(days=dias_reales_suspendidos)
+
     st.text_input(
         "NUEVA FECHA DE VENCIMIENTO DEL CONTRATO:",
-        value=_fecha_texto(nueva_fecha_base),
+        value=_fecha_texto(nueva_fecha_recalculada),
         disabled=True,
     )
-
 st.markdown("### ")
 st.write(
     "Se suscribe la presente acta de reanudación del contrato de obra considerando que están dadas las condiciones para continuar con la ejecución del contrato."
