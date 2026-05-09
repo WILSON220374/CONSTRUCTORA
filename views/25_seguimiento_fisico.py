@@ -252,11 +252,12 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
     columna_actual = f"Periodo {periodo_actual} $"
     valor_mes_actual = _safe_float(fila_item.get(columna_actual), 0.0)
 
-    valor_programado = valor_anterior + (valor_mes_actual * factor_periodo)
-    pct_programado = (valor_programado / valor_total_item) * 100.0
+    valor_programado_base = valor_anterior + (valor_mes_actual * factor_periodo)
+    pct_programado = (valor_programado_base / valor_total_item) * 100.0
+    pct_programado = max(0.0, min(100.0, pct_programado))
+    valor_programado = (pct_programado / 100.0) * valor_total_item
 
     return round(pct_programado, 4), round(valor_programado, 2)
-
 
 # ==========================================================
 # Filas y normalizadores
