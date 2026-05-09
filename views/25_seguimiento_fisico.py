@@ -217,19 +217,82 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
         return 0.0, 0.0
 
     valor_total_item = _safe_float(fila_item.get("VALOR CON AIU"), 0.0)
+    if valor_total_item <= 0:
+        return 0.0, 0.0
 
-    periodos = []
+    periodos_pct = []
+    periodos_valor = []
+
     for columna in fila_item.keys():
         nombre = _texto(columna)
-        if nombre.startswith("Periodo ") and nombre.endswith(" $"):
+
+        if nombre.startswith("Periodo ") and nombre.endswith(" %"):
             try:
-                numero = int(nombre.replace("Periodo ", "").replace(" $", "").strip())
-                periodos.append((numero, nombre))
+                numero = int(nombre.replace("Periodo ", "").replace(" %", "").strip())
+                periodos_pct.append((numero, nombre))
             except Exception:
                 continue
 
-    if not periodos or valor_total_item <= 0:
+        if nombre.startswith("Periodo ") and nombre.endswith(" $"):
+            try:
+                numero = int(nombre.replace("Periodo ", "").replace(" $", "").strip())
+                periodos_valor.append((numero, nombre))
+            except Exception:
+                continue
+
+    fecha_corte = _parse_fecha(fecha_corte)
+    fecha_inicio = _parse_fecha(fecha_inicio)
+    dias_transcurridos = (fecha_corte - fecha_inicio).days + 1
+
+    if dias_transcurridos <= 0:
         return 0.0, 0.0
+
+    # 1) Preferir siempre la programación porcentual si existe
+    if periodos_pct:
+        periodos_pct = sorted(periodos_pct, key=lambda x: x[0])
+
+        periodo_actual = int((dias_transcurridos - 1) // 30) + 1
+        dia_periodo = ((dias_transcurridos - 1) % 30) + 1
+        factor_periodo = dia_periodo / 30.0
+        periodo_actual = min(periodo_actual, periodos_pct[-1][0])
+
+        nombre_actual = f"Periodo {periodo_actual} %"
+        nombre_anterior = f"Periodo {periodo_actual - 1} %"
+
+        pct_anterior = _safe_float(fila_item.get(nombre_anterior), 0.0) if periodo_actual > 1 else 0.0
+        pct_actual = _safe_float(fila_item.get(nombre_actual), pct_anterior)
+
+        pct_programado = pct_anterior + ((pct_actual - pct_anterior) * factor_periodo)
+        pct_programado = max(0.0, min(100.0, pct_programado))
+        valor_programado = (pct_programado / 100.0) * valor_total_item
+
+        return round(pct_programado, 4), round(valor_programado, 2)
+
+    # 2) Si no hay programación porcentual, usar valores por periodo y derivar el porcentaje
+    if periodos_valor:
+        periodos_valor = sorted(periodos_valor, key=lambda x: x[0])
+
+        periodo_actual = int((dias_transcurridos - 1) // 30) + 1
+        dia_periodo = ((dias_transcurridos - 1) % 30) + 1
+        factor_periodo = dia_periodo / 30.0
+        periodo_actual = min(periodo_actual, periodos_valor[-1][0])
+
+        valor_anterior = 0.0
+        for numero, columna in periodos_valor:
+            if numero < periodo_actual:
+                valor_anterior += _safe_float(fila_item.get(columna), 0.0)
+
+        columna_actual = f"Periodo {periodo_actual} $"
+        valor_mes_actual = _safe_float(fila_item.get(columna_actual), 0.0)
+
+        valor_programado = valor_anterior + (valor_mes_actual * factor_periodo)
+        pct_programado = (valor_programado / valor_total_item) * 100.0 if valor_total_item > 0 else 0.0
+        pct_programado = max(0.0, min(100.0, pct_programado))
+        valor_programado = (pct_programado / 100.0) * valor_total_item
+
+        return round(pct_programado, 4), round(valor_programado, 2)
+
+    return 0.0, 0.0
 
     periodos = sorted(periodos, key=lambda x: x[0])
     fecha_corte = _parse_fecha(fecha_corte)
