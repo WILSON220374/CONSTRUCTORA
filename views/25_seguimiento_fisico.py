@@ -216,8 +216,22 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
     if not fila_item:
         return 0.0, 0.0
 
-    valor_total_item = _safe_float(fila_item.get("VALOR CON AIU"), 0.0)
+    fila_programa_obra = {}
+    for fila in _tabla_programa_obra_desde_flujo(flujo_fondos):
+        if not isinstance(fila, dict):
+            continue
+        if _texto(fila.get("ITEM")) == item:
+            fila_programa_obra = fila
+            break
 
+    valor_total_item = _safe_float(
+        _primero_no_vacio(
+            fila_programa_obra.get("VALOR CON AIU"),
+            fila_programa_obra.get("VALOR TOTAL CON AIU"),
+            fila_item.get("VALOR CON AIU"),
+        ),
+        0.0,
+    )
     periodos = []
     for columna in fila_item.keys():
         nombre = _texto(columna)
