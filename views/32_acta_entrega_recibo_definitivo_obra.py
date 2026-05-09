@@ -671,9 +671,9 @@ def _estado_inicial(generales):
         "cantidades_rows": [],
         "observaciones_anticipo": "",
         "valor_total_ejecutado_resumen": 0.0,
-        "concepto_interventoria": "La interventoría deja constancia que las obras recibidas cumplen con los requerimientos de calidad, con las normas, especificaciones generales y particulares de construcción y demás condiciones contractuales, de acuerdo con los diseños, planos y especificaciones estipuladas para el proyecto.",
-        "concepto_planos_record": "Con la suscripción de la presente Acta la interventoría deja constancia de la revisión y aprobación de los planos record elaborados y entregados por el Contratista.",
-        "gestion_ambiental_social_predial": "Las actividades del componente ambiental, social, predial y de sostenibilidad son recibidas y aprobadas por la Interventoría, teniendo en cuenta que el Contratista cumplió con las actividades de conformidad con los instructivos y formatos.",
+        "concepto_interventoria": "",
+        "concepto_planos_record": "",
+        "gestion_ambiental_social_predial": "",
         "observaciones_garantias": "",
         "observaciones_generales": "",
         "firma_contratista": generales.get("contratista", ""),
@@ -876,10 +876,40 @@ st.dataframe(
 valor_total_ejecutado_resumen = st.number_input("VALOR TOTAL EJECUTADO", value=float(_safe_float(guardado.get("valor_total_ejecutado_resumen"), 0.0)), min_value=0.0, step=1000.0, format="%.2f", key="valor_total_ejecutado_resumen")
 
 st.markdown("### CONCEPTOS Y OBSERVACIONES")
-concepto_interventoria = st.text_area("CONCEPTO DE LA INTERVENTORÍA RECIBO DE LAS OBRAS", value=guardado.get("concepto_interventoria", ""), height=110)
-concepto_planos_record = st.text_area("CONCEPTO DE LA INTERVENTORÍA SOBRE LA APROBACIÓN DE LOS PLANOS RECORD", value=guardado.get("concepto_planos_record", ""), height=90)
-gestion_ambiental_social_predial = st.text_area("GESTIÓN AMBIENTAL, SOCIAL, PREDIAL Y DE SOSTENIBILIDAD", value=guardado.get("gestion_ambiental_social_predial", ""), height=130)
-observaciones_garantias = st.text_area("OBSERVACIONES DEL INTERVENTOR RESPECTO DEL ESTADO DE LAS GARANTÍAS Y SEGUROS CONTRACTUALES EXIGIDOS AL CONTRATISTA DE OBRA", value=guardado.get("observaciones_garantias", ""), height=90)
+st.markdown("#### CONCEPTO DE LA INTERVENTORÍA RECIBO DE LAS OBRAS")
+st.markdown(
+    "La interventoría deja constancia que las obras recibidas cumplen con los requerimientos de calidad, "
+    "con las normas, especificaciones generales y particulares de construcción y demás condiciones contractuales, "
+    "de acuerdo con los diseños, planos y especificaciones estipuladas para el proyecto."
+)
+concepto_interventoria = st.text_area(
+    "Observaciones adicionales sobre el recibo de las obras",
+    value=guardado.get("concepto_interventoria", ""),
+    height=90,
+)
+
+st.markdown("#### CONCEPTO DE LA INTERVENTORÍA SOBRE LA APROBACIÓN DE LOS PLANOS RECORD")
+st.markdown(
+    "Con la suscripción de la presente Acta la interventoría deja constancia de la revisión y aprobación "
+    "de los planos record elaborados y entregados por el Contratista."
+)
+concepto_planos_record = st.text_area(
+    "Observaciones adicionales sobre planos record",
+    value=guardado.get("concepto_planos_record", ""),
+    height=90,
+)
+
+st.markdown("#### GESTIÓN AMBIENTAL, SOCIAL, PREDIAL Y DE SOSTENIBILIDAD")
+st.markdown(
+    "Las actividades del componente ambiental, social, predial y de sostenibilidad son recibidas y aprobadas "
+    "por la Interventoría, teniendo en cuenta que el Contratista cumplió con las actividades de conformidad "
+    "con los instructivos y formatos."
+)
+gestion_ambiental_social_predial = st.text_area(
+    "Observaciones adicionales sobre gestión ambiental, social, predial y de sostenibilidad",
+    value=guardado.get("gestion_ambiental_social_predial", ""),
+    height=90,
+)
 observaciones_generales = st.text_area("OBSERVACIONES", value=guardado.get("observaciones_generales", ""), height=90)
 
 st.markdown("### FIRMAS")
