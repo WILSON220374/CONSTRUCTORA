@@ -1072,7 +1072,38 @@ cantidades_editadas = st.data_editor(
 )
 
 cantidades_recalculadas = _normalizar_cantidades(cantidades_editadas.to_dict("records"), mapa_items)
-total_cantidades = round(sum(_safe_float(f.get("VALOR TOTAL EJECUTADO"), 0.0) for f in cantidades_recalculadas), 2)
+
+df_cantidades_recalculadas = pd.DataFrame(
+    cantidades_recalculadas,
+    columns=[
+        "No. ORDEN",
+        "DESCRIPCIÓN ITEM",
+        "UNIDAD",
+        "VALOR UNITARIO",
+        "CANTIDAD",
+        "VALOR TOTAL EJECUTADO",
+    ],
+)
+
+st.markdown("#### Cantidades recalculadas")
+st.dataframe(
+    df_cantidades_recalculadas,
+    hide_index=True,
+    width="stretch",
+    column_config={
+        "No. ORDEN": st.column_config.TextColumn("No. ORDEN"),
+        "DESCRIPCIÓN ITEM": st.column_config.TextColumn("DESCRIPCIÓN ITEM"),
+        "UNIDAD": st.column_config.TextColumn("UNIDAD"),
+        "VALOR UNITARIO": st.column_config.NumberColumn("VALOR UNITARIO", format="$ %.2f"),
+        "CANTIDAD": st.column_config.NumberColumn("CANTIDAD", format="%.4f"),
+        "VALOR TOTAL EJECUTADO": st.column_config.NumberColumn("VALOR TOTAL EJECUTADO", format="$ %.2f"),
+    },
+)
+
+total_cantidades = round(
+    sum(_safe_float(f.get("VALOR TOTAL EJECUTADO"), 0.0) for f in cantidades_recalculadas),
+    2,
+)
 
 st.metric("VALOR TOTAL EJECUTADO SEGÚN CANTIDADES", _moneda(total_cantidades))
 
