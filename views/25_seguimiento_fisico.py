@@ -239,10 +239,16 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
     if dias_transcurridos <= 0:
         return 0.0, 0.0
 
-    periodo_actual = int((dias_transcurridos - 1) // 30) + 1
+    ultimo_periodo = periodos[-1][0]
+
+    periodo_calculado = int((dias_transcurridos - 1) // 30) + 1
+
+    if periodo_calculado > ultimo_periodo:
+        return 100.0, round(valor_total_item, 2)
+
+    periodo_actual = periodo_calculado
     dia_periodo = ((dias_transcurridos - 1) % 30) + 1
     factor_periodo = dia_periodo / 30.0
-    periodo_actual = min(periodo_actual, periodos[-1][0])
 
     valor_anterior = 0.0
     for numero, columna in periodos:
@@ -255,9 +261,14 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
     valor_programado_base = valor_anterior + (valor_mes_actual * factor_periodo)
     pct_programado = (valor_programado_base / valor_total_item) * 100.0
     pct_programado = max(0.0, min(100.0, pct_programado))
+    pct_programado = round(pct_programado, 4)
+
+    if pct_programado >= 100.0:
+        return 100.0, round(valor_total_item, 2)
+
     valor_programado = (pct_programado / 100.0) * valor_total_item
 
-    return round(pct_programado, 4), round(valor_programado, 2)
+    return pct_programado, round(valor_programado, 2)
 
 # ==========================================================
 # Filas y normalizadores
