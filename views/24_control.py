@@ -930,13 +930,7 @@ with tab_modificaciones:
 
     garantias_contrato = contrato_obra.get("garantias", []) or []
 
-    df_garantias = pd.DataFrame(
-        garantias_contrato,
-        columns=["amparo", "suficiencia", "desde", "hasta"],
-    )
-
-    if df_garantias.empty:
-    df_garantias = pd.DataFrame(
+        df_garantias = pd.DataFrame(
         garantias_contrato,
         columns=["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"],
     )
@@ -955,6 +949,12 @@ with tab_modificaciones:
             ]
         )
 
+    if "%" not in df_garantias.columns:
+        df_garantias["%"] = 0.0
+
+    if "cobertura" not in df_garantias.columns:
+        df_garantias["cobertura"] = 0.0
+
     df_garantias["%"] = pd.to_numeric(df_garantias["%"], errors="coerce").fillna(0.0)
     df_garantias["cobertura"] = pd.to_numeric(df_garantias["cobertura"], errors="coerce").fillna(0.0)
 
@@ -962,14 +962,7 @@ with tab_modificaciones:
         df_garantias[col] = pd.to_datetime(df_garantias[col], errors="coerce").dt.date
 
     df_garantias = df_garantias[
-        [
-            "amparo",
-            "suficiencia",
-            "%",
-            "cobertura",
-            "desde",
-            "hasta",
-        ]
+        ["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"]
     ]
 
     st.dataframe(
@@ -978,7 +971,7 @@ with tab_modificaciones:
         width="stretch",
         column_config={
             "amparo": st.column_config.TextColumn("AMPARO"),
-            "suficiencia": st.column_config.NumberColumn("SUFICIENCIA", format="$ %.2f"),
+            "suficiencia": st.column_config.TextColumn("SUFICIENCIA"),
             "%": st.column_config.NumberColumn("%", format="%.2f"),
             "cobertura": st.column_config.NumberColumn("COBERTURA", format="$ %.2f"),
             "desde": st.column_config.DateColumn("DESDE", format="DD/MM/YYYY"),
