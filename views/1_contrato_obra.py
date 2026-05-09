@@ -461,14 +461,21 @@ with st.expander("8. Cláusula penal", expanded=False):
 with st.expander("9. Garantías", expanded=False):
     df_garantias = pd.DataFrame(datos["garantias"])
 
-    for col in ["amparo", "suficiencia", "desde", "hasta"]:
+    valor_contrato_garantias = _safe_float(datos.get("valor_total_numeros"), 0.0)
+
+    for col in ["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"]:
         if col not in df_garantias.columns:
             df_garantias[col] = ""
+
+    df_garantias["%"] = pd.to_numeric(df_garantias["%"], errors="coerce").fillna(0.0)
+    df_garantias["cobertura"] = df_garantias["%"] * valor_contrato_garantias / 100.0
 
     for col in ["desde", "hasta"]:
         df_garantias[col] = pd.to_datetime(df_garantias[col], errors="coerce").dt.date
 
-    st.session_state["df_garantias_contrato"] = df_garantias[["amparo", "suficiencia", "desde", "hasta"]].copy()
+    st.session_state["df_garantias_contrato"] = df_garantias[
+        ["amparo", "suficiencia", "%", "cobertura", "desde", "hasta"]
+    ].copy()
 
 with st.form("form_garantias_contrato"):
     df_editado = st.data_editor(
@@ -479,6 +486,8 @@ with st.form("form_garantias_contrato"):
         column_config={
             "amparo": st.column_config.TextColumn("amparo"),
             "suficiencia": st.column_config.TextColumn("suficiencia"),
+            "%": st.column_config.NumberColumn("%", format="%.2f"),
+            "cobertura": st.column_config.NumberColumn("cobertura", format="$ %.2f", disabled=True),
             "desde": st.column_config.DateColumn("desde", format="DD/MM/YYYY"),
             "hasta": st.column_config.DateColumn("hasta", format="DD/MM/YYYY"),
         }
@@ -491,6 +500,9 @@ with st.form("form_garantias_contrato"):
     )
 
     if st.form_submit_button("Guardar sección 9"):
+        df_editado["%"] = pd.to_numeric(df_editado["%"], errors="coerce").fillna(0.0)
+        df_editado["cobertura"] = df_editado["%"] * valor_contrato_garantias / 100.0
+
         registros = []
         for fila in df_editado.to_dict(orient="records"):
             fila_limpia = {}
@@ -507,8 +519,7 @@ with st.form("form_garantias_contrato"):
         datos["garantias"] = registros
         datos["plazo_garantias_dias"] = plazo_garantias_dias
         guardar_y_refrescar()
-
-with st.expander("10. Notificaciones", expanded=False):
+        
     st.markdown("**Notificaciones del contratante**")
     c1, c2, c3 = st.columns(3)
     with c1:
