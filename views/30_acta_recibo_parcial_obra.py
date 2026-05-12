@@ -499,7 +499,10 @@ def _amortizado_acumulado_anterior(actas, acta_no):
 
 
 def _recalcular_resumen(acta, actas):
-    valor_total = _total_presente_acta(acta)
+    valor_sin_aiu = _total_presente_acta(acta)
+    aiu_pct = _safe_float(acta.get("aiu_pct"), 0.0)
+    valor_total = round(valor_sin_aiu * (1 + aiu_pct / 100.0), 2)
+
     valor_anticipo = _safe_float(acta.get("valor_anticipo_otorgado"), 0.0)
     valor_inicial_base = _safe_float(acta.get("valor_inicial"), 0.0)
 
@@ -513,6 +516,7 @@ def _recalcular_resumen(acta, actas):
     saldo_amortizar = round(valor_anticipo - amortizado_presente - amortizado_acumulado, 2)
     valor_con_amortizacion = round(valor_total - amortizado_presente, 2)
 
+    acta["valor_sin_aiu"] = valor_sin_aiu
     acta["valor_total_obra_ejecutada"] = valor_total
     acta["valor_amortizado_presente_acta"] = amortizado_presente
     acta["valor_amortizado_acumulado"] = amortizado_acumulado
@@ -521,6 +525,7 @@ def _recalcular_resumen(acta, actas):
     acta["valor_basico_sin_amortizacion"] = valor_total
     acta["valor_basico_con_amortizacion"] = valor_con_amortizacion
     acta["valor_total_pagar_presente_acta"] = valor_con_amortizacion
+
     return acta
 
 
@@ -851,8 +856,23 @@ acta["items_previstos"] = items_previstos_actualizados
 acta["items_no_previstos"] = items_no_previstos_actualizados
 _recalcular_resumen(acta, estado.get("actas", []))
 
-st.markdown("### VALOR TOTAL")
-st.number_input("VALOR TOTAL", value=float(acta.get("valor_total_obra_ejecutada", 0.0)), disabled=True, format="%.2f")
+acta["aiu_pct"] = _safe_float(aiu_info.get("AIU %"), 0.0)
+_recalcular_resumen(acta, estado.get("actas", []))
+
+st.markdown("### VALORES")
+st.number_input(
+    "VALOR SIN AIU",
+    value=float(acta.get("valor_sin_aiu", 0.0)),
+    disabled=True,
+    format="%.2f",
+)
+
+st.number_input(
+    "VALOR TOTAL",
+    value=float(acta.get("valor_total_obra_ejecutada", 0.0)),
+    disabled=True,
+    format="%.2f",
+)
 
 st.markdown("### AIU Y ANTICIPO")
 col_aiu1, col_aiu2 = st.columns(2)
