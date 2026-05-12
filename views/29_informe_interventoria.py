@@ -300,21 +300,25 @@ def _df_garantias_modificadas(control_obra):
     for bloque in control_obra.get("garantias_modificaciones_bloques", []) or []:
         if not isinstance(bloque, dict):
             continue
+
         numero = int(bloque.get("numero") or 0)
+
         for fila in bloque.get("rows", []) or []:
             if not isinstance(fila, dict):
                 continue
+
             filas.append(
                 {
                     "TIPO": f"MODIFICACIÓN DE GARANTÍAS No. {numero}",
-                    "AMPARO": _texto(fila.get("AMPARO")),
-                    "SUFICIENCIA": _texto(fila.get("SUFICIENCIA")),
-                    "%": _safe_float(fila.get("%"), 0.0),
-                    "COBERTURA": _safe_float(fila.get("COBERTURA"), 0.0),
-                    "DESDE": _parse_fecha(fila.get("DESDE")),
-                    "HASTA": _parse_fecha(fila.get("HASTA")),
+                    "AMPARO": _texto(_primero_no_vacio(fila.get("AMPARO"), fila.get("amparo"))),
+                    "SUFICIENCIA": _texto(_primero_no_vacio(fila.get("SUFICIENCIA"), fila.get("suficiencia"))),
+                    "%": _safe_float(_primero_no_vacio(fila.get("%"), fila.get("porcentaje")), 0.0),
+                    "COBERTURA": _safe_float(_primero_no_vacio(fila.get("COBERTURA"), fila.get("cobertura")), 0.0),
+                    "DESDE": _parse_fecha(_primero_no_vacio(fila.get("DESDE"), fila.get("desde"))),
+                    "HASTA": _parse_fecha(_primero_no_vacio(fila.get("HASTA"), fila.get("hasta"))),
                 }
             )
+
     return pd.DataFrame(filas)
 
 
