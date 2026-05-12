@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta
 
 import pandas as pd
 import plotly.express as px
+import matplotlib.pyplot as plt
 import streamlit as st
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -731,8 +732,44 @@ def _tabla_dataframe(doc, df):
             _cell_text(cells[i], row[col], align=WD_ALIGN_PARAGRAPH.CENTER)
     return table
 
+def _grafico_valor_ganado_png(df_valor_ganado):
+    if df_valor_ganado is None or df_valor_ganado.empty:
+        return None
 
-def _generar_word(generales, datos, df_suspensiones, df_modificaciones, df_adiciones, df_garantias, df_pagos_seleccionados, df_avance, df_avance_actividad, indicadores):
+    df_plot = df_valor_ganado.copy()
+    df_plot["FECHA DE CORTE"] = pd.to_datetime(df_plot["FECHA DE CORTE"], errors="coerce")
+    df_plot["VALOR"] = pd.to_numeric(df_plot["VALOR"], errors="coerce").fillna(0.0)
+    df_plot = df_plot.dropna(subset=["FECHA DE CORTE"])
+
+    if df_plot.empty:
+        return None
+
+    fig, ax = plt.subplots(figsize=(9, 4.8))
+
+    for tipo, grupo in df_plot.groupby("TIPO DE AVANCE"):
+        grupo = grupo.sort_values("FECHA DE CORTE")
+        ax.plot(
+            grupo["FECHA DE CORTE"],
+            grupo["VALOR"],
+            marker="o",
+            label=tipo,
+        )
+
+    ax.set_title("Valor ganado")
+    ax.set_xlabel("Fecha de programación")
+    ax.set_ylabel("Valor")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    buffer = BytesIO()
+    fig.tight_layout()
+    fig.savefig(buffer, format="png", dpi=180)
+    plt.close(fig)
+    buffer.seek(0)
+
+    return buffer
+
+def _generar_word(generales, datos, df_suspensiones, df_modificaciones, df_adiciones, df_garantias, df_pagos_seleccionados, df_avance, df_avance_actividad, df_valor_ganado_grafico, indicadores):
     doc = Document()
     _set_doc_defaults(doc)
 
@@ -808,6 +845,13 @@ def _generar_word(generales, datos, df_suspensiones, df_modificaciones, df_adici
     if df_avance_actividad is not None and not df_avance_actividad.empty:
         _p(doc, "AVANCE POR ACTIVIDAD", bold=True)
         _tabla_dataframe(doc, df_avance_actividad)
+
+    imagen_valor_ganado = _grafico_valor_ganado_png(df_valor_ganado_grafico)
+
+    if imagen_valor_ganado is not None:
+        _p(doc, "")
+        _p(doc, "GRÁFICO DE VALOR GANADO", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
+        doc.add_picture(imagen_valor_ganado, width=Inches(6.5))
 
     _p(doc, "")
     _p(doc, "INDICADORES", bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -1158,6 +1202,7 @@ with col_b2:
         df_pagos_seleccionados,
         df_avance,
         df_avance_actividad,
+        df_valor_ganado_grafico,
         indicadores,
     )
     st.download_button(
