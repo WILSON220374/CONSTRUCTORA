@@ -286,6 +286,8 @@ def _df_garantias_iniciales(contrato_obra):
                 "TIPO": "CONDICIONES INICIALES",
                 "AMPARO": _texto(fila.get("amparo")),
                 "SUFICIENCIA": _texto(fila.get("suficiencia")),
+                "%": _safe_float(fila.get("%"), 0.0),
+                "COBERTURA": _safe_float(fila.get("cobertura"), 0.0),
                 "DESDE": _parse_fecha(fila.get("desde")),
                 "HASTA": _parse_fecha(fila.get("hasta")),
             }
@@ -307,6 +309,8 @@ def _df_garantias_modificadas(control_obra):
                     "TIPO": f"MODIFICACIÓN DE GARANTÍAS No. {numero}",
                     "AMPARO": _texto(fila.get("AMPARO")),
                     "SUFICIENCIA": _texto(fila.get("SUFICIENCIA")),
+                    "%": _safe_float(fila.get("%"), 0.0),
+                    "COBERTURA": _safe_float(fila.get("COBERTURA"), 0.0),
                     "DESDE": _parse_fecha(fila.get("DESDE")),
                     "HASTA": _parse_fecha(fila.get("HASTA")),
                 }
