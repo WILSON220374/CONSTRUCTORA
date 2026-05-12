@@ -1056,11 +1056,13 @@ with tab_modificaciones:
             },
         )
 
-    datos["garantias_modificaciones_bloques"] = _normalizar_bloques_garantias(
-        garantias_modificaciones_editadas,
-        garantias_contrato,
-    )
-
+        garantias_modificaciones_editadas.append(
+            {
+                "numero": numero_bloque,
+                "rows": bloque_editado.to_dict("records"),
+            }
+        )
+        
 guardar_form = st.button("💾 Guardar control")
 
 if guardar_form:
