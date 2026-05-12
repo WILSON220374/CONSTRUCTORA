@@ -1095,3 +1095,7 @@ if guardar_form:
         garantias_modificaciones_editadas,
         garantias_contrato,
     )
+
+    _guardar()
+    st.success("Control guardado correctamente.")
+    st.rerun()
