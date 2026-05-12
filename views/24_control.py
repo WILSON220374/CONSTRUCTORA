@@ -1039,13 +1039,15 @@ with tab_modificaciones:
                 df_bloque_garantias[col], errors="coerce"
             ).fillna(0.0)
 
+        editor_key_garantia = f"control_modificacion_garantias_{numero_bloque}"
+
         bloque_editado = st.data_editor(
             df_bloque_garantias,
             hide_index=True,
             width="stretch",
             num_rows="fixed",
             disabled=["AMPARO"],
-            key=f"control_modificacion_garantias_{numero_bloque}",
+            key=editor_key_garantia,
             column_config={
                 "AMPARO": st.column_config.TextColumn("AMPARO"),
                 "SUFICIENCIA": st.column_config.TextColumn("SUFICIENCIA"),
@@ -1056,10 +1058,27 @@ with tab_modificaciones:
             },
         )
 
+        bloque_guardar = bloque_editado.copy()
+
+        estado_editor_garantia = st.session_state.get(editor_key_garantia, {})
+        if isinstance(estado_editor_garantia, dict):
+            for idx, cambios in estado_editor_garantia.get("edited_rows", {}).items():
+                try:
+                    idx = int(idx)
+                except Exception:
+                    continue
+
+                if idx not in bloque_guardar.index:
+                    continue
+
+                for columna, valor in cambios.items():
+                    if columna in bloque_guardar.columns:
+                        bloque_guardar.at[idx, columna] = valor
+
         garantias_modificaciones_editadas.append(
             {
                 "numero": numero_bloque,
-                "rows": bloque_editado.to_dict("records"),
+                "rows": bloque_guardar.to_dict("records"),
             }
         )
         
