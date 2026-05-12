@@ -1097,5 +1097,4 @@ if guardar_form:
     )
 
     _guardar()
-    st.success("Control guardado correctamente.")
     st.rerun()
