@@ -929,7 +929,19 @@ balance_rows = [
     },
 ]
 
-total_balance_ejecutado, total_balance_pagado, saldo_balance = _totales_balance(balance_rows)
+valor_total_ejecutado_balance = 0.0
+valor_pagado_actas_balance = 0.0
+
+if len(balance_rows) > 0:
+    valor_total_ejecutado_balance = _safe_float(balance_rows[0].get("EJECUTADO"), 0.0)
+
+if len(balance_rows) > 1:
+    valor_pagado_actas_balance = _safe_float(balance_rows[1].get("EJECUTADO"), 0.0)
+
+total_balance_ejecutado = round(valor_total_ejecutado_balance, 2)
+total_balance_pagado = round(valor_pagado_actas_balance, 2)
+saldo_balance = round(total_balance_ejecutado - total_balance_pagado, 2)
+
 c_bal1, c_bal2, c_bal3 = st.columns(3)
 with c_bal1:
     st.metric("TOTAL EJECUTADO", _moneda(total_balance_ejecutado))
