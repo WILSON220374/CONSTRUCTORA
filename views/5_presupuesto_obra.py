@@ -260,6 +260,39 @@ def _buscar_en_catalogo(codigo_item, fuente, catalog_index):
         "vr_unitario": 0.0,
         "mensaje": "ÍTEM NO ENCONTRADO EN CATÁLOGO",
     }
+
+def _unidad_desde_base_apu(cod_apu_base, actividad_apu_base):
+    try:
+        df_base = pd.read_excel("data/Copia de APU.xlsx")
+    except Exception:
+        return ""
+
+    cod_apu_base = str(cod_apu_base or "").strip()
+    actividad_apu_base = str(actividad_apu_base or "").strip()
+
+    df_filtrado = pd.DataFrame()
+
+    if cod_apu_base and "cod_actividad" in df_base.columns:
+        df_filtrado = df_base[
+            df_base["cod_actividad"].astype(str).str.strip() == cod_apu_base
+        ]
+
+    if df_filtrado.empty and actividad_apu_base and "actividad" in df_base.columns:
+        df_filtrado = df_base[
+            df_base["actividad"].astype(str).str.strip() == actividad_apu_base
+        ]
+
+    if df_filtrado.empty:
+        return ""
+
+    for col_unidad in ["und_act", "Und. Act", "Und Act", "unidad_actividad", "Unidad Actividad", "unidad", "Unidad", "UNIDAD"]:
+        if col_unidad in df_filtrado.columns:
+            serie = df_filtrado[col_unidad].astype(str).str.strip()
+            serie = serie[(serie != "") & (serie.str.lower() != "nan")]
+            if not serie.empty:
+                return str(serie.iloc[0]).strip()
+
+    return ""
 # ==========================================================
 # EXTRACCIÓN EDT
 # ==========================================================
@@ -537,7 +570,16 @@ def _construir_grupos_calculados():
                     item_catalogo_display = str(item_catalogo or "").strip()
             elif fuente == "APU generado":
                 apu_generado = (st.session_state.get("apus_generados_obra", {}) or {}).get(str(node_id), {})
-                unidad_display = str(apu_generado.get("unidad_apu", "") or "").strip() or "GLOBAL"
+
+                unidad_display = str(apu_generado.get("unidad_apu", "") or "").strip()
+
+                if not unidad_display:
+                    unidad_display = _unidad_desde_base_apu(
+                        apu_generado.get("apu_base_codigo", ""),
+                        apu_generado.get("apu_base_actividad", ""),
+                    )
+
+                unidad_display = unidad_display or "GLOBAL"
                 vr_unitario = _safe_float(apu_generado.get("total_apu", 0.0), 0.0)
             else:
                 unidad_display = ""
