@@ -472,6 +472,39 @@ def _items_desde_presupuesto(presupuesto_obra):
 
         agregar(item, descripcion, unidad, valor_unitario)
 
+    resumen_presupuesto = tablas.get("resumen_presupuesto_obra", {}) or {}
+    otros_costos_indirectos = resumen_presupuesto.get("otros_costos_indirectos", []) or []
+
+    consecutivo_ci = 1
+    for fila in otros_costos_indirectos:
+        if not isinstance(fila, dict):
+            continue
+
+        descripcion = _primero_no_vacio(
+            fila.get("nombre"),
+            fila.get("DESCRIPCIÓN"),
+            fila.get("DESCRIPCION"),
+            fila.get("descripcion"),
+        )
+
+        if not descripcion or _es_interventoria(descripcion):
+            continue
+
+        item = f"CI-{consecutivo_ci}"
+        consecutivo_ci += 1
+
+        valor_unitario = _safe_float(
+            _primero_no_vacio(
+                fila.get("valor"),
+                fila.get("VALOR"),
+                fila.get("VR TOTAL"),
+                fila.get("VALOR BASE"),
+            ),
+            0.0,
+        )
+
+        agregar(item, descripcion, "GLOBAL", valor_unitario)
+
     return sorted(filas, key=lambda x: _key_codigo_natural(x.get("No. ORDEN")))
 
 
