@@ -866,15 +866,12 @@ valor_total_ejecutado = st.number_input(
     format="%.2f",
 )
 
-c_aiu1, c_aiu2, c_aiu3, c_aiu4 = st.columns(4)
-with c_aiu1:
-    st.number_input("AIU %", value=float(aiu.get("aiu_total", 0.0)), format="%.2f", disabled=True)
-with c_aiu2:
-    st.number_input("A %", value=float(aiu.get("administracion", 0.0)), format="%.2f", disabled=True)
-with c_aiu3:
-    st.number_input("I %", value=float(aiu.get("imprevistos", 0.0)), format="%.2f", disabled=True)
-with c_aiu4:
-    st.number_input("U %", value=float(aiu.get("utilidad", 0.0)), format="%.2f", disabled=True)
+st.number_input(
+    "AIU %",
+    value=float(aiu.get("aiu_total", 0.0)),
+    format="%.2f",
+    disabled=True,
+)
 
 st.markdown("### BALANCE GENERAL DEL CONTRATO")
 
