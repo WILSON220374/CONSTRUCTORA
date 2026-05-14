@@ -377,6 +377,11 @@ def _inicializar_estado(acta_inicio, contrato_obra):
             for x in incidencias
         ]
 
+        incidencias_individuales, folios_indice, folio_activo_indice = _cargar_incidencias_por_folio(
+            acta_inicio,
+            contrato_obra,
+        )
+
         incidencias_normalizadas = _combinar_incidencias(
             incidencias_normalizadas,
             incidencias_individuales,
