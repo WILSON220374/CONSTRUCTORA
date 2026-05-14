@@ -903,21 +903,33 @@ balance_editado = st.data_editor(
     width="stretch",
     num_rows="fixed",
     key="balance_liquidacion_obra_editor",
-    disabled=["DESCRIPCIÓN", "EJECUTADO"],
+    disabled=["DESCRIPCIÓN"],
     column_config={
         "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
         "EJECUTADO": st.column_config.NumberColumn("", format="$ %.2f"),
-    }
+    },
 )
 
-balance_rows = _normalizar_balance(balance_editado.to_dict("records"))
-balance_rows = _filas_balance_inicial({"balance_rows": balance_rows}, valor_total_ejecutado)
+balance_rows_editados = _normalizar_balance(balance_editado.to_dict("records"))
 
-for fila in balance_rows:
-    fila["PAGADO"] = 0.0
+valor_pagado_actas = 0.0
+if len(balance_rows_editados) > 1:
+    valor_pagado_actas = _safe_float(balance_rows_editados[1].get("EJECUTADO"), 0.0)
+
+balance_rows = [
+    {
+        "DESCRIPCIÓN": "Valor total ejecutado",
+        "EJECUTADO": round(_safe_float(valor_total_ejecutado, 0.0), 2),
+        "PAGADO": 0.0,
+    },
+    {
+        "DESCRIPCIÓN": "Valor pagado en actas parciales",
+        "EJECUTADO": round(valor_pagado_actas, 2),
+        "PAGADO": 0.0,
+    },
+]
 
 total_balance_ejecutado, total_balance_pagado, saldo_balance = _totales_balance(balance_rows)
-
 c_bal1, c_bal2, c_bal3 = st.columns(3)
 with c_bal1:
     st.metric("TOTAL EJECUTADO", _moneda(total_balance_ejecutado))
