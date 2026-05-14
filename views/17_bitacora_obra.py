@@ -360,9 +360,6 @@ def _incidencia_tiene_contenido(incidencia):
 
 
 def _inicializar_estado(acta_inicio, contrato_obra):
-
-
-def _inicializar_estado(acta_inicio, contrato_obra):
     group_id_actual = _texto(st.session_state.get("group_id"))
     cache_group = _texto(st.session_state.get("_bitacora_obra_group"))
 
