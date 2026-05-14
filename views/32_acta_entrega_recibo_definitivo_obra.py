@@ -433,15 +433,6 @@ def _items_desde_presupuesto(presupuesto_obra):
                 valor_unitario = valor_base / cantidad
         agregar(item, descripcion, unidad, valor_unitario)
 
-    for _, fila in items_dict.items():
-        if not isinstance(fila, dict):
-            continue
-        item = _texto(fila.get("ITEM") or fila.get("item_catalogo") or fila.get("No. ORDEN"))
-        descripcion = _primero_no_vacio(fila.get("DESCRIPCIÓN"), fila.get("DESCRIPCION"), fila.get("descripcion"), fila.get("DESCRIPCIÓN ITEM"))
-        unidad = _primero_no_vacio(fila.get("UNIDAD"), fila.get("unidad"), fila.get("UND"))
-        valor_unitario = tomar_valor_unitario(fila)
-        agregar(item, descripcion, unidad, valor_unitario)
-
     return sorted(filas, key=lambda x: _key_codigo_natural(x.get("No. ORDEN")))
 
 
