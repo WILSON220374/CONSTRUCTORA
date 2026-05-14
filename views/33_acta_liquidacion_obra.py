@@ -442,21 +442,36 @@ def _aiu_desde_presupuesto(presupuesto_obra):
 # ==========================================================
 # Balance general
 # ==========================================================
-def _filas_balance_inicial(guardado):
-    rows = guardado.get("balance_rows", [])
-    if isinstance(rows, list) and rows:
-        return rows
+def _filas_balance_inicial(guardado, valor_total_ejecutado=0.0):
+    rows = guardado.get("balance_rows", []) if isinstance(guardado, dict) else []
+
+    valor_pagado = 0.0
+
+    if isinstance(rows, list):
+        for fila in rows:
+            if not isinstance(fila, dict):
+                continue
+
+            descripcion = _texto(fila.get("DESCRIPCIÓN")).upper()
+
+            if "PAGADO" in descripcion:
+                valor_pagado = _safe_float(fila.get("PAGADO"), 0.0)
+                break
+
+            posible_pagado = _safe_float(fila.get("PAGADO"), 0.0)
+            if posible_pagado > 0:
+                valor_pagado = posible_pagado
 
     return [
         {
-            "DESCRIPCIÓN": "Valor ejecutado por actas de recibo parcial de Obra",
-            "EJECUTADO": 0.0,
+            "DESCRIPCIÓN": "Valor total ejecutado",
+            "EJECUTADO": round(_safe_float(valor_total_ejecutado, 0.0), 2),
             "PAGADO": 0.0,
         },
         {
-            "DESCRIPCIÓN": "Valor pagado por actas de recibo parcial de Obra",
+            "DESCRIPCIÓN": "Valor pagado en actas parciales",
             "EJECUTADO": 0.0,
-            "PAGADO": 0.0,
+            "PAGADO": round(valor_pagado, 2),
         },
     ]
 
@@ -876,7 +891,7 @@ st.number_input(
 st.markdown("### BALANCE GENERAL DEL CONTRATO")
 
 df_balance = pd.DataFrame(
-    _filas_balance_inicial(guardado),
+    _filas_balance_inicial(guardado, valor_total_ejecutado),
     columns=["DESCRIPCIÓN", "EJECUTADO", "PAGADO"],
 )
 
@@ -884,8 +899,9 @@ balance_editado = st.data_editor(
     df_balance,
     hide_index=True,
     width="stretch",
-    num_rows="dynamic",
+    num_rows="fixed",
     key="balance_liquidacion_obra_editor",
+    disabled=["DESCRIPCIÓN", "EJECUTADO"],
     column_config={
         "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
         "EJECUTADO": st.column_config.NumberColumn("EJECUTADO", format="$ %.2f"),
@@ -894,6 +910,8 @@ balance_editado = st.data_editor(
 )
 
 balance_rows = _normalizar_balance(balance_editado.to_dict("records"))
+balance_rows = _filas_balance_inicial({"balance_rows": balance_rows}, valor_total_ejecutado)
+
 total_balance_ejecutado, total_balance_pagado, saldo_balance = _totales_balance(balance_rows)
 
 c_bal1, c_bal2, c_bal3 = st.columns(3)
