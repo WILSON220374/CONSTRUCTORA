@@ -383,6 +383,8 @@ def _items_desde_presupuesto(presupuesto_obra):
     filas = []
     vistos = set()
 
+    aiu_pct = _safe_float(_aiu_desde_presupuesto(presupuesto_obra).get("aiu_total"), 0.0)
+
     tablas = presupuesto_obra.get("__tablas__", {}) or {}
     grupos = tablas.get("grupos_presupuesto_obra", []) or presupuesto_obra.get("grupos_presupuesto_obra", []) or []
     flujo_directos = presupuesto_obra.get("flujo_fondos_directos", []) or []
@@ -429,6 +431,7 @@ def _items_desde_presupuesto(presupuesto_obra):
             descripcion = _primero_no_vacio(fila.get("DESCRIPCIÓN"), fila.get("DESCRIPCION"), fila.get("DESCRIPCIÓN ITEM"))
             unidad = _primero_no_vacio(fila.get("UNIDAD"), fila.get("unidad"), fila.get("UND"))
             valor_unitario = tomar_valor_unitario(fila)
+            valor_unitario = round(valor_unitario * (1 + aiu_pct / 100.0), 2)
             agregar(item, descripcion, unidad, valor_unitario)
 
     for fila in flujo_directos:
@@ -478,6 +481,9 @@ def _items_desde_presupuesto(presupuesto_obra):
             )
             if cantidad > 0:
                 valor_unitario = valor_base / cantidad
+
+        if tipo != "INDIRECTO":
+            valor_unitario = round(valor_unitario * (1 + aiu_pct / 100.0), 2)
 
         agregar(item, descripcion, unidad, valor_unitario)
 
