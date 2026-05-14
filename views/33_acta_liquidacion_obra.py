@@ -942,6 +942,9 @@ total_balance_ejecutado = round(valor_total_ejecutado_balance, 2)
 total_balance_pagado = round(valor_pagado_actas_balance, 2)
 saldo_balance = round(total_balance_ejecutado - total_balance_pagado, 2)
 
+saldo_por_amortizar_liquidacion = _safe_float(anticipo.get("saldo"), 0.0)
+total_a_pagar_liquidacion = round(saldo_balance - saldo_por_amortizar_liquidacion, 2)
+
 c_bal1, c_bal2, c_bal3 = st.columns(3)
 with c_bal1:
     st.metric("TOTAL EJECUTADO", _moneda(total_balance_ejecutado))
@@ -949,6 +952,35 @@ with c_bal2:
     st.metric("TOTAL PAGADO", _moneda(total_balance_pagado))
 with c_bal3:
     st.metric("SALDO", _moneda(saldo_balance))
+
+st.markdown("### TOTAL A PAGAR")
+
+df_total_pagar = pd.DataFrame(
+    [
+        {
+            "CONCEPTO": "Saldo del balance general del contrato",
+            "VALOR": saldo_balance,
+        },
+        {
+            "CONCEPTO": "Saldo por amortizar anticipo",
+            "VALOR": saldo_por_amortizar_liquidacion,
+        },
+        {
+            "CONCEPTO": "Total a pagar",
+            "VALOR": total_a_pagar_liquidacion,
+        },
+    ]
+)
+
+st.dataframe(
+    df_total_pagar,
+    hide_index=True,
+    width="stretch",
+    column_config={
+        "CONCEPTO": st.column_config.TextColumn("CONCEPTO"),
+        "VALOR": st.column_config.NumberColumn("VALOR", format="$ %.2f"),
+    },
+)
 
 st.markdown("### DOCUMENTOS APORTADOS PARA LA LIQUIDACIÓN")
 
