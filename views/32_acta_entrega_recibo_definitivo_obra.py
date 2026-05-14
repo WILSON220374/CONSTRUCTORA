@@ -121,13 +121,22 @@ def _numero(valor, decimales=2):
 
 
 def _key_codigo_natural(valor):
-    partes = []
-    for chunk in _texto(valor).split("."):
+    texto = _texto(valor)
+
+    if texto.startswith("CI-"):
         try:
-            partes.append(int(chunk))
+            return (1, int(texto.replace("CI-", "").strip()))
         except Exception:
-            partes.append(chunk)
-    return tuple(partes)
+            return (1, texto)
+
+    partes = []
+    for chunk in texto.split("."):
+        try:
+            partes.append((0, int(chunk)))
+        except Exception:
+            partes.append((1, chunk))
+
+    return (0, tuple(partes))
 
 
 def _extraer_dias_plazo(valor):
