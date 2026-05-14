@@ -780,15 +780,12 @@ sitios_criticos = st.text_area("RELACIÓN DE SITIOS CRÍTICOS ATENDIDOS Y/O SEÑ
 st.markdown("### VALOR TOTAL EJECUTADO DEL CONTRATO DE OBRA")
 valor_total_ejecutado_contrato = st.number_input("Valor total ejecutado del contrato", value=float(_safe_float(guardado.get("valor_total_ejecutado_contrato"), 0.0)), min_value=0.0, step=1000.0, format="%.2f")
 
-c_aiu1, c_aiu2, c_aiu3, c_aiu4 = st.columns(4)
-with c_aiu1:
-    st.number_input("AIU %", value=float(aiu.get("aiu_total", 0.0)), format="%.2f", disabled=True)
-with c_aiu2:
-    st.number_input("A %", value=float(aiu.get("administracion", 0.0)), format="%.2f", disabled=True)
-with c_aiu3:
-    st.number_input("I %", value=float(aiu.get("imprevistos", 0.0)), format="%.2f", disabled=True)
-with c_aiu4:
-    st.number_input("U %", value=float(aiu.get("utilidad", 0.0)), format="%.2f", disabled=True)
+st.number_input(
+    "AIU %",
+    value=float(aiu.get("aiu_total", 0.0)),
+    format="%.2f",
+    disabled=True,
+)
 
 st.markdown("### DESCRIPCIÓN CANTIDADES DE OBRA Y PROVISIONES EJECUTADAS")
 st.caption("El valor unitario se alimenta de la columna del presupuesto: VR AFECTADO POR FACTOR. La cantidad se calcula como VALOR TOTAL EJECUTADO / VALOR UNITARIO AJUSTADO POR DISTANCIA.")
