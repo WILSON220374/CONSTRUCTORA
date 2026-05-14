@@ -90,6 +90,24 @@ def _primero_no_vacio(*valores):
             return txt
     return ""
 
+def _es_interventoria(descripcion):
+    return _texto(descripcion).upper() == "INTERVENTORIA"
+
+
+def _item_visible_flujo(fila, consecutivo_indirecto=0):
+    item = _texto(fila.get("ITEM"))
+    tipo = _texto(fila.get("TIPO")).upper()
+    descripcion = _primero_no_vacio(
+        fila.get("DESCRIPCIÓN"),
+        fila.get("DESCRIPCION"),
+        fila.get("DESCRIPCIÓN DEL ÍTEM"),
+        fila.get("DESCRIPCION DEL ITEM"),
+    )
+
+    if tipo == "INDIRECTO" and not item:
+        return f"CI-{consecutivo_indirecto}" if consecutivo_indirecto else ""
+
+    return item
 
 def _leer_estado_directo(clave):
     datos = cargar_estado(clave) or {}
@@ -206,21 +224,79 @@ def _programado_actividad_desde_flujo(flujo_fondos, item, fecha_corte, fecha_ini
     item = _texto(item)
     fila_item = {}
 
+    programa_obra = _tabla_programa_obra_desde_flujo(flujo_fondos)
+    mapa_codigo_descripcion = {}
+    consecutivo_indirecto = 1
+
+    for fila in programa_obra:
+        if not isinstance(fila, dict):
+            continue
+
+        tipo = _texto(fila.get("TIPO")).upper()
+        descripcion = _primero_no_vacio(
+            fila.get("DESCRIPCIÓN"),
+            fila.get("DESCRIPCION"),
+            fila.get("DESCRIPCIÓN DEL ÍTEM"),
+            fila.get("DESCRIPCION DEL ITEM"),
+        )
+
+        if tipo == "INDIRECTO":
+            if _es_interventoria(descripcion):
+                continue
+            codigo_visible = _item_visible_flujo(fila, consecutivo_indirecto)
+            consecutivo_indirecto += 1
+        else:
+            codigo_visible = _texto(fila.get("ITEM"))
+
+        if codigo_visible:
+            mapa_codigo_descripcion[codigo_visible] = descripcion
+
+    descripcion_buscada = mapa_codigo_descripcion.get(item, "")
+
     for fila in programa:
         if not isinstance(fila, dict):
             continue
+
         if _texto(fila.get("ITEM")) == item:
             fila_item = fila
             break
+
+        if descripcion_buscada and _texto(fila.get("TIPO")).upper() == "INDIRECTO":
+            descripcion_fila = _primero_no_vacio(
+                fila.get("DESCRIPCIÓN"),
+                fila.get("DESCRIPCION"),
+            )
+            if descripcion_fila == descripcion_buscada:
+                fila_item = fila
+                break
 
     if not fila_item:
         return 0.0, 0.0
 
     fila_programa_obra = {}
-    for fila in _tabla_programa_obra_desde_flujo(flujo_fondos):
+    consecutivo_indirecto = 1
+
+    for fila in programa_obra:
         if not isinstance(fila, dict):
             continue
-        if _texto(fila.get("ITEM")) == item:
+
+        tipo = _texto(fila.get("TIPO")).upper()
+        descripcion = _primero_no_vacio(
+            fila.get("DESCRIPCIÓN"),
+            fila.get("DESCRIPCION"),
+            fila.get("DESCRIPCIÓN DEL ÍTEM"),
+            fila.get("DESCRIPCION DEL ITEM"),
+        )
+
+        if tipo == "INDIRECTO":
+            if _es_interventoria(descripcion):
+                continue
+            codigo_visible = _item_visible_flujo(fila, consecutivo_indirecto)
+            consecutivo_indirecto += 1
+        else:
+            codigo_visible = _texto(fila.get("ITEM"))
+
+        if codigo_visible == item:
             fila_programa_obra = fila
             break
 
@@ -344,36 +420,49 @@ def _normalizar_avance_actividad(rows):
 def _mapa_programa_obra_desde_flujo(flujo_fondos):
     programa = _tabla_programa_obra_desde_flujo(flujo_fondos)
     mapa = {}
+    consecutivo_indirecto = 1
 
     for fila in programa:
         if not isinstance(fila, dict):
             continue
 
-        item = _texto(fila.get("ITEM"))
+        tipo = _texto(fila.get("TIPO")).upper()
+        descripcion = _primero_no_vacio(
+            fila.get("DESCRIPCIÓN"),
+            fila.get("DESCRIPCION"),
+            fila.get("DESCRIPCIÓN DEL ÍTEM"),
+            fila.get("DESCRIPCION DEL ITEM"),
+        )
+
+        if tipo == "INDIRECTO":
+            if _es_interventoria(descripcion):
+                continue
+            item = _item_visible_flujo(fila, consecutivo_indirecto)
+            consecutivo_indirecto += 1
+        else:
+            item = _texto(fila.get("ITEM"))
+
         if not item:
             continue
 
         mapa[item] = {
-            "DESCRIPCIÓN": _primero_no_vacio(
-                fila.get("DESCRIPCIÓN"),
-                fila.get("DESCRIPCION"),
-                fila.get("DESCRIPCIÓN DEL ÍTEM"),
-                fila.get("DESCRIPCION DEL ITEM"),
-            ),
+            "DESCRIPCIÓN": descripcion,
             "UNIDAD": _primero_no_vacio(
                 fila.get("UNIDAD"),
                 fila.get("unidad"),
                 fila.get("UND"),
                 fila.get("und"),
-            ),
+            ) or "GLOBAL",
             "CANTIDAD": _safe_float(
                 fila.get(
                     "CANTIDAD TOTAL",
-                    fila.get("CANTIDAD", fila.get("CANT", fila.get("cantidad", 0.0))),
+                    fila.get("CANTIDAD", fila.get("CANT", fila.get("cantidad", 1.0))),
                 ),
-                0.0,
+                1.0,
             ),
         }
+
+    return mapa
 
     return mapa
 
@@ -503,18 +592,27 @@ def _tabla_programa_obra_desde_flujo(flujo_fondos):
 def _mapa_items_desde_flujo(flujo_fondos):
     programa = _tabla_programa_obra_desde_flujo(flujo_fondos)
     mapa = {}
+    consecutivo_indirecto = 1
 
     for fila in programa:
         if not isinstance(fila, dict):
             continue
 
-        item = _texto(fila.get("ITEM"))
+        tipo = _texto(fila.get("TIPO")).upper()
         descripcion = _primero_no_vacio(
             fila.get("DESCRIPCIÓN"),
             fila.get("DESCRIPCION"),
             fila.get("DESCRIPCIÓN DEL ÍTEM"),
             fila.get("DESCRIPCION DEL ITEM"),
         )
+
+        if tipo == "INDIRECTO":
+            if _es_interventoria(descripcion):
+                continue
+            item = _item_visible_flujo(fila, consecutivo_indirecto)
+            consecutivo_indirecto += 1
+        else:
+            item = _texto(fila.get("ITEM"))
 
         if item:
             mapa[item] = descripcion
