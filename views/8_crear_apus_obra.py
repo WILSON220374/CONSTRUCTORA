@@ -252,7 +252,8 @@ if df_apu_seleccionado.empty:
     st.stop()
 
 unidad_apu = ""
-for col_unidad in ["unidad", "Unidad", "UNIDAD"]:
+
+for col_unidad in ["und_act", "Und. Act", "Und Act", "unidad_actividad", "Unidad Actividad"]:
     if col_unidad in df_apu_seleccionado.columns:
         series_unidad = (
             df_apu_seleccionado[col_unidad]
@@ -263,6 +264,17 @@ for col_unidad in ["unidad", "Unidad", "UNIDAD"]:
         if not series_unidad.empty:
             unidad_apu = str(series_unidad.iloc[0] or "").strip()
             break
+
+if not unidad_apu:
+    df_encabezado_apu = df_apu_base[
+        df_apu_base["cod_actividad"].astype(str).str.strip() == str(cod_apu_base).strip()
+    ]
+
+    if "Und. Act" in df_encabezado_apu.columns:
+        series_unidad = df_encabezado_apu["Und. Act"].astype(str).str.strip()
+        series_unidad = series_unidad[series_unidad != ""]
+        if not series_unidad.empty:
+            unidad_apu = str(series_unidad.iloc[0] or "").strip()
 
 st.info(f"Unidad del APU base: {unidad_apu or 'No definida'}")
 def _tabla_apu_por_tipo(titulo, df_fuente, tipos_validos):
