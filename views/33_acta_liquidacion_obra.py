@@ -475,8 +475,8 @@ def _filas_balance_inicial(guardado, valor_total_ejecutado=0.0):
         },
         {
             "DESCRIPCIÓN": "Valor pagado en actas parciales",
-            "EJECUTADO": 0.0,
-            "PAGADO": round(valor_pagado, 2),
+            "EJECUTADO": round(valor_pagado, 2),
+            "PAGADO": 0.0,
         },
     ]
 
@@ -917,18 +917,13 @@ balance_editado = st.data_editor(
 
 balance_rows_editados = _normalizar_balance(balance_editado.to_dict("records"))
 
-valor_pagado_actas = _safe_float(
-    st.session_state.get("balance_liquidacion_obra_editor", {})
-    .get("edited_rows", {})
-    .get(1, {})
-    .get("EJECUTADO"),
-    None,
-)
+valor_pagado_actas = 0.0
 
-if valor_pagado_actas is None:
-    valor_pagado_actas = 0.0
-    if len(balance_rows_editados) > 1:
-        valor_pagado_actas = _safe_float(balance_rows_editados[1].get("EJECUTADO"), 0.0)
+if len(balance_rows_editados) > 1:
+    valor_pagado_actas = _safe_float(
+        balance_rows_editados[1].get("EJECUTADO"),
+        0.0,
+    )
 
 balance_rows = [
     {
