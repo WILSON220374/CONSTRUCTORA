@@ -906,8 +906,8 @@ balance_editado = st.data_editor(
     disabled=["DESCRIPCIÓN", "EJECUTADO"],
     column_config={
         "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
-        "EJECUTADO": st.column_config.NumberColumn("EJECUTADO", format="$ %.2f"),
-    },
+        "EJECUTADO": st.column_config.NumberColumn("", format="$ %.2f"),
+    }
 )
 
 balance_rows = _normalizar_balance(balance_editado.to_dict("records"))
