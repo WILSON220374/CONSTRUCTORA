@@ -455,9 +455,14 @@ def _filas_balance_inicial(guardado, valor_total_ejecutado=0.0):
             descripcion = _texto(fila.get("DESCRIPCIÓN")).upper()
 
             if "PAGADO" in descripcion:
-                valor_pagado = _safe_float(fila.get("PAGADO"), 0.0)
+                valor_pagado = _safe_float(
+                    _primero_no_vacio(
+                        fila.get("EJECUTADO"),
+                        fila.get("PAGADO"),
+                    ),
+                    0.0,
+                )
                 break
-
             posible_pagado = _safe_float(fila.get("PAGADO"), 0.0)
             if posible_pagado > 0:
                 valor_pagado = posible_pagado
@@ -912,9 +917,18 @@ balance_editado = st.data_editor(
 
 balance_rows_editados = _normalizar_balance(balance_editado.to_dict("records"))
 
-valor_pagado_actas = 0.0
-if len(balance_rows_editados) > 1:
-    valor_pagado_actas = _safe_float(balance_rows_editados[1].get("EJECUTADO"), 0.0)
+valor_pagado_actas = _safe_float(
+    st.session_state.get("balance_liquidacion_obra_editor", {})
+    .get("edited_rows", {})
+    .get(1, {})
+    .get("EJECUTADO"),
+    None,
+)
+
+if valor_pagado_actas is None:
+    valor_pagado_actas = 0.0
+    if len(balance_rows_editados) > 1:
+        valor_pagado_actas = _safe_float(balance_rows_editados[1].get("EJECUTADO"), 0.0)
 
 balance_rows = [
     {
