@@ -895,6 +895,8 @@ df_balance = pd.DataFrame(
     columns=["DESCRIPCIÓN", "EJECUTADO", "PAGADO"],
 )
 
+df_balance = df_balance[["DESCRIPCIÓN", "EJECUTADO"]]
+
 balance_editado = st.data_editor(
     df_balance,
     hide_index=True,
@@ -905,12 +907,14 @@ balance_editado = st.data_editor(
     column_config={
         "DESCRIPCIÓN": st.column_config.TextColumn("DESCRIPCIÓN"),
         "EJECUTADO": st.column_config.NumberColumn("EJECUTADO", format="$ %.2f"),
-        "PAGADO": st.column_config.NumberColumn("PAGADO", format="$ %.2f"),
     },
 )
 
 balance_rows = _normalizar_balance(balance_editado.to_dict("records"))
 balance_rows = _filas_balance_inicial({"balance_rows": balance_rows}, valor_total_ejecutado)
+
+for fila in balance_rows:
+    fila["PAGADO"] = 0.0
 
 total_balance_ejecutado, total_balance_pagado, saldo_balance = _totales_balance(balance_rows)
 
