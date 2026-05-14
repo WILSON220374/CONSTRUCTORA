@@ -365,20 +365,15 @@ def _inicializar_estado(acta_inicio, contrato_obra):
             incidencias_individuales,
         )
 
-        if not incidencias_normalizadas:
-            incidencias_normalizadas = [
-                _incidencia_vacia(1, acta_inicio, contrato_obra)
-            ]
-
         folio_activo_base = (
             folio_activo_indice
             or cargado.get("folio_activo")
-            or incidencias_normalizadas[-1]["folio"]
+            or (incidencias_normalizadas[-1]["folio"] if incidencias_normalizadas else 0)
         )
 
         st.session_state["bitacora_obra_datos"] = {
             "incidencias": incidencias_normalizadas,
-            "folio_activo": int(folio_activo_base),
+            "folio_activo": int(folio_activo_base or 0),
         }
         st.session_state["_bitacora_obra_group"] = group_id_actual
 
@@ -410,6 +405,10 @@ def _peso_incidencias(incidencias):
 def _guardar(validar=True):
     datos_actuales = st.session_state["bitacora_obra_datos"]
     incidencia = _obtener_incidencia_activa()
+
+    if incidencia is None:
+        st.warning("No hay folio activo para guardar. Cree una nueva incidencia primero.")
+        return False
 
     folio = int(incidencia.get("folio") or 0)
 
@@ -463,19 +462,20 @@ def _eliminar_folio_activo():
         if int(incidencia.get("folio") or 0) != folio_activo
     ]
 
-    if not incidencias:
-        incidencias = [_incidencia_vacia(1, _leer_acta_inicio(), _leer_contrato_obra())]
-
     datos["incidencias"] = incidencias
-    datos["folio_activo"] = int(incidencias[0].get("folio") or 1)
+    datos["folio_activo"] = int(incidencias[0].get("folio") or 0) if incidencias else 0
 
-    _guardar(validar=False)
+    if incidencias:
+        _guardar(validar=False)
+    else:
+        _guardar_indice_folios([], 0)
+        st.success("Folio eliminado correctamente.")
 
 
 def _obtener_incidencia_activa():
     datos = st.session_state["bitacora_obra_datos"]
     incidencias = datos.get("incidencias", [])
-    folio_activo = int(datos.get("folio_activo") or 1)
+    folio_activo = int(datos.get("folio_activo") or 0)
 
     for incidencia in incidencias:
         if int(incidencia.get("folio") or 0) == folio_activo:
@@ -485,10 +485,7 @@ def _obtener_incidencia_activa():
         datos["folio_activo"] = int(incidencias[0]["folio"])
         return incidencias[0]
 
-    nueva = _incidencia_vacia(1, _leer_acta_inicio(), _leer_contrato_obra())
-    datos["incidencias"] = [nueva]
-    datos["folio_activo"] = 1
-    return nueva
+    return None
 
 
 def _crear_nueva_incidencia(acta_inicio, contrato_obra):
@@ -636,8 +633,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-folio_opciones = [int(x.get("folio") or 0) for x in incidencias]
-folio_activo_default = int(datos.get("folio_activo") or folio_opciones[0])
+folio_opciones = [int(x.get("folio") or 0) for x in incidencias if int(x.get("folio") or 0) > 0]
+folio_activo_default = int(datos.get("folio_activo") or (folio_opciones[0] if folio_opciones else 0))
 
 st.markdown('<div class="bitacora-titulo">BITÁCORA DE OBRA</div>', unsafe_allow_html=True)
 st.markdown('<div class="bitacora-subtitulo">Registro diario de obra</div>', unsafe_allow_html=True)
@@ -680,13 +677,17 @@ with col_word:
     )
 
 with col_selector:
-    folio_activo = st.selectbox(
-        "No. de Folio",
-        options=folio_opciones,
-        index=folio_opciones.index(folio_activo_default) if folio_activo_default in folio_opciones else 0,
-        key="bitacora_selector_folio",
-    )
-    datos["folio_activo"] = int(folio_activo)
+    if folio_opciones:
+        folio_activo = st.selectbox(
+            "No. de Folio",
+            options=folio_opciones,
+            index=folio_opciones.index(folio_activo_default) if folio_activo_default in folio_opciones else 0,
+            key="bitacora_selector_folio",
+        )
+        datos["folio_activo"] = int(folio_activo)
+    else:
+        st.text_input("No. de Folio", value="", disabled=True)
+        datos["folio_activo"] = 0
 
 st.markdown("### CONSULTA DE INCIDENCIAS")
 
@@ -703,7 +704,9 @@ df_consulta = pd.DataFrame(
     ]
 )
 
-st.dataframe(df_consulta, use_container_width=True, hide_index=True)
+if not folio_opciones:
+    st.info("No hay folios creados. Use el botón 'Nueva incidencia' para crear el primer folio.")
+    st.stop()
 
 incidencia = _obtener_incidencia_activa()
 incidencia["numero_contrato"] = _primero_no_vacio(
