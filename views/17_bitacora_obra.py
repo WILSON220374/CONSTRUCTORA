@@ -337,6 +337,31 @@ def _combinar_incidencias(incidencias_base, incidencias_por_folio):
     return [mapa[folio] for folio in sorted(mapa.keys())]
 
 
+def _incidencia_tiene_contenido(incidencia):
+    if not isinstance(incidencia, dict):
+        return False
+
+    if _texto(incidencia.get("anotaciones")):
+        return True
+
+    imagenes = incidencia.get("imagenes", [])
+    if isinstance(imagenes, list) and len(imagenes) > 0:
+        return True
+
+    actividades = incidencia.get("actividades", [])
+    if isinstance(actividades, list):
+        for actividad in actividades:
+            if not isinstance(actividad, dict):
+                continue
+            if _texto(actividad.get("ÍTEM No.")) or _texto(actividad.get("DESCRIPCIÓN DEL ÍTEM")):
+                return True
+
+    return False
+
+
+def _inicializar_estado(acta_inicio, contrato_obra):
+
+
 def _inicializar_estado(acta_inicio, contrato_obra):
     group_id_actual = _texto(st.session_state.get("group_id"))
     cache_group = _texto(st.session_state.get("_bitacora_obra_group"))
@@ -355,15 +380,16 @@ def _inicializar_estado(acta_inicio, contrato_obra):
             for x in incidencias
         ]
 
-        incidencias_individuales, folios_indice, folio_activo_indice = _cargar_incidencias_por_folio(
-            acta_inicio,
-            contrato_obra,
-        )
-
         incidencias_normalizadas = _combinar_incidencias(
             incidencias_normalizadas,
             incidencias_individuales,
         )
+
+        incidencias_normalizadas = [
+            incidencia
+            for incidencia in incidencias_normalizadas
+            if int(incidencia.get("folio") or 0) != 1 or _incidencia_tiene_contenido(incidencia)
+        ]
 
         folio_activo_base = (
             folio_activo_indice
@@ -701,8 +727,11 @@ df_consulta = pd.DataFrame(
             "Interventor": _texto(x.get("interventor")),
         }
         for x in incidencias
+        if isinstance(x, dict) and int(x.get("folio") or 0) > 0
     ]
 )
+
+st.dataframe(df_consulta, width="stretch", hide_index=True)
 
 if not folio_opciones:
     st.info("No hay folios creados. Use el botón 'Nueva incidencia' para crear el primer folio.")
