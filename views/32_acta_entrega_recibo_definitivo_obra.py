@@ -363,6 +363,9 @@ def _valor_acumulado(valor_inicial, adiciones):
         total += _safe_float(fila.get("VALOR"), 0.0)
     return round(total, 2)
 
+def _es_interventoria(descripcion):
+    return _texto(descripcion).upper() == "INTERVENTORIA"
+
 
 # ==========================================================
 # Presupuesto: items para la tabla de cantidades
@@ -374,7 +377,7 @@ def _items_desde_presupuesto(presupuesto_obra):
     tablas = presupuesto_obra.get("__tablas__", {}) or {}
     grupos = tablas.get("grupos_presupuesto_obra", []) or presupuesto_obra.get("grupos_presupuesto_obra", []) or []
     flujo_directos = presupuesto_obra.get("flujo_fondos_directos", []) or []
-    items_dict = presupuesto_obra.get("items", {}) or {}
+    items_dict = {}
 
     def tomar_valor_unitario(fila):
         return _safe_float(
@@ -422,15 +425,51 @@ def _items_desde_presupuesto(presupuesto_obra):
     for fila in flujo_directos:
         if not isinstance(fila, dict):
             continue
+
+        descripcion = _primero_no_vacio(
+            fila.get("DESCRIPCIÓN"),
+            fila.get("DESCRIPCION"),
+            fila.get("DESCRIPCIÓN ITEM"),
+        )
+
+        tipo = _texto(fila.get("TIPO")).upper()
+
+        if tipo == "INDIRECTO" and _es_interventoria(descripcion):
+            continue
+
         item = _texto(fila.get("ITEM") or fila.get("No. ORDEN"))
-        descripcion = _primero_no_vacio(fila.get("DESCRIPCIÓN"), fila.get("DESCRIPCION"), fila.get("DESCRIPCIÓN ITEM"))
-        unidad = _primero_no_vacio(fila.get("UNIDAD"), fila.get("unidad"), fila.get("UND"))
+
+        if tipo == "INDIRECTO" and not item:
+            item = f"CI-{len([x for x in filas if _texto(x.get('No. ORDEN')).startswith('CI-')]) + 1}"
+
+        unidad = _primero_no_vacio(
+            fila.get("UNIDAD"),
+            fila.get("unidad"),
+            fila.get("UND"),
+        ) or ("GLOBAL" if tipo == "INDIRECTO" else "")
+
         valor_unitario = tomar_valor_unitario(fila)
+
         if valor_unitario <= 0:
-            valor_base = _safe_float(fila.get("VALOR BASE"), 0.0)
-            cantidad = _safe_float(_primero_no_vacio(fila.get("CANT"), fila.get("CANTIDAD"), fila.get("CANTIDAD TOTAL")), 0.0)
+            valor_base = _safe_float(
+                _primero_no_vacio(
+                    fila.get("VALOR BASE"),
+                    fila.get("VR TOTAL"),
+                    fila.get("VALOR CON AIU"),
+                ),
+                0.0,
+            )
+            cantidad = _safe_float(
+                _primero_no_vacio(
+                    fila.get("CANT"),
+                    fila.get("CANTIDAD"),
+                    fila.get("CANTIDAD TOTAL"),
+                ),
+                1.0 if tipo == "INDIRECTO" else 0.0,
+            )
             if cantidad > 0:
                 valor_unitario = valor_base / cantidad
+
         agregar(item, descripcion, unidad, valor_unitario)
 
     return sorted(filas, key=lambda x: _key_codigo_natural(x.get("No. ORDEN")))
