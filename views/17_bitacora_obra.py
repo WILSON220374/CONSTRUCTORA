@@ -387,10 +387,22 @@ def _inicializar_estado(acta_inicio, contrato_obra):
             incidencias_individuales,
         )
 
+        folios_cargados = [
+            int(incidencia.get("folio") or 0)
+            for incidencia in incidencias_normalizadas
+            if isinstance(incidencia, dict) and int(incidencia.get("folio") or 0) > 0
+        ]
+
+        existen_folios_mayores_a_uno = any(folio > 1 for folio in folios_cargados)
+
         incidencias_normalizadas = [
             incidencia
             for incidencia in incidencias_normalizadas
-            if int(incidencia.get("folio") or 0) != 1 or _incidencia_tiene_contenido(incidencia)
+            if (
+                int(incidencia.get("folio") or 0) != 1
+                or _incidencia_tiene_contenido(incidencia)
+                or not existen_folios_mayores_a_uno
+            )
         ]
 
         folio_activo_base = (
