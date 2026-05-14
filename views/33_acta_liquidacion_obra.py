@@ -942,7 +942,7 @@ total_balance_ejecutado = round(valor_total_ejecutado_balance, 2)
 total_balance_pagado = round(valor_pagado_actas_balance, 2)
 saldo_balance = round(total_balance_ejecutado - total_balance_pagado, 2)
 
-saldo_por_amortizar_liquidacion = _safe_float(anticipo.get("saldo"), 0.0)
+ssaldo_por_amortizar_liquidacion = _safe_float(anticipo.get("saldo_por_amortizar"), 0.0)
 total_a_pagar_liquidacion = round(saldo_balance - saldo_por_amortizar_liquidacion, 2)
 
 c_bal1, c_bal2, c_bal3 = st.columns(3)
