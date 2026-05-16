@@ -138,6 +138,19 @@ def _filtrar_df_hasta_fecha(df, columna_fecha, fecha_corte):
         & (out[columna_fecha] <= fecha_corte)
     ]
 
+def _fechas_disponibles_df(df, columna_fecha):
+    if df is None or df.empty or columna_fecha not in df.columns:
+        return []
+
+    fechas = pd.to_datetime(
+        df[columna_fecha],
+        errors="coerce",
+    ).dt.date
+
+    fechas = fechas.dropna().unique().tolist()
+
+    return sorted(fechas)
+
 # ==========================================================
 # Datos base desde otras hojas
 # ==========================================================
