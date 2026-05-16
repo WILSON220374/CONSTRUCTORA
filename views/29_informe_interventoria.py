@@ -131,11 +131,11 @@ def _filtrar_df_hasta_fecha(df, columna_fecha, fecha_corte):
         errors="coerce",
     )
 
-    out[columna_fecha] = out[columna_fecha].dt.date
+    fecha_corte_ts = pd.Timestamp(fecha_corte)
 
     return out[
         out[columna_fecha].notna()
-        & (out[columna_fecha] <= fecha_corte)
+        & (out[columna_fecha] <= fecha_corte_ts)
     ]
 
 def _fechas_disponibles_df(df, columna_fecha):
