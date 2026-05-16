@@ -118,20 +118,25 @@ def _sumar_valores(rows, campo):
 def _filtrar_df_hasta_fecha(df, columna_fecha, fecha_corte):
     if df is None or df.empty or columna_fecha not in df.columns:
         return df
+
     fecha_corte = _parse_fecha(fecha_corte)
+
     if not fecha_corte:
         return df
+
     out = df.copy()
-    out[columna_fecha] = pd.to_datetime(out[columna_fecha], errors="coerce").dt.date
-    return out[out[columna_fecha].notna() & (out[columna_fecha] <= fecha_corte)]
 
+    out[columna_fecha] = pd.to_datetime(
+        out[columna_fecha],
+        errors="coerce",
+    )
 
-def _fechas_disponibles_df(df, columna_fecha):
-    if df is None or df.empty or columna_fecha not in df.columns:
-        return []
-    fechas = pd.to_datetime(df[columna_fecha], errors="coerce").dt.date.dropna().unique().tolist()
-    return sorted(fechas)
+    out[columna_fecha] = out[columna_fecha].dt.date
 
+    return out[
+        out[columna_fecha].notna()
+        & (out[columna_fecha] <= fecha_corte)
+    ]
 
 # ==========================================================
 # Datos base desde otras hojas
